@@ -25,6 +25,11 @@ export class AuthController {
     return this.authService.login(body);
   }
 
+  @Post('google')
+  async googleLogin(@Body() body: any) {
+    return this.authService.googleLogin(body);
+  }
+
   @Get('profile')
   async getProfile() {
     return this.authService.getProfile();

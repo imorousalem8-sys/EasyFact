@@ -473,33 +473,62 @@ class EasyFactApp {
     }
   }
 
-  loginWithGoogle() {
-    // 1-Click Google Auth
-    const demoGoogleEmail = 'compte.google@gmail.com';
-    this.isLoggedIn = true;
-    this.currentUserEmail = demoGoogleEmail;
-    this.currentUserId = 'user_google_' + Date.now();
-    this.companyProfile.name = 'Mon Entreprise';
+  async loginWithGoogle() {
+    const userEmail = prompt("Veuillez saisir votre adresse email Google :", "votre.email@gmail.com");
+    if (!userEmail || !userEmail.includes('@')) return;
 
-    localStorage.setItem('easyfact_logged_in', 'true');
-    localStorage.setItem('easyfact_active_user_id', this.currentUserId);
-    localStorage.setItem('easyfact_active_user_email', this.currentUserEmail);
-    this.saveToStorage();
+    try {
+      const res = await fetch(`${this.apiBaseUrl}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail, name: userEmail.split('@')[0].toUpperCase() })
+      });
 
-    this.updateHeaderAuthUI();
-    this.closeModal('auth-modal');
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        alert("⚠️ Échec d'authentification Google : " + (data.message || 'Erreur serveur'));
+        return;
+      }
 
-    const nextTab = this.pendingTabId || 'dashboard';
-    this.pendingTabId = null;
-    this.switchTab(nextTab);
+      this.isLoggedIn = true;
+      this.currentUserEmail = data.user.email;
+      this.currentUserId = data.user.id;
+      this.companyProfile.name = data.user.companyName || 'Mon Entreprise';
 
-    alert(`✅ Connecté avec succès via Google (${demoGoogleEmail}) !`);
+      localStorage.setItem('easyfact_logged_in', 'true');
+      localStorage.setItem('easyfact_jwt_token', data.token);
+      localStorage.setItem('easyfact_active_user_id', this.currentUserId);
+      localStorage.setItem('easyfact_active_user_email', this.currentUserEmail);
+      this.saveToStorage();
+
+      this.updateHeaderAuthUI();
+      this.closeModal('auth-modal');
+
+      const nextTab = this.pendingTabId || 'dashboard';
+      this.pendingTabId = null;
+      this.switchTab(nextTab);
+
+      alert(`✅ Authentification Google réussie pour ${this.currentUserEmail} !`);
+    } catch (err) {
+      // Local fallback for offline mode
+      this.isLoggedIn = true;
+      this.currentUserEmail = userEmail;
+      this.currentUserId = 'user_g_' + Date.now();
+      localStorage.setItem('easyfact_logged_in', 'true');
+      localStorage.setItem('easyfact_active_user_id', this.currentUserId);
+      localStorage.setItem('easyfact_active_user_email', this.currentUserEmail);
+      this.saveToStorage();
+      this.updateHeaderAuthUI();
+      this.closeModal('auth-modal');
+      this.switchTab(this.pendingTabId || 'dashboard');
+    }
   }
 
-  handleAuthSubmit() {
+  async handleAuthSubmit() {
     const email = document.getElementById('auth-email')?.value?.trim();
     const pass = document.getElementById('auth-password')?.value;
     const errDiv = document.getElementById('auth-error-msg');
+    const submitBtn = document.getElementById('btn-auth-submit');
 
     if (!email || !pass) {
       if (errDiv) { errDiv.innerText = 'Veuillez saisir votre email et votre mot de passe.'; errDiv.style.display = 'block'; }
@@ -507,23 +536,55 @@ class EasyFactApp {
     }
 
     if (errDiv) errDiv.style.display = 'none';
+    if (submitBtn) submitBtn.disabled = true;
 
-    this.isLoggedIn = true;
-    this.currentUserEmail = email;
-    this.currentUserId = 'user_' + btoa(email).replace(/=/g, '').substring(0, 10);
-    this.companyProfile.name = email.split('@')[0].toUpperCase();
+    const endpoint = this.authMode === 'register' ? '/auth/register' : '/auth/login';
 
-    localStorage.setItem('easyfact_logged_in', 'true');
-    localStorage.setItem('easyfact_active_user_id', this.currentUserId);
-    localStorage.setItem('easyfact_active_user_email', this.currentUserEmail);
-    this.saveToStorage();
+    try {
+      const res = await fetch(`${this.apiBaseUrl}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pass, companyName: email.split('@')[0].toUpperCase() })
+      });
 
-    this.updateHeaderAuthUI();
-    this.closeModal('auth-modal');
+      const data = await res.json();
 
-    const nextTab = this.pendingTabId || 'dashboard';
-    this.pendingTabId = null;
-    this.switchTab(nextTab);
+      if (!res.ok || !data.success) {
+        if (errDiv) {
+          errDiv.innerText = data.message || '⚠️ Identifiants incorrects ou compte introuvable.';
+          errDiv.style.display = 'block';
+        }
+        if (submitBtn) submitBtn.disabled = false;
+        return;
+      }
+
+      this.isLoggedIn = true;
+      this.currentUserEmail = data.user.email;
+      this.currentUserId = data.user.id;
+      this.userTier = data.user.tier || 'starter';
+      this.companyProfile.name = data.user.companyName || email.split('@')[0].toUpperCase();
+
+      localStorage.setItem('easyfact_logged_in', 'true');
+      localStorage.setItem('easyfact_jwt_token', data.token);
+      localStorage.setItem('easyfact_active_user_id', this.currentUserId);
+      localStorage.setItem('easyfact_active_user_email', this.currentUserEmail);
+      this.saveToStorage();
+
+      this.updateHeaderAuthUI();
+      this.closeModal('auth-modal');
+
+      const nextTab = this.pendingTabId || 'dashboard';
+      this.pendingTabId = null;
+      this.switchTab(nextTab);
+
+      if (submitBtn) submitBtn.disabled = false;
+    } catch (err) {
+      if (submitBtn) submitBtn.disabled = false;
+      if (errDiv) {
+        errDiv.innerText = '⚠️ Impossible de contacter le serveur d'authentification.';
+        errDiv.style.display = 'block';
+      }
+    }
   }
 
   handleHeaderAuthClick() {

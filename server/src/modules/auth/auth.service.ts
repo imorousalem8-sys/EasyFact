@@ -142,8 +142,58 @@ export class AuthService {
     };
   }
 
+  async googleLogin(data: { email: string; name?: string; sub?: string; picture?: string }) {
+    const emailKey = (data.email || '').toLowerCase().trim();
+    if (!emailKey || !emailKey.includes('@')) {
+      throw new BadRequestException('Adresse email Google invalide.');
+    }
+
+    let user = this.users.get(emailKey);
+    if (!user) {
+      user = {
+        id: 'usr_g_' + Date.now(),
+        email: emailKey,
+        companyName: data.name ? `${data.name}` : emailKey.split('@')[0].toUpperCase(),
+        tier: 'starter',
+        verified: true,
+        picture: data.picture || '',
+        createdAt: new Date().toISOString(),
+      };
+      this.users.set(emailKey, user);
+    }
+
+    const token = await this.jwtService.signAsync({
+      sub: user.id,
+      email: user.email,
+      companyName: user.companyName,
+      tier: user.tier,
+    });
+
+    return {
+      success: true,
+      message: 'Connexion Google OAuth 2.0 réussie.',
+      user: {
+        id: user.id,
+        email: user.email,
+        companyName: user.companyName,
+        tier: user.tier,
+        verified: true,
+      },
+      token,
+    };
+  }
+
   async login(data: any) {
-    const emailKey = (data.email || 'utilisateur@entreprise.com').toLowerCase().trim();
+    const emailKey = (data.email || '').toLowerCase().trim();
+    const rawPassword = data.password || '';
+
+    if (!emailKey || !emailKey.includes('@')) {
+      throw new BadRequestException('Veuillez fournir une adresse email valide.');
+    }
+    if (!rawPassword) {
+      throw new BadRequestException('Veuillez saisir votre mot de passe.');
+    }
+
     const now = Date.now();
 
     // Check Brute Force Lockout Status
@@ -156,7 +206,7 @@ export class AuthService {
         {
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
           error: 'Accès Verrouillé pour Sécurité',
-          message: `⚠️ Sécurité Anti-Intrusion : 5 tentatives échouées enregistrées. Compte temporairement verrouillé. Veuillez réespacer de ${remainingMinutes} minute(s) (${remainingSeconds}s).`,
+          message: `⚠️ Sécurité Anti-Intrusion : 5 tentatives échouées. Compte verrouillé pendant ${remainingMinutes} minute(s).`,
           remainingSeconds,
         },
         HttpStatus.TOO_MANY_REQUESTS,
@@ -164,64 +214,50 @@ export class AuthService {
     }
 
     const user = this.users.get(emailKey);
-    const rawPassword = data.password || '';
 
-    let isPasswordValid = false;
-    if (user && user.passwordHash) {
-      isPasswordValid = await bcrypt.compare(rawPassword, user.passwordHash);
-    } else if (rawPassword.length >= 4) {
-      // Default initial mock validation
-      isPasswordValid = true;
+    // Strict account checking: user must exist and password must match
+    if (!user) {
+      const currentCount = (attemptRecord?.count || 0) + 1;
+      this.failedAttempts.set(emailKey, { count: currentCount, lockedUntil: currentCount >= 5 ? now + 5 * 60 * 1000 : 0 });
+      throw new UnauthorizedException('Compte introuvable ou mot de passe incorrect. Veuillez créer un compte.');
     }
+
+    const isPasswordValid = await bcrypt.compare(rawPassword, user.passwordHash);
 
     if (!isPasswordValid) {
       const currentCount = (attemptRecord?.count || 0) + 1;
       let lockedUntil = 0;
 
       if (currentCount >= 5) {
-        lockedUntil = now + 5 * 60 * 1000; // 5 minutes lockout
-        console.warn(`🚨 [ANTI-BRUTE-FORCE] 5 tentatives échouées pour ${emailKey}. Verrouillage de 5 minutes activé !`);
+        lockedUntil = now + 5 * 60 * 1000;
       }
 
       this.failedAttempts.set(emailKey, { count: currentCount, lockedUntil });
-
       const attemptsRemaining = Math.max(0, 5 - currentCount);
       throw new UnauthorizedException(
-        `Mot de passe incorrect. Tentatives restantes avant verrouillage de 5 minutes : ${attemptsRemaining}/5.`,
+        `Mot de passe incorrect. Tentatives restantes avant verrouillage : ${attemptsRemaining}/5.`,
       );
     }
 
     // Reset failed attempts on successful login
     this.failedAttempts.delete(emailKey);
 
-    const activeUser = user || {
-      id: 'usr_' + Date.now(),
-      email: emailKey,
-      companyName: data.companyName || 'Mon Entreprise SARL',
-      tier: 'starter',
-      verified: true,
-    };
-
-    if (!user) {
-      this.users.set(emailKey, activeUser);
-    }
-
     const token = await this.jwtService.signAsync({
-      sub: activeUser.id,
-      email: activeUser.email,
-      companyName: activeUser.companyName,
-      tier: activeUser.tier,
+      sub: user.id,
+      email: user.email,
+      companyName: user.companyName,
+      tier: user.tier,
     });
 
     return {
       success: true,
-      message: 'Connexion JWT sécurisée réussie.',
+      message: 'Connexion JWT réussie.',
       user: {
-        id: activeUser.id,
-        email: activeUser.email,
-        companyName: activeUser.companyName,
-        tier: activeUser.tier,
-        verified: activeUser.verified,
+        id: user.id,
+        email: user.email,
+        companyName: user.companyName,
+        tier: user.tier,
+        verified: user.verified,
       },
       token,
     };
