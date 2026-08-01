@@ -1185,6 +1185,20 @@ class EasyFactApp {
     };
   }
 
+  handlePaymentMethodChange(method) {
+    const input = document.getElementById('doc-pay-account-input');
+    if (!input) return;
+
+    if (method === 'wave') {
+      input.value = this.companyProfile.waveNum || this.companyProfile.phone || '+221 77 123 45 67';
+    } else if (method === 'om') {
+      input.value = this.companyProfile.omNum || this.companyProfile.phone || '+221 78 987 65 43';
+    } else if (method === 'card') {
+      input.value = this.companyProfile.bankRib || 'RIB / IBAN: SN012 01001 12345678901';
+    }
+    this.updateLivePdf();
+  }
+
   updateLivePdf() {
     const totals = this.calculateCurrentInvoiceTotals();
 
@@ -1269,23 +1283,29 @@ class EasyFactApp {
     if (netTotEl) netTotEl.innerText = this.formatMoney(totals.netToPay);
     if (txtAmtEl) txtAmtEl.innerText = `${this.amountInFrenchWords(totals.netToPay)} (${this.formatMoney(totals.netToPay)})`;
 
-    // High Reliability Secured QR Code Payload matching Net To Pay Exactly
+    // Dynamic High Reliability Scannable QR Code Payload matching Selected Payment Channel
     const qrImg = document.getElementById('pdf-qr-code');
     const payName = document.getElementById('pdf-pay-method-name');
+    const payAccountDisplay = document.getElementById('pdf-pay-account-display');
+    const customAccount = document.getElementById('doc-pay-account-input')?.value?.trim() || this.companyProfile.phone || '+221 77 000 00 00';
 
+    const cleanNum = encodeURIComponent(customAccount);
     const encodedDocId = encodeURIComponent(docNum);
     const encodedAmount = totals.netToPay;
 
     if (payName && qrImg) {
       if (payMethod === 'wave') {
         payName.innerText = 'Wave Mobile Money';
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://wave.com/pay?ref=${encodedDocId}%26amount=${encodedAmount}`;
+        if (payAccountDisplay) payAccountDisplay.innerText = `N° Crédité : ${customAccount}`;
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://pay.wave.com/m/${cleanNum}?amount=${encodedAmount}`;
       } else if (payMethod === 'om') {
-        payName.innerText = 'Orange Money / MTN';
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://orangemoney.com/pay?ref=${encodedDocId}%26amount=${encodedAmount}`;
+        payName.innerText = 'Orange Money / MTN / Moov';
+        if (payAccountDisplay) payAccountDisplay.innerText = `N° Crédité : ${customAccount}`;
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=tel:${cleanNum}`;
       } else {
-        payName.innerText = 'Carte Bancaire (Visa / MC)';
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://paystack.com/pay/${encodedDocId}`;
+        payName.innerText = 'Virement / Carte Bancaire';
+        if (payAccountDisplay) payAccountDisplay.innerText = `Compte / RIB : ${customAccount}`;
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://easyfact.africa/pay?ref=${encodedDocId}%26amount=${encodedAmount}`;
       }
     }
 

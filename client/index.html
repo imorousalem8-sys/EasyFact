@@ -554,16 +554,16 @@
 
                 <div class="form-row split-3" style="margin-top: 10px;">
                   <div class="form-group">
-                    <label><i class="fa-solid fa-qrcode text-emerald"></i> Canal de Règlement QR</label>
-                    <select id="doc-payment-method" class="form-control">
+                    <label><i class="fa-solid fa-qrcode text-emerald"></i> Canal de Règlement</label>
+                    <select id="doc-payment-method" class="form-control" onchange="app.handlePaymentMethodChange(this.value)">
                       <option value="wave">Wave Mobile Money</option>
-                      <option value="om">Orange Money / MTN</option>
-                      <option value="card">Carte Bancaire Visa/MC</option>
+                      <option value="om">Orange Money / MTN / Moov</option>
+                      <option value="card">Virement / Carte Bancaire</option>
                     </select>
                   </div>
                   <div class="form-group">
-                    <label><i class="fa-solid fa-phone text-emerald"></i> N° Encaissement (N° Wave/OM)</label>
-                    <input type="text" id="doc-pay-account-input" class="form-control" placeholder="Ex: +221 77 123 45 67">
+                    <label><i class="fa-solid fa-phone text-emerald"></i> N° de Compte pour Encaissement</label>
+                    <input type="text" id="doc-pay-account-input" class="form-control" placeholder="+221 77 000 00 00">
                   </div>
                   <div class="form-group">
                     <label>Style de Thème PDF</label>
@@ -685,8 +685,7 @@
                 </div>
 
                 <div class="pdf-legal-footer">
-                  <p>Arrêté la présente facture à la somme de : <strong id="pdf-text-amount">Zéro Franc CFA</strong></p>
-                  <p class="small-legal">Facture conforme aux normes SYSCOHADA.</p>
+                  <p>Arrêté la présente facture à la somme de : <strong id="pdf-text-amount">Zéro Franc CFA (0 FCFA)</strong></p>
                 </div>
               </div>
             </div>
