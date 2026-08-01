@@ -185,9 +185,14 @@ class EasyFactApp {
       });
     });
 
-    // Mobile Sidebar Toggle
-    document.getElementById('toggle-sidebar')?.addEventListener('click', () => {
-      document.getElementById('sidebar')?.classList.toggle('open');
+    // Mobile Sidebar Toggle & Touch Backdrop
+    document.getElementById('toggle-sidebar')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleSidebar();
+    });
+
+    document.getElementById('sidebar-backdrop')?.addEventListener('click', () => {
+      this.closeSidebar();
     });
 
     // Close Modals on Overlay Click & Escape key
@@ -200,7 +205,7 @@ class EasyFactApp {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
-        document.getElementById('sidebar')?.classList.remove('open');
+        this.closeSidebar();
       }
     });
 
@@ -433,8 +438,28 @@ class EasyFactApp {
       this.loadSettingsForm();
     }
 
-    document.getElementById('sidebar')?.classList.remove('open');
+    this.closeSidebar();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar) {
+      const isOpen = sidebar.classList.contains('open');
+      if (isOpen) {
+        sidebar.classList.remove('open');
+        backdrop?.classList.remove('active');
+      } else {
+        sidebar.classList.add('open');
+        backdrop?.classList.add('active');
+      }
+    }
+  }
+
+  closeSidebar() {
+    document.getElementById('sidebar')?.classList.remove('open');
+    document.getElementById('sidebar-backdrop')?.classList.remove('active');
   }
 
   /* AUTHENTICATION & SIMPLE FRICTIONLESS LOGIN HANDLERS */

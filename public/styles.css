@@ -402,34 +402,72 @@ body { background-color: var(--bg-dark); color: var(--text-main); min-height: 10
    ULTRA-RESPONSIVE MEDIA QUERIES (MOBILE, TABLET & DESKTOP OPTIMIZATION)
    ========================================================================== */
 
+/* Sidebar Backdrop for Mobile Drawer */
+.sidebar-backdrop {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  width: 100vw;
+  height: calc(100vh - 60px);
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(3px);
+  z-index: 89;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.sidebar-backdrop.active {
+  display: block;
+  opacity: 1;
+}
+
 /* Mobile & Small Tablets (< 768px) */
 @media screen and (max-width: 768px) {
-  .mobile-menu-btn { display: flex; }
+  .mobile-menu-btn { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; font-size: 1.2rem; }
   
-  .main-header { padding: 0 12px; height: 60px; }
-  .brand-logo-img { height: 34px; }
+  .main-header { padding: 0 10px; height: 60px; justify-content: space-between; }
+  .brand-logo-img { height: 32px; }
 
   /* Device Switcher compact */
   .device-switcher { display: none; }
-  .user-info { display: none; }
+  .user-info { display: flex; flex-direction: column; }
+  .user-info .company-name { display: none; }
+  .user-tier-badge { display: none; }
 
-  /* Drawer Sidebar Navigation */
+  /* Touch-Optimized Drawer Sidebar Navigation */
   .sidebar {
     position: fixed;
     top: 60px;
     left: 0;
+    width: 270px;
     height: calc(100vh - 60px);
     transform: translateX(-100%);
-    box-shadow: 10px 0 30px rgba(0,0,0,0.15);
+    box-shadow: 10px 0 30px rgba(0,0,0,0.2);
+    z-index: 95;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .sidebar.open { transform: translateX(0); }
 
-  .content-area { padding: 12px; }
+  .content-area { padding: 10px; }
+
+  /* Mobile Touch Targets & Buttons */
+  .btn, .mode-btn, .user-profile-button {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  .form-control, select, input {
+    font-size: 16px !important; /* Prevents auto-zoom on iOS Safari */
+    min-height: 42px;
+  }
+
+  /* Landing Hero Actions Stack */
+  .landing-hero-actions { flex-direction: column; width: 100%; gap: 10px; }
+  .btn-landing-primary, .btn-landing-secondary { width: 100%; justify-content: center; min-height: 48px; font-size: 0.95rem; }
 
   /* Editor Stack Vertical */
   .editor-grid.mode-split { flex-direction: column; }
   .editor-grid.mode-split #editor-form-panel,
-  .editor-grid.mode-split #editor-pdf-panel { width: 100%; flex: none; }
+  .editor-grid.mode-split #editor-pdf-panel { width: 100%; flex: none; position: static; }
 
   /* Form Rows Stack */
   .form-row.split-2, .form-row.split-3 { flex-direction: column; gap: 8px; }
@@ -437,13 +475,15 @@ body { background-color: var(--bg-dark); color: var(--text-main); min-height: 10
   .kpi-grid { grid-template-columns: 1fr; }
   .pdf-footer-grid { grid-template-columns: 1fr; gap: 10px; }
   .pdf-totals-box { text-align: left; border-top: 1px solid #e2e8f0; padding-top: 6px; }
+
+  .modal-card { width: 95%; max-height: 88vh; overflow-y: auto; padding: 20px; }
 }
 
 /* Extra Small Phones (< 480px) */
 @media screen and (max-width: 480px) {
   .view-title { font-size: 1.15rem; }
-  .view-header { flex-direction: column; align-items: flex-start; }
-  .action-buttons { width: 100%; justify-content: space-between; }
+  .view-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .action-buttons { width: 100%; flex-direction: column; gap: 8px; }
   .btn { width: 100%; justify-content: center; }
   .items-table th:nth-child(2), .items-table td:nth-child(2) { display: none; } /* Hide Qty column on tiny screens */
 }
