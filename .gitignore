@@ -1,0 +1,19 @@
+# Node dependencies
+node_modules/
+server/node_modules/
+
+# Build outputs
+dist/
+server/dist/
+*.tsbuildinfo
+
+# Environment variables & secrets
+.env
+server/.env
+
+# System & IDE logs
+*.log
+.gemini/
+.agents/
+.DS_Store
+Thumbs.db
