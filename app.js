@@ -5,7 +5,9 @@
 
 class EasyFactApp {
   constructor() {
-    this.apiBaseUrl = 'http://localhost:3000/api';
+    this.apiBaseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:3000/api'
+      : '/api';
 
     // User Session & Multi-Tenant Data Isolation
     this.isLoggedIn = localStorage.getItem('easyfact_logged_in') === 'true';
