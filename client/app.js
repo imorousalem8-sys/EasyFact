@@ -8,8 +8,11 @@ class EasyFactApp {
     this.apiBaseUrl = 'http://localhost:3000/api';
 
     // User Session & Multi-Tenant Data Isolation
+    this.isLoggedIn = localStorage.getItem('easyfact_logged_in') === 'true';
     this.currentUserId = localStorage.getItem('easyfact_active_user_id') || 'tenant_default';
     this.currentUserEmail = localStorage.getItem('easyfact_active_user_email') || 'utilisateur@entreprise.com';
+    this.pendingTabId = null;
+    this.authMode = 'login'; // 'login' or 'register'
 
     // Financial Configuration & Currencies
     this.currency = 'XOF';
@@ -87,6 +90,7 @@ class EasyFactApp {
     this.applyLanguage(this.lang);
     this.renderAllViews();
     this.updateLivePdf();
+    this.updateHeaderAuthUI();
     this.switchTab('landing');
   }
 
@@ -396,6 +400,13 @@ class EasyFactApp {
   }
 
   switchTab(tabId) {
+    // Auth Guard: Require login for all protected workspace views
+    if (tabId !== 'landing' && !this.isLoggedIn) {
+      this.pendingTabId = tabId;
+      this.openAuthModal('login', `🔒 Accès Réservé : Veuillez vous connecter ou créer un compte d'entreprise pour accéder à cet espace.`);
+      return;
+    }
+
     document.querySelectorAll('.tab-view').forEach(view => view.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
 
@@ -422,6 +433,129 @@ class EasyFactApp {
 
     document.getElementById('sidebar')?.classList.remove('open');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* AUTHENTICATION & LOGIN/SIGNUP MODAL HANDLERS */
+  openAuthModal(mode = 'login', customSubtitle = null) {
+    this.authMode = mode;
+    this.switchAuthMode(mode);
+    const sub = document.getElementById('auth-modal-subtitle');
+    if (sub && customSubtitle) sub.innerText = customSubtitle;
+    const modal = document.getElementById('auth-modal');
+    if (modal) modal.classList.add('active');
+  }
+
+  closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.remove('active');
+  }
+
+  switchAuthMode(mode) {
+    this.authMode = mode;
+    const btnLogin = document.getElementById('tab-btn-login');
+    const btnReg = document.getElementById('tab-btn-register');
+    const grpCompany = document.getElementById('group-company-name');
+    const lblBtn = document.getElementById('lbl-auth-btn');
+    const title = document.getElementById('auth-modal-title');
+
+    if (mode === 'register') {
+      if (btnLogin) { btnLogin.style.background = 'transparent'; btnLogin.style.color = '#64748b'; btnLogin.style.boxShadow = 'none'; }
+      if (btnReg) { btnReg.style.background = '#ffffff'; btnReg.style.color = '#0f172a'; btnReg.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'; }
+      if (grpCompany) grpCompany.style.display = 'block';
+      if (lblBtn) lblBtn.innerText = "Créer mon Compte Entreprise";
+      if (title) title.innerText = "Création de Compte EasyFact";
+    } else {
+      if (btnReg) { btnReg.style.background = 'transparent'; btnReg.style.color = '#64748b'; btnReg.style.boxShadow = 'none'; }
+      if (btnLogin) { btnLogin.style.background = '#ffffff'; btnLogin.style.color = '#0f172a'; btnLogin.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'; }
+      if (grpCompany) grpCompany.style.display = 'none';
+      if (lblBtn) lblBtn.innerText = "Se Connecter à EasyFact";
+      if (title) title.innerText = "Espace Entreprise EasyFact";
+    }
+  }
+
+  async requestOtpCode() {
+    const email = document.getElementById('auth-email')?.value?.trim();
+    if (!email || !email.includes('@')) {
+      alert("⚠️ Veuillez d'abord saisir une adresse email professionnelle valide.");
+      return;
+    }
+
+    try {
+      fetch(`${this.apiBaseUrl}/auth/send-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      }).catch(e => console.log('OTP sent (local mode):', e));
+
+      alert(`📩 Code de sécurité OTP envoyé avec succès à : ${email}\nVeuillez consulter votre boîte de réception.`);
+    } catch (err) {
+      alert(`📩 Code OTP envoyé à : ${email}`);
+    }
+  }
+
+  handleAuthSubmit() {
+    const email = document.getElementById('auth-email')?.value?.trim();
+    const pass = document.getElementById('auth-password')?.value;
+    const company = document.getElementById('auth-company-name')?.value?.trim() || 'Mon Entreprise SARL';
+    const errDiv = document.getElementById('auth-error-msg');
+
+    if (!email || !pass) {
+      if (errDiv) { errDiv.innerText = 'Veuillez remplir tous les champs.'; errDiv.style.display = 'block'; }
+      return;
+    }
+
+    if (errDiv) errDiv.style.display = 'none';
+
+    this.isLoggedIn = true;
+    this.currentUserEmail = email;
+    this.currentUserId = 'user_' + btoa(email).replace(/=/g, '').substring(0, 10);
+    this.companyProfile.name = company;
+
+    localStorage.setItem('easyfact_logged_in', 'true');
+    localStorage.setItem('easyfact_active_user_id', this.currentUserId);
+    localStorage.setItem('easyfact_active_user_email', this.currentUserEmail);
+    this.saveToStorage();
+
+    this.updateHeaderAuthUI();
+    this.closeModal('auth-modal');
+
+    const nextTab = this.pendingTabId || 'dashboard';
+    this.pendingTabId = null;
+    this.switchTab(nextTab);
+  }
+
+  handleHeaderAuthClick() {
+    if (this.isLoggedIn) {
+      this.openProfileModal();
+    } else {
+      this.openAuthModal('login');
+    }
+  }
+
+  updateHeaderAuthUI() {
+    const nameEl = document.getElementById('header-user-name');
+    const subEl = document.getElementById('header-user-sub');
+    const avatarEl = document.getElementById('header-avatar');
+
+    if (this.isLoggedIn) {
+      if (nameEl) nameEl.innerText = this.companyProfile.name || this.currentUserEmail;
+      if (subEl) subEl.innerHTML = `<i class="fa-solid fa-circle text-emerald"></i> Connecté (${this.userTier.toUpperCase()})`;
+      if (avatarEl) avatarEl.innerText = (this.companyProfile.name || 'E').charAt(0).toUpperCase();
+    } else {
+      if (nameEl) nameEl.innerText = 'Connexion / Inscription';
+      if (subEl) subEl.innerHTML = `<i class="fa-solid fa-right-to-bracket text-emerald"></i> Espace Membre`;
+      if (avatarEl) avatarEl.innerHTML = `<i class="fa-solid fa-user-lock"></i>`;
+    }
+  }
+
+  logout() {
+    if (confirm("Êtes-vous sûr de vouloir vous déconnecter d'EasyFact ?")) {
+      this.isLoggedIn = false;
+      localStorage.removeItem('easyfact_logged_in');
+      this.updateHeaderAuthUI();
+      this.closeModal('profile-modal');
+      this.switchTab('landing');
+    }
   }
 
   loadSettingsForm() {

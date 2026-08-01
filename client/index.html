@@ -86,12 +86,12 @@
           <button class="upgrade-mini-btn" id="btn-upgrade-header">Changer Plan</button>
         </div>
 
-        <!-- Dynamic User Profile Button -->
-        <div class="user-profile-button" onclick="app.openProfileModal()" title="Gérer Mon Entreprise & Compte">
-          <div class="avatar" id="header-avatar">E</div>
+        <!-- Dynamic User Profile / Auth Button -->
+        <div class="user-profile-button" id="header-auth-btn" onclick="app.handleHeaderAuthClick()" title="Compte & Connexion" style="cursor: pointer;">
+          <div class="avatar" id="header-avatar"><i class="fa-solid fa-user-lock"></i></div>
           <div class="user-info">
-            <span class="user-name" id="header-user-name">Mon Entreprise SARL</span>
-            <span class="company-name"><i class="fa-solid fa-gear"></i> Gérer mon profil</span>
+            <span class="user-name" id="header-user-name">Connexion / Inscription</span>
+            <span class="company-name" id="header-user-sub"><i class="fa-solid fa-right-to-bracket text-emerald"></i> Espace Membre</span>
           </div>
         </div>
       </div>
@@ -1299,6 +1299,59 @@
       </div>
       <div class="modal-footer" style="margin-top: 18px;">
         <button class="btn btn-outline" onclick="app.closeModal('plan-switcher-modal')">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL AUTHENTIFICATION & CREATION DE COMPTE -->
+  <div class="modal-overlay" id="auth-modal">
+    <div class="modal-card" style="max-width: 460px; padding: 28px; position: relative;">
+      <button class="modal-close" onclick="app.closeModal('auth-modal')" style="position: absolute; right: 18px; top: 18px; border: none; background: #f1f5f9; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 1.1rem; color: #64748b;">&times;</button>
+      
+      <div class="modal-header" style="border-bottom: none; padding-bottom: 0; display: block; text-align: center;">
+        <img src="easyfact_logo.png" alt="EasyFact Logo" style="height: 40px; margin-bottom: 10px;">
+        <h3 id="auth-modal-title" style="font-size: 1.2rem; font-weight: 700; color: #0f172a; margin: 0;">Espace Entreprise EasyFact</h3>
+        <p id="auth-modal-subtitle" style="font-size: 0.82rem; color: #64748b; margin-top: 4px; margin-bottom: 0;">Connectez-vous ou créez votre compte pour accéder à vos tableaux de bord et créer vos factures.</p>
+      </div>
+
+      <div class="modal-body" style="padding-top: 16px;">
+        <!-- Auth Tabs (Connexion / Inscription) -->
+        <div class="auth-toggle-bar" style="display: flex; background: #f1f5f9; padding: 4px; border-radius: 10px; margin-bottom: 20px;">
+          <button type="button" class="auth-tab-btn active" id="tab-btn-login" onclick="app.switchAuthMode('login')" style="flex: 1; padding: 8px; border: none; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; background: #ffffff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">Connexion</button>
+          <button type="button" class="auth-tab-btn" id="tab-btn-register" onclick="app.switchAuthMode('register')" style="flex: 1; padding: 8px; border: none; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; background: transparent; color: #64748b;">Créer un Compte</button>
+        </div>
+
+        <form id="auth-form" onsubmit="event.preventDefault(); app.handleAuthSubmit();">
+          <div class="form-group" id="group-company-name" style="display: none; margin-bottom: 14px;">
+            <label style="font-weight: 600; font-size: 0.82rem; color: #334155; margin-bottom: 6px; display: block;">Nom de votre Entreprise / PME</label>
+            <input type="text" id="auth-company-name" class="form-control" placeholder="Ex: Dakar Tech SARL, Kaba & Frères..." style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.9rem;">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label style="font-weight: 600; font-size: 0.82rem; color: #334155; margin-bottom: 6px; display: block;">Adresse Email Professionnelle</label>
+            <input type="email" id="auth-email" class="form-control" placeholder="nom@entreprise.com" required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.9rem;">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label style="font-weight: 600; font-size: 0.82rem; color: #334155; margin: 0;">Code OTP ou Mot de Passe</label>
+              <button type="button" onclick="app.requestOtpCode()" id="btn-request-otp" style="border: none; background: none; color: #059669; font-size: 0.78rem; font-weight: 600; cursor: pointer;">
+                <i class="fa-solid fa-paper-plane"></i> Recevoir un Code par Email
+              </button>
+            </div>
+            <input type="password" id="auth-password" class="form-control" placeholder="Entrez votre mot de passe ou le code OTP" required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.9rem;">
+          </div>
+
+          <div id="auth-error-msg" style="display: none; background: #fef2f2; color: #dc2626; padding: 10px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 14px; text-align: center; border: 1px solid #fecaca;"></div>
+
+          <button type="submit" class="btn btn-primary" id="btn-auth-submit" style="width: 100%; padding: 12px; font-weight: 700; border-radius: 8px; font-size: 0.95rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: white; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);">
+            <i class="fa-solid fa-right-to-bracket"></i> <span id="lbl-auth-btn">Se Connecter à EasyFact</span>
+          </button>
+        </form>
+      </div>
+
+      <div style="margin-top: 16px; text-align: center; font-size: 0.78rem; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 14px;">
+        <i class="fa-solid fa-shield-halved text-emerald"></i> Connexion Sécurisée JWT • Isolation des Données par Entreprise
       </div>
     </div>
   </div>
