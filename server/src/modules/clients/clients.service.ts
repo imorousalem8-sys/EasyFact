@@ -10,7 +10,7 @@ export class ClientsService {
     return { success: true, data: clients };
   }
 
-  async create(userId: string = 'guest', dto: any) {
+  async create(dto: any, userId: string = 'guest') {
     const newClient = {
       id: 'cli_' + Date.now(),
       userId,
@@ -29,14 +29,14 @@ export class ClientsService {
     return { success: true, data: newClient };
   }
 
-  async findOne(userId: string = 'guest', id: string) {
+  async findOne(id: string, userId: string = 'guest') {
     const clients = this.userClients.get(userId) || [];
     const client = clients.find(c => c.id === id);
     if (!client) return { success: false, message: 'Client non trouvé' };
     return { success: true, data: client };
   }
 
-  async delete(userId: string = 'guest', id: string) {
+  async delete(id: string, userId: string = 'guest') {
     const clients = this.userClients.get(userId) || [];
     const updated = clients.filter(c => c.id !== id);
     this.userClients.set(userId, updated);
