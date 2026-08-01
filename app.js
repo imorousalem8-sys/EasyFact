@@ -1287,24 +1287,28 @@ class EasyFactApp {
     const qrImg = document.getElementById('pdf-qr-code');
     const payName = document.getElementById('pdf-pay-method-name');
     const payAccountDisplay = document.getElementById('pdf-pay-account-display');
-    const customAccount = document.getElementById('doc-pay-account-input')?.value?.trim() || this.companyProfile.phone || '+221 77 000 00 00';
+    
+    let activeAccount = this.companyProfile.phone || '+221 77 000 00 00';
+    if (payMethod === 'wave') activeAccount = this.companyProfile.waveNum || this.companyProfile.phone || '+221 77 123 45 67';
+    else if (payMethod === 'om') activeAccount = this.companyProfile.omNum || this.companyProfile.phone || '+221 78 987 65 43';
+    else if (payMethod === 'card') activeAccount = this.companyProfile.bankRib || 'RIB / IBAN: SN012 01001 12345678901';
 
-    const cleanNum = encodeURIComponent(customAccount);
+    const cleanNum = encodeURIComponent(activeAccount);
     const encodedDocId = encodeURIComponent(docNum);
     const encodedAmount = totals.netToPay;
 
     if (payName && qrImg) {
       if (payMethod === 'wave') {
         payName.innerText = 'Wave Mobile Money';
-        if (payAccountDisplay) payAccountDisplay.innerText = `N° Crédité : ${customAccount}`;
+        if (payAccountDisplay) payAccountDisplay.innerText = `N° Crédité : ${activeAccount}`;
         qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://pay.wave.com/m/${cleanNum}?amount=${encodedAmount}`;
       } else if (payMethod === 'om') {
         payName.innerText = 'Orange Money / MTN / Moov';
-        if (payAccountDisplay) payAccountDisplay.innerText = `N° Crédité : ${customAccount}`;
+        if (payAccountDisplay) payAccountDisplay.innerText = `N° Crédité : ${activeAccount}`;
         qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=tel:${cleanNum}`;
       } else {
         payName.innerText = 'Virement / Carte Bancaire';
-        if (payAccountDisplay) payAccountDisplay.innerText = `Compte / RIB : ${customAccount}`;
+        if (payAccountDisplay) payAccountDisplay.innerText = `Compte / RIB : ${activeAccount}`;
         qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://easyfact.africa/pay?ref=${encodedDocId}%26amount=${encodedAmount}`;
       }
     }
