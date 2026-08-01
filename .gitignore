@@ -15,5 +15,6 @@ server/.env
 *.log
 .gemini/
 .agents/
+.vercel/
 .DS_Store
 Thumbs.db
