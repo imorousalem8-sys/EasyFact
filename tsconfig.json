@@ -8,19 +8,10 @@
     "allowSyntheticDefaultImports": true,
     "target": "ES2021",
     "sourceMap": true,
-    "outDir": "./server/dist",
-    "baseUrl": "./server",
-    "paths": {
-      "*": ["node_modules/*", "src/*"]
-    },
-    "typeRoots": ["./server/node_modules/@types"],
-    "incremental": true,
+    "outDir": "./dist",
     "skipLibCheck": true,
     "strictNullChecks": false,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
+    "noImplicitAny": false
   },
-  "include": ["server/src/**/*"]
+  "include": ["server/src/**/*", "api/**/*"]
 }
