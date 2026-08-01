@@ -639,8 +639,21 @@ class EasyFactApp {
   logout() {
     if (confirm("Êtes-vous sûr de vouloir vous déconnecter d'EasyFact ?")) {
       this.isLoggedIn = false;
+      this.currentUserEmail = null;
+      this.currentUserId = 'guest';
+      this.invoices = [];
+      this.expenses = [];
+      this.deliveryNotes = [];
+      this.clients = [];
+      this.products = [];
+
       localStorage.removeItem('easyfact_logged_in');
+      localStorage.removeItem('easyfact_jwt_token');
+      localStorage.removeItem('easyfact_active_user_id');
+      localStorage.removeItem('easyfact_active_user_email');
+
       this.updateHeaderAuthUI();
+      this.renderAllViews();
       this.closeModal('profile-modal');
       this.switchTab('landing');
     }

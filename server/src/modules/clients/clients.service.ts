@@ -2,15 +2,18 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ClientsService {
-  private clients = []; // Starts clean/empty for new user onboarding
+  // Map of userId -> Client[] for 100% strict per-user tenant isolation
+  private userClients = new Map<string, any[]>();
 
-  async findAll() {
-    return { success: true, data: this.clients };
+  async findAll(userId: string = 'guest') {
+    const clients = this.userClients.get(userId) || [];
+    return { success: true, data: clients };
   }
 
-  async create(dto: any) {
+  async create(userId: string = 'guest', dto: any) {
     const newClient = {
       id: 'cli_' + Date.now(),
+      userId,
       name: dto.name,
       ninea: dto.ninea || '',
       rccm: dto.rccm || '',
@@ -18,18 +21,25 @@ export class ClientsService {
       email: dto.email || '',
       city: dto.city || '',
     };
-    this.clients.unshift(newClient);
+
+    const clients = this.userClients.get(userId) || [];
+    clients.unshift(newClient);
+    this.userClients.set(userId, clients);
+
     return { success: true, data: newClient };
   }
 
-  async findOne(id: string) {
-    const client = this.clients.find(c => c.id === id);
+  async findOne(userId: string = 'guest', id: string) {
+    const clients = this.userClients.get(userId) || [];
+    const client = clients.find(c => c.id === id);
     if (!client) return { success: false, message: 'Client non trouvé' };
     return { success: true, data: client };
   }
 
-  async delete(id: string) {
-    this.clients = this.clients.filter(c => c.id !== id);
+  async delete(userId: string = 'guest', id: string) {
+    const clients = this.userClients.get(userId) || [];
+    const updated = clients.filter(c => c.id !== id);
+    this.userClients.set(userId, updated);
     return { success: true, message: 'Client supprimé' };
   }
 }
