@@ -4,7 +4,7 @@
   "private": true,
   "description": "EasyFact Africa - Enterprise Financial & Invoicing Platform",
   "scripts": {
-    "build": "cd server && npm install --include=dev && npm run build",
+    "build": "node -e \"const fs=require('fs'); if(!fs.existsSync('public')) fs.mkdirSync('public'); ['index.html','styles.css','app.js','easyfact_logo.png','easyfact_icon.png','easyfact_hero.png'].forEach(f => { if(fs.existsSync(f)) fs.copyFileSync(f, 'public/' + f); });\" && cd server && npm install --include=dev && npm run build",
     "start": "cd server && npm run start:prod",
     "dev": "cd server && npm run start:dev"
   },
