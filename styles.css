@@ -303,7 +303,7 @@ body { background-color: var(--bg-dark); color: var(--text-main); min-height: 10
 /* Editor Grid Layout */
 .editor-grid { display: flex; gap: 20px; align-items: flex-start; width: 100%; }
 .editor-grid.mode-split #editor-form-panel { flex: 1.1; min-width: 0; }
-.editor-grid.mode-split #editor-pdf-panel { flex: 0.9; min-width: 0; }
+.editor-grid.mode-split #editor-pdf-panel { flex: 0.9; min-width: 0; position: sticky; top: 75px; }
 .editor-grid.mode-form-only #editor-form-panel { flex: 1; width: 100%; display: block; }
 .editor-grid.mode-form-only #editor-pdf-panel { display: none; }
 .editor-grid.mode-pdf-only #editor-form-panel { display: none; }
