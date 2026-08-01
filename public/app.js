@@ -620,6 +620,49 @@ class EasyFactApp {
     }
   }
 
+  updateSidebarUI() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+
+    if (!this.isLoggedIn) {
+      // Unauthenticated / Landing Mode: HIDE protected tabs from sidebar
+      document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
+        const tab = item.getAttribute('data-tab');
+        if (tab === 'landing' || tab === 'pricing') {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+
+      document.querySelectorAll('.sidebar-nav .nav-section-title').forEach(title => {
+        const text = title.innerText.toUpperCase();
+        if (text.includes('PRINCIPAL') || text.includes('EXCLUSIVITÉS') || text.includes('GESTION')) {
+          title.style.display = 'none';
+        } else {
+          title.style.display = 'block';
+        }
+      });
+    } else {
+      // Authenticated Mode: SHOW ALL tabs in sidebar
+      document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
+        item.style.display = 'flex';
+      });
+      document.querySelectorAll('.sidebar-nav .nav-section-title').forEach(title => {
+        title.style.display = 'block';
+      });
+    }
+  }
+
+  handleHeroCta(targetTab = 'create-invoice') {
+    if (!this.isLoggedIn) {
+      this.pendingTabId = targetTab;
+      this.openAuthModal('register', "🔒 Créez votre compte gratuit ou connectez-vous pour commencer.");
+    } else {
+      this.switchTab(targetTab);
+    }
+  }
+
   updateHeaderAuthUI() {
     const nameEl = document.getElementById('header-user-name');
     const subEl = document.getElementById('header-user-sub');
@@ -634,6 +677,8 @@ class EasyFactApp {
       if (subEl) subEl.innerHTML = `<i class="fa-solid fa-right-to-bracket text-emerald"></i> Espace Membre`;
       if (avatarEl) avatarEl.innerHTML = `<i class="fa-solid fa-user-lock"></i>`;
     }
+
+    this.updateSidebarUI();
   }
 
   logout() {
