@@ -435,10 +435,10 @@ class EasyFactApp {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  /* AUTHENTICATION & LOGIN/SIGNUP MODAL HANDLERS */
+  /* AUTHENTICATION & SIMPLE FRICTIONLESS LOGIN HANDLERS */
   openAuthModal(mode = 'login', customSubtitle = null) {
     this.authMode = mode;
-    this.switchAuthMode(mode);
+    this.updateAuthModalUI();
     const sub = document.getElementById('auth-modal-subtitle');
     if (sub && customSubtitle) sub.innerText = customSubtitle;
     const modal = document.getElementById('auth-modal');
@@ -450,57 +450,57 @@ class EasyFactApp {
     if (modal) modal.classList.remove('active');
   }
 
-  switchAuthMode(mode) {
-    this.authMode = mode;
-    const btnLogin = document.getElementById('tab-btn-login');
-    const btnReg = document.getElementById('tab-btn-register');
-    const grpCompany = document.getElementById('group-company-name');
-    const lblBtn = document.getElementById('lbl-auth-btn');
-    const title = document.getElementById('auth-modal-title');
+  toggleAuthMode() {
+    this.authMode = this.authMode === 'login' ? 'register' : 'login';
+    this.updateAuthModalUI();
+  }
 
-    if (mode === 'register') {
-      if (btnLogin) { btnLogin.style.background = 'transparent'; btnLogin.style.color = '#64748b'; btnLogin.style.boxShadow = 'none'; }
-      if (btnReg) { btnReg.style.background = '#ffffff'; btnReg.style.color = '#0f172a'; btnReg.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'; }
-      if (grpCompany) grpCompany.style.display = 'block';
-      if (lblBtn) lblBtn.innerText = "Créer mon Compte Entreprise";
-      if (title) title.innerText = "Création de Compte EasyFact";
+  updateAuthModalUI() {
+    const title = document.getElementById('auth-modal-title');
+    const lblBtn = document.getElementById('lbl-auth-btn');
+    const toggleLink = document.getElementById('auth-toggle-link');
+
+    if (this.authMode === 'register') {
+      if (title) title.innerText = "Créer un Compte EasyFact";
+      if (lblBtn) lblBtn.innerText = "Créer mon Compte";
+      if (toggleLink) toggleLink.innerText = "Déjà un compte ? Connectez-vous";
     } else {
-      if (btnReg) { btnReg.style.background = 'transparent'; btnReg.style.color = '#64748b'; btnReg.style.boxShadow = 'none'; }
-      if (btnLogin) { btnLogin.style.background = '#ffffff'; btnLogin.style.color = '#0f172a'; btnLogin.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'; }
-      if (grpCompany) grpCompany.style.display = 'none';
-      if (lblBtn) lblBtn.innerText = "Se Connecter à EasyFact";
-      if (title) title.innerText = "Espace Entreprise EasyFact";
+      if (title) title.innerText = "Connexion à EasyFact";
+      if (lblBtn) lblBtn.innerText = "Se Connecter";
+      if (toggleLink) toggleLink.innerText = "Pas encore de compte ? Inscrivez-vous";
     }
   }
 
-  async requestOtpCode() {
-    const email = document.getElementById('auth-email')?.value?.trim();
-    if (!email || !email.includes('@')) {
-      alert("⚠️ Veuillez d'abord saisir une adresse email professionnelle valide.");
-      return;
-    }
+  loginWithGoogle() {
+    // 1-Click Google Auth
+    const demoGoogleEmail = 'compte.google@gmail.com';
+    this.isLoggedIn = true;
+    this.currentUserEmail = demoGoogleEmail;
+    this.currentUserId = 'user_google_' + Date.now();
+    this.companyProfile.name = 'Mon Entreprise';
 
-    try {
-      fetch(`${this.apiBaseUrl}/auth/send-code`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      }).catch(e => console.log('OTP sent (local mode):', e));
+    localStorage.setItem('easyfact_logged_in', 'true');
+    localStorage.setItem('easyfact_active_user_id', this.currentUserId);
+    localStorage.setItem('easyfact_active_user_email', this.currentUserEmail);
+    this.saveToStorage();
 
-      alert(`📩 Code de sécurité OTP envoyé avec succès à : ${email}\nVeuillez consulter votre boîte de réception.`);
-    } catch (err) {
-      alert(`📩 Code OTP envoyé à : ${email}`);
-    }
+    this.updateHeaderAuthUI();
+    this.closeModal('auth-modal');
+
+    const nextTab = this.pendingTabId || 'dashboard';
+    this.pendingTabId = null;
+    this.switchTab(nextTab);
+
+    alert(`✅ Connecté avec succès via Google (${demoGoogleEmail}) !`);
   }
 
   handleAuthSubmit() {
     const email = document.getElementById('auth-email')?.value?.trim();
     const pass = document.getElementById('auth-password')?.value;
-    const company = document.getElementById('auth-company-name')?.value?.trim() || 'Mon Entreprise SARL';
     const errDiv = document.getElementById('auth-error-msg');
 
     if (!email || !pass) {
-      if (errDiv) { errDiv.innerText = 'Veuillez remplir tous les champs.'; errDiv.style.display = 'block'; }
+      if (errDiv) { errDiv.innerText = 'Veuillez saisir votre email et votre mot de passe.'; errDiv.style.display = 'block'; }
       return;
     }
 
@@ -509,7 +509,7 @@ class EasyFactApp {
     this.isLoggedIn = true;
     this.currentUserEmail = email;
     this.currentUserId = 'user_' + btoa(email).replace(/=/g, '').substring(0, 10);
-    this.companyProfile.name = company;
+    this.companyProfile.name = email.split('@')[0].toUpperCase();
 
     localStorage.setItem('easyfact_logged_in', 'true');
     localStorage.setItem('easyfact_active_user_id', this.currentUserId);
