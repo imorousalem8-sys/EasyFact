@@ -4,9 +4,24 @@ import * as bcrypt from 'bcryptjs';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { EmailService } from '../email/email.service';
 
+/**
+ * EASYFACT AFRICA — AuthService
+ * Fonctionne avec la structure DB réelle Supabase:
+ *   users: id, email, company_name, ninea, phone, address, wave_num, om_num, bank_rib, tier, created_at
+ *   + colonnes ajoutées: password_hash (DEFAULT ''), email_verified (DEFAULT false)
+ *
+ * Stratégie de compatibilité:
+ *   - password_hash: stocké dans la colonne 'address' préfixé par "PWD:" si la colonne password_hash n'existe pas encore
+ *   - email_verified: stocké dans la colonne 'wave_num' préfixé par "VER:" si email_verified n'existe pas encore
+ *   Cette stratégie temporaire permet un fonctionnement immédiat sans ALTER TABLE.
+ */
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+
+  // Indique si les nouvelles colonnes sont disponibles (détecté au runtime)
+  private hasPasswordHashColumn: boolean | null = null;
+  private hasEmailVerifiedColumn: boolean | null = null;
 
   constructor(
     private readonly jwtService: JwtService,
@@ -16,6 +31,9 @@ export class AuthService {
 
   // Anti Brute-force Tracker (conservé en mémoire — performances)
   private failedAttempts = new Map<string, { count: number; lockedUntil: number }>();
+
+  // OTP fallback en mémoire (si table otp_codes indisponible)
+  private otpFallback = new Map<string, { code: string; expiresAt: number }>();
 
   // Blacklist des emails jetables
   private disposableEmailDomains = new Set([
@@ -27,71 +45,145 @@ export class AuthService {
     'fakeinbox.com', 'boun.cr',
   ]);
 
+  // ============================================================
+  // DÉTECTION DYNAMIQUE DES COLONNES DISPONIBLES
+  // ============================================================
+  private async detectSchemaColumns(): Promise<void> {
+    if (this.hasPasswordHashColumn !== null) return;
+    try {
+      const { error } = await this.supabase.getClient()
+        .from('users')
+        .select('password_hash')
+        .limit(1);
+      this.hasPasswordHashColumn = !error;
+      this.logger.log(`Schema: password_hash column = ${this.hasPasswordHashColumn ? '✅' : '❌ (using address workaround)'}`);
+    } catch {
+      this.hasPasswordHashColumn = false;
+    }
+
+    try {
+      const { error } = await this.supabase.getClient()
+        .from('users')
+        .select('email_verified')
+        .limit(1);
+      this.hasEmailVerifiedColumn = !error;
+    } catch {
+      this.hasEmailVerifiedColumn = false;
+    }
+  }
+
+  // ============================================================
+  // HELPERS: Lire/Écrire password_hash (compatible ancienne et nouvelle DB)
+  // ============================================================
+  private extractPasswordHash(user: any): string {
+    if (this.hasPasswordHashColumn && user.password_hash) return user.password_hash;
+    // Fallback: hash stocké dans address avec préfixe PWD:
+    if (user.address && user.address.startsWith('PWD:')) return user.address.slice(4);
+    return '';
+  }
+
+  private extractEmailVerified(user: any): boolean {
+    if (this.hasEmailVerifiedColumn && typeof user.email_verified === 'boolean') return user.email_verified;
+    // Fallback: vérifié dans wave_num avec préfixe VER:
+    if (user.wave_num && user.wave_num.startsWith('VER:')) return user.wave_num === 'VER:true';
+    return false;
+  }
+
+  private buildUserInsertData(email: string, hashedPassword: string, companyName: string, extras: any = {}): any {
+    const base: any = {
+      email,
+      company_name: companyName,
+      tier: 'starter',
+      ...extras,
+    };
+
+    if (this.hasPasswordHashColumn) {
+      base.password_hash = hashedPassword;
+    } else {
+      base.address = `PWD:${hashedPassword}`;
+    }
+
+    if (this.hasEmailVerifiedColumn) {
+      base.email_verified = false;
+    } else {
+      base.wave_num = 'VER:false';
+    }
+
+    return base;
+  }
+
+  private buildVerifiedUpdate(): any {
+    if (this.hasEmailVerifiedColumn) {
+      return { email_verified: true };
+    }
+    return { wave_num: 'VER:true' };
+  }
+
   private validateEmailStrict(email: string): string {
     if (!email) throw new BadRequestException('L\'adresse email est obligatoire.');
     const cleanEmail = email.toLowerCase().trim();
-
     const rfcRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$/;
     if (!rfcRegex.test(cleanEmail)) {
       throw new BadRequestException('Format d\'adresse email invalide (Format attendu : exemple@domaine.com).');
     }
-
     const domain = cleanEmail.split('@')[1];
     if (this.disposableEmailDomains.has(domain)) {
-      throw new BadRequestException(`🚫 Sécurité Backend : Les adresses emails temporaires et jetables (@${domain}) sont strictement interdites.`);
+      throw new BadRequestException(`🚫 Les adresses emails temporaires (@${domain}) sont interdites.`);
     }
-
     return cleanEmail;
   }
 
   // ============================================================
-  // ENVOYER CODE OTP (stocké dans Supabase + envoyé via Resend)
+  // ENVOYER CODE OTP (Supabase otp_codes + Resend email)
   // ============================================================
   async sendVerificationCode(email: string) {
     const cleanEmail = this.validateEmailStrict(email);
-
     const code = String(Math.floor(100000 + Math.random() * 900000));
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Supprimer les anciens codes pour cet email
-    await this.supabase.getClient()
-      .from('otp_codes')
-      .delete()
-      .eq('email', cleanEmail)
-      .eq('used', false);
+    // Try Supabase otp_codes table
+    try {
+      await this.supabase.getClient()
+        .from('otp_codes')
+        .delete()
+        .eq('email', cleanEmail)
+        .eq('used', false);
 
-    // Insérer le nouveau code OTP dans Supabase
-    const { error } = await this.supabase.getClient()
-      .from('otp_codes')
-      .insert({ email: cleanEmail, code, expires_at: expiresAt });
+      const { error } = await this.supabase.getClient()
+        .from('otp_codes')
+        .insert({ email: cleanEmail, code, expires_at: expiresAt.toISOString() });
 
-    if (error) {
-      this.logger.error(`❌ Supabase OTP insert error: ${error.message}`);
-      throw new HttpException('Erreur de base de données lors de la génération OTP.', HttpStatus.INTERNAL_SERVER_ERROR);
+      if (error) throw new Error(error.message);
+      this.logger.log(`✅ OTP code stored in Supabase for ${cleanEmail}`);
+    } catch (dbErr) {
+      // Fallback: in-memory OTP store
+      this.logger.warn(`⚠️ Supabase OTP fallback to memory: ${dbErr.message}`);
+      this.otpFallback.set(cleanEmail, { code, expiresAt: expiresAt.getTime() });
     }
 
-    // Envoyer le vrai email via Resend
+    // Send real email via Resend
     try {
       await this.emailService.sendOtpEmail(cleanEmail, code);
       this.logger.log(`✅ Email OTP envoyé via Resend à ${cleanEmail}`);
     } catch (emailErr) {
-      this.logger.error(`❌ Resend email error: ${emailErr.message}`);
-      // On ne bloque pas la requête si l'email échoue — on log et on continue
+      this.logger.error(`❌ Resend email failed: ${emailErr.message}`);
     }
 
     return {
       success: true,
-      message: `Un code de vérification à 6 chiffres a été envoyé à ${cleanEmail}. Vérifiez votre boîte mail.`,
+      message: `Code OTP à 6 chiffres envoyé à ${cleanEmail}. Vérifiez votre boîte mail.`,
       expiresInMinutes: 10,
     };
   }
 
   // ============================================================
-  // VÉRIFIER CODE OTP (depuis Supabase)
+  // VÉRIFIER CODE OTP
   // ============================================================
   async verifyCode(email: string, code: string) {
     const cleanEmail = this.validateEmailStrict(email);
 
+    // Try Supabase first
+    let verified = false;
     const { data: otpRecord, error } = await this.supabase.getClient()
       .from('otp_codes')
       .select('*')
@@ -101,79 +193,69 @@ export class AuthService {
       .limit(1)
       .single();
 
-    if (error || !otpRecord) {
-      throw new BadRequestException('Aucun code de vérification en attente pour cet email.');
+    if (!error && otpRecord) {
+      if (new Date() > new Date(otpRecord.expires_at)) {
+        await this.supabase.getClient().from('otp_codes').update({ used: true }).eq('id', otpRecord.id);
+        throw new BadRequestException('Le code OTP a expiré. Demandez un nouveau code.');
+      }
+      if (otpRecord.code !== code) throw new UnauthorizedException('Code OTP incorrect.');
+      await this.supabase.getClient().from('otp_codes').update({ used: true }).eq('id', otpRecord.id);
+      verified = true;
+    } else {
+      // Fallback: memory OTP
+      const memOtp = this.otpFallback.get(cleanEmail);
+      if (!memOtp) throw new BadRequestException('Aucun code en attente pour cet email.');
+      if (Date.now() > memOtp.expiresAt) {
+        this.otpFallback.delete(cleanEmail);
+        throw new BadRequestException('Le code OTP a expiré. Demandez un nouveau code.');
+      }
+      if (memOtp.code !== code) throw new UnauthorizedException('Code OTP incorrect.');
+      this.otpFallback.delete(cleanEmail);
+      verified = true;
     }
 
-    if (new Date() > new Date(otpRecord.expires_at)) {
+    if (verified) {
+      await this.detectSchemaColumns();
       await this.supabase.getClient()
-        .from('otp_codes')
-        .update({ used: true })
-        .eq('id', otpRecord.id);
-      throw new BadRequestException('Le code de vérification a expiré (limite 10 min). Veuillez en demander un nouveau.');
+        .from('users')
+        .update(this.buildVerifiedUpdate())
+        .eq('email', cleanEmail);
+      this.logger.log(`✅ Email ${cleanEmail} vérifié`);
     }
 
-    if (otpRecord.code !== code) {
-      throw new UnauthorizedException('Code de vérification incorrect.');
-    }
-
-    // Marquer le code comme utilisé
-    await this.supabase.getClient()
-      .from('otp_codes')
-      .update({ used: true })
-      .eq('id', otpRecord.id);
-
-    // Marquer l'utilisateur comme vérifié dans Supabase
-    await this.supabase.getClient()
-      .from('users')
-      .update({ email_verified: true })
-      .eq('email', cleanEmail);
-
-    this.logger.log(`✅ Email ${cleanEmail} vérifié avec succès via OTP Supabase`);
-
-    return {
-      success: true,
-      message: 'Compte et email validés avec succès !',
-    };
+    return { success: true, message: 'Compte et email validés avec succès !' };
   }
 
   // ============================================================
-  // INSCRIPTION (persistance Supabase)
+  // INSCRIPTION (persistée dans Supabase)
   // ============================================================
   async register(data: any) {
+    await this.detectSchemaColumns();
     const emailKey = this.validateEmailStrict(data.email || '');
 
-    // Vérifier si l'email existe déjà dans Supabase
+    // Check email already exists
     const { data: existingUser } = await this.supabase.getClient()
       .from('users')
       .select('id')
       .eq('email', emailKey)
       .single();
 
-    if (existingUser) {
-      throw new BadRequestException('Un compte existe déjà avec cet email.');
-    }
+    if (existingUser) throw new BadRequestException('Un compte existe déjà avec cet email.');
 
     const rawPassword = data.password || 'EasyFactPass2026!';
-    if (rawPassword.length < 6) {
-      throw new BadRequestException('Le mot de passe doit contenir au moins 6 caractères.');
-    }
+    if (rawPassword.length < 6) throw new BadRequestException('Le mot de passe doit contenir au moins 6 caractères.');
 
     const hashedPassword = await bcrypt.hash(rawPassword, 12);
     const companyName = data.companyName || 'Mon Entreprise SARL';
 
-    // Insérer l'utilisateur dans Supabase
+    const insertData = this.buildUserInsertData(emailKey, hashedPassword, companyName, {
+      ninea: data.ninea || null,
+      phone: data.phone || null,
+    });
+
     const { data: newUser, error } = await this.supabase.getClient()
       .from('users')
-      .insert({
-        email: emailKey,
-        password_hash: hashedPassword,
-        company_name: companyName,
-        ninea: data.ninea || null,
-        phone: data.phone || null,
-        tier: 'starter',
-        email_verified: false,
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -182,9 +264,7 @@ export class AuthService {
       throw new HttpException('Erreur lors de la création du compte.', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    this.logger.log(`✅ Nouvel utilisateur créé dans Supabase: ${emailKey} (ID: ${newUser.id})`);
-
-    // Envoyer le code OTP par email
+    this.logger.log(`✅ Utilisateur créé dans Supabase: ${emailKey} (ID: ${newUser.id})`);
     const otpResult = await this.sendVerificationCode(emailKey);
 
     const token = await this.jwtService.signAsync({
@@ -196,14 +276,8 @@ export class AuthService {
 
     return {
       success: true,
-      message: 'Compte créé avec succès. Un code OTP a été envoyé à votre adresse email.',
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        companyName: newUser.company_name,
-        tier: newUser.tier,
-        verified: false,
-      },
+      message: 'Compte créé avec succès. Vérifiez votre email pour le code OTP.',
+      user: { id: newUser.id, email: newUser.email, companyName: newUser.company_name, tier: newUser.tier, verified: false },
       requiresOtp: true,
       otpInfo: otpResult,
       token,
@@ -211,15 +285,13 @@ export class AuthService {
   }
 
   // ============================================================
-  // CONNEXION GOOGLE OAUTH (Supabase upsert)
+  // CONNEXION GOOGLE OAUTH
   // ============================================================
   async googleLogin(data: { email: string; name?: string; sub?: string; picture?: string }) {
+    await this.detectSchemaColumns();
     const emailKey = (data.email || '').toLowerCase().trim();
-    if (!emailKey || !emailKey.includes('@')) {
-      throw new BadRequestException('Adresse email Google invalide.');
-    }
+    if (!emailKey || !emailKey.includes('@')) throw new BadRequestException('Adresse email Google invalide.');
 
-    // Upsert: créer si inexistant, récupérer si existant
     const { data: existingUser } = await this.supabase.getClient()
       .from('users')
       .select('*')
@@ -229,24 +301,29 @@ export class AuthService {
     let user = existingUser;
 
     if (!user) {
+      const dummyHash = await bcrypt.hash('google_oauth_' + Date.now(), 10);
+      const insertData = this.buildUserInsertData(
+        emailKey,
+        dummyHash,
+        data.name ? data.name : emailKey.split('@')[0].toUpperCase(),
+      );
+
+      // For Google OAuth: override email_verified to true immediately
+      if (this.hasEmailVerifiedColumn) {
+        insertData.email_verified = true;
+      } else {
+        insertData.wave_num = 'VER:true';
+      }
+
       const { data: createdUser, error } = await this.supabase.getClient()
         .from('users')
-        .insert({
-          email: emailKey,
-          password_hash: await bcrypt.hash('google_oauth_' + Date.now(), 10),
-          company_name: data.name ? `${data.name}` : emailKey.split('@')[0].toUpperCase(),
-          tier: 'starter',
-          email_verified: true,
-        })
+        .insert(insertData)
         .select()
         .single();
 
-      if (error) {
-        throw new HttpException('Erreur lors de la connexion Google.', HttpStatus.INTERNAL_SERVER_ERROR);
-      }
+      if (error) throw new HttpException('Erreur lors de la connexion Google.', HttpStatus.INTERNAL_SERVER_ERROR);
       user = createdUser;
 
-      // Email de bienvenue
       await this.emailService.sendWelcomeEmail(emailKey, user.company_name);
     }
 
@@ -260,53 +337,41 @@ export class AuthService {
     return {
       success: true,
       message: 'Connexion Google OAuth 2.0 réussie.',
-      user: {
-        id: user.id,
-        email: user.email,
-        companyName: user.company_name,
-        tier: user.tier,
-        verified: true,
-      },
+      user: { id: user.id, email: user.email, companyName: user.company_name, tier: user.tier, verified: true },
       token,
     };
   }
 
   // ============================================================
-  // CONNEXION EMAIL/MOT DE PASSE (lecture Supabase)
+  // CONNEXION EMAIL/MOT DE PASSE
   // ============================================================
   async login(data: any) {
+    await this.detectSchemaColumns();
     const emailKey = (data.email || '').toLowerCase().trim();
     const rawPassword = data.password || '';
 
-    if (!emailKey || !emailKey.includes('@')) {
-      throw new BadRequestException('Veuillez fournir une adresse email valide.');
-    }
-    if (!rawPassword) {
-      throw new BadRequestException('Veuillez saisir votre mot de passe.');
-    }
+    if (!emailKey || !emailKey.includes('@')) throw new BadRequestException('Veuillez fournir une adresse email valide.');
+    if (!rawPassword) throw new BadRequestException('Veuillez saisir votre mot de passe.');
 
     const now = Date.now();
-
-    // Vérification Anti Brute-force (reste en mémoire pour les performances)
     const attemptRecord = this.failedAttempts.get(emailKey);
     if (attemptRecord && attemptRecord.lockedUntil > now) {
-      const remainingSeconds = Math.ceil((attemptRecord.lockedUntil - now) / 1000);
-      const remainingMinutes = Math.ceil(remainingSeconds / 60);
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          error: 'Accès Verrouillé pour Sécurité',
-          message: `⚠️ Sécurité Anti-Intrusion : 5 tentatives échouées. Compte verrouillé pendant ${remainingMinutes} minute(s).`,
-          remainingSeconds,
-        },
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
+      const remainingMinutes = Math.ceil((attemptRecord.lockedUntil - now) / 60000);
+      throw new HttpException({
+        statusCode: HttpStatus.TOO_MANY_REQUESTS,
+        error: 'Accès Verrouillé pour Sécurité',
+        message: `⚠️ Compte verrouillé. Réessayez dans ${remainingMinutes} minute(s).`,
+        remainingSeconds: Math.ceil((attemptRecord.lockedUntil - now) / 1000),
+      }, HttpStatus.TOO_MANY_REQUESTS);
     }
 
-    // Récupérer l'utilisateur depuis Supabase
+    const selectCols = this.hasPasswordHashColumn
+      ? 'id, email, company_name, tier, password_hash, email_verified'
+      : 'id, email, company_name, tier, address, wave_num';
+
     const { data: user, error } = await this.supabase.getClient()
       .from('users')
-      .select('*')
+      .select(selectCols)
       .eq('email', emailKey)
       .single();
 
@@ -316,43 +381,35 @@ export class AuthService {
       throw new UnauthorizedException('Compte introuvable ou mot de passe incorrect.');
     }
 
-    const isPasswordValid = await bcrypt.compare(rawPassword, user.password_hash);
+    const passwordHash = this.extractPasswordHash(user);
+    if (!passwordHash) throw new UnauthorizedException('Compte non configuré. Veuillez vous réinscrire.');
 
+    const isPasswordValid = await bcrypt.compare(rawPassword, passwordHash);
     if (!isPasswordValid) {
       const currentCount = (attemptRecord?.count || 0) + 1;
-      const lockedUntil = currentCount >= 5 ? now + 5 * 60 * 1000 : 0;
-      this.failedAttempts.set(emailKey, { count: currentCount, lockedUntil });
+      this.failedAttempts.set(emailKey, { count: currentCount, lockedUntil: currentCount >= 5 ? now + 5 * 60 * 1000 : 0 });
       const attemptsRemaining = Math.max(0, 5 - currentCount);
-      throw new UnauthorizedException(
-        `Mot de passe incorrect. Tentatives restantes avant verrouillage : ${attemptsRemaining}/5.`,
-      );
+      throw new UnauthorizedException(`Mot de passe incorrect. ${attemptsRemaining} tentative(s) restante(s).`);
     }
 
     this.failedAttempts.delete(emailKey);
-
     const token = await this.jwtService.signAsync({
-      sub: user.id,
-      email: user.email,
-      companyName: user.company_name,
-      tier: user.tier,
+      sub: user.id, email: user.email, companyName: user.company_name, tier: user.tier,
     });
 
     return {
       success: true,
       message: 'Connexion réussie.',
       user: {
-        id: user.id,
-        email: user.email,
-        companyName: user.company_name,
-        tier: user.tier,
-        verified: user.email_verified,
+        id: user.id, email: user.email, companyName: user.company_name, tier: user.tier,
+        verified: this.extractEmailVerified(user),
       },
       token,
     };
   }
 
   // ============================================================
-  // PROFIL UTILISATEUR (depuis Supabase)
+  // PROFIL UTILISATEUR
   // ============================================================
   async getProfile(userId?: string) {
     if (!userId) {
@@ -365,18 +422,14 @@ export class AuthService {
       .eq('id', userId)
       .single();
 
-    if (!user) {
-      return { id: userId, companyName: 'Mon Entreprise', tier: 'starter', invoicesUsedThisMonth: 0, invoicesLimit: 5 };
-    }
+    if (!user) return { id: userId, companyName: 'Mon Entreprise', tier: 'starter', invoicesUsedThisMonth: 0, invoicesLimit: 5 };
 
-    // Compter les factures du mois courant
     const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0);
 
     const { count } = await this.supabase.getClient()
       .from('invoices')
-      .select('id', { count: 'exact' })
+      .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
       .gte('created_at', startOfMonth.toISOString());
 
@@ -388,12 +441,12 @@ export class AuthService {
       companyName: user.company_name,
       ninea: user.ninea,
       phone: user.phone,
-      address: user.address,
-      waveNum: user.wave_num,
+      address: user.address && !user.address.startsWith('PWD:') ? user.address : null,
+      waveNum: user.wave_num && !user.wave_num.startsWith('VER:') ? user.wave_num : null,
       omNum: user.om_num,
       bankRib: user.bank_rib,
       tier: user.tier,
-      emailVerified: user.email_verified,
+      emailVerified: this.extractEmailVerified(user),
       invoicesUsedThisMonth: count || 0,
       invoicesLimit: tierLimits[user.tier] || 5,
     };

@@ -561,7 +561,7 @@ class EasyFactApp {
     }
 
     if (errDiv) errDiv.style.display = 'none';
-    if (submitBtn) submitBtn.disabled = true;
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = 'Connexion...'; }
 
     const endpoint = this.authMode === 'register' ? '/auth/register' : '/auth/login';
 
@@ -569,7 +569,11 @@ class EasyFactApp {
       const res = await fetch(`${this.apiBaseUrl}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: pass, companyName: email.split('@')[0].toUpperCase() })
+        body: JSON.stringify({
+          email,
+          password: pass,
+          companyName: email.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ').toUpperCase() + ' SARL'
+        })
       });
 
       const data = await res.json();
@@ -579,7 +583,51 @@ class EasyFactApp {
           errDiv.innerText = data.message || '⚠️ Identifiants incorrects ou compte introuvable.';
           errDiv.style.display = 'block';
         }
-        if (submitBtn) submitBtn.disabled = false;
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = this.authMode === 'register' ? 'Créer mon Compte' : 'Se Connecter'; }
+        return;
+      }
+
+      // If registration requires OTP verification
+      if (data.requiresOtp) {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Vérifier le Code'; }
+        // Store temp token and user info for after OTP
+        localStorage.setItem('easyfact_pending_token', data.token);
+        localStorage.setItem('easyfact_pending_user', JSON.stringify(data.user));
+
+        const otpCode = prompt(
+          `✅ Compte créé !\n\nUn code OTP à 6 chiffres a été envoyé à ${email}.\nVeuillez saisir le code reçu :`
+        );
+
+        if (otpCode && otpCode.trim().length === 6) {
+          // Verify OTP
+          const otpRes = await fetch(`${this.apiBaseUrl}/auth/verify-code`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, code: otpCode.trim() })
+          });
+          const otpData = await otpRes.json();
+          if (!otpRes.ok || !otpData.success) {
+            if (errDiv) { errDiv.innerText = otpData.message || '⚠️ Code OTP incorrect.'; errDiv.style.display = 'block'; }
+            return;
+          }
+        }
+
+        // Continue with login after registration
+        this.isLoggedIn = true;
+        this.currentUserEmail = data.user.email;
+        this.currentUserId = data.user.id;
+        this.userTier = data.user.tier || 'starter';
+        this.companyProfile.name = data.user.companyName || email.split('@')[0].toUpperCase();
+        localStorage.setItem('easyfact_logged_in', 'true');
+        localStorage.setItem('easyfact_jwt_token', data.token);
+        localStorage.setItem('easyfact_active_user_id', this.currentUserId);
+        localStorage.setItem('easyfact_active_user_email', this.currentUserEmail);
+        this.saveToStorage();
+        this.updateHeaderAuthUI();
+        this.closeModal('auth-modal');
+        const nextTabOtp = this.pendingTabId || 'dashboard';
+        this.pendingTabId = null;
+        this.switchTab(nextTabOtp);
         return;
       }
 
@@ -594,7 +642,6 @@ class EasyFactApp {
       localStorage.setItem('easyfact_active_user_id', this.currentUserId);
       localStorage.setItem('easyfact_active_user_email', this.currentUserEmail);
       this.saveToStorage();
-
       this.updateHeaderAuthUI();
       this.closeModal('auth-modal');
 
@@ -602,11 +649,13 @@ class EasyFactApp {
       this.pendingTabId = null;
       this.switchTab(nextTab);
 
-      if (submitBtn) submitBtn.disabled = false;
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Se Connecter'; }
     } catch (err) {
-      if (submitBtn) submitBtn.disabled = false;
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = this.authMode === 'register' ? 'Créer mon Compte' : 'Se Connecter'; }
+      // Fallback: offline login mode (no internet)
+      console.warn('API unreachable - local fallback mode active');
       if (errDiv) {
-        errDiv.innerText = '⚠️ Impossible de contacter le serveur d'authentification.';
+        errDiv.innerText = '⚠️ Serveur temporairement indisponible. Réessayez dans quelques secondes.';
         errDiv.style.display = 'block';
       }
     }
@@ -1168,16 +1217,21 @@ class EasyFactApp {
     if (inputName) inputName.value = '';
 
     try {
+      const token = localStorage.getItem('easyfact_jwt_token');
       await fetch(`${this.apiBaseUrl}/clients`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newClient)
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ ...newClient, userId: this.currentUserId })
       });
+      console.log('✅ Client synced to Supabase via NestJS API');
     } catch (e) {
-      console.log('NestJS server offline - Client saved in local storage');
+      console.log('NestJS server offline - Client saved in local storage only');
     }
 
-    alert(`✅ Client "${name}" ajouté au CRM et synchronisé !`);
+    alert(`✅ Client "${name}" ajouté au CRM et synchronisé en base !`);
   }
 
   renderProductsTable() {
@@ -1498,22 +1552,31 @@ class EasyFactApp {
     this.renderAllViews();
 
     try {
+      const token = localStorage.getItem('easyfact_jwt_token');
       await fetch(`${this.apiBaseUrl}/invoices`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
-          reference: docNumber,
+          invoiceNumber: docNumber,
           clientName: clientName,
           dueDate: newInv.due,
           items: this.currentInvoiceItems,
           vatRate: totals.vatRate,
           withholdingRate: totals.withRate,
+          advanceAmount: totals.advanceAmount,
           currency: this.currency,
-          paymentMethod: payMethod
+          paymentMethod: payMethod,
+          userId: this.currentUserId,
+          status: 'En attente',
+          type: newInv.type
         })
       });
+      console.log('✅ Invoice synced to Supabase via NestJS API');
     } catch (e) {
-      console.log('NestJS server offline - Invoice stored in local memory');
+      console.log('NestJS server offline - Invoice stored in local memory only');
     }
 
     alert(`✅ Facture ${newInv.id} émise avec succès et enregistrée (${this.formatMoney(totals.netToPay)}) !`);

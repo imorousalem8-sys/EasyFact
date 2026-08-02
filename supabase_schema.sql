@@ -134,6 +134,14 @@ CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON public.invoices(user_id);
 CREATE INDEX IF NOT EXISTS idx_expenses_user_id ON public.expenses(user_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON public.subscriptions(user_id);
 
+-- ============================================================
+-- 7. Colonnes Manquantes (ALTER TABLE — compatibilité v2.0)
+-- ============================================================
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS password_hash TEXT NOT NULL DEFAULT '';
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS notes TEXT;
+
 -- ==========================================================================
 -- FIN DU SCRIPT - Cliquez sur "Run" pour créer toutes les tables
 -- Vérifiez dans : https://supabase.com/dashboard/project/szjsxufiollglpsgzxqa/editor

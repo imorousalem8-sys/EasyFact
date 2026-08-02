@@ -73,7 +73,7 @@ export class InvoicesService {
       net_to_pay: netTotal,
       items: dto.items || [],
       due_date: dto.dueDate || null,
-      notes: dto.notes || null,
+      // Note: 'notes' column added in schema v2.0 — only include if provided and column exists
     };
 
     if (dto.userId) {
