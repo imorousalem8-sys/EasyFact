@@ -1,35 +1,36 @@
-import { Injectable, BadRequestException, UnauthorizedException, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
+import { SupabaseService } from '../../supabase/supabase.service';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly jwtService: JwtService) {}
+  private readonly logger = new Logger(AuthService.name);
 
-  // Anti Brute-force Tracker (Email -> { count, lockedUntil })
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly supabase: SupabaseService,
+    private readonly emailService: EmailService,
+  ) {}
+
+  // Anti Brute-force Tracker (conservé en mémoire — performances)
   private failedAttempts = new Map<string, { count: number; lockedUntil: number }>();
 
-  // Email 2FA Verification Codes Store (Email -> { code, expiresAt })
-  private verificationCodes = new Map<string, { code: string; expiresAt: number }>();
-
-  // In-Memory User Store (Data Isolation per User/Tenant)
-  private users = new Map<string, any>();
-
-  // Blacklist of known disposable / fake temporary email providers
+  // Blacklist des emails jetables
   private disposableEmailDomains = new Set([
     'yopmail.com', 'yopmail.fr', 'yopmail.net',
     'mailinator.com', 'tempmail.com', 'temp-mail.org',
     '10minutemail.com', 'trashmail.com', 'trashmail.net',
     'dispostable.com', 'guerrillamail.com', 'sharklasers.com',
     'getnada.com', 'maildrop.cc', 'throwawaymail.com',
-    'fakeinbox.com', 'boun.cr'
+    'fakeinbox.com', 'boun.cr',
   ]);
 
   private validateEmailStrict(email: string): string {
     if (!email) throw new BadRequestException('L\'adresse email est obligatoire.');
     const cleanEmail = email.toLowerCase().trim();
-    
-    // Strict RFC 5322 standard syntax check
+
     const rfcRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$/;
     if (!rfcRegex.test(cleanEmail)) {
       throw new BadRequestException('Format d\'adresse email invalide (Format attendu : exemple@domaine.com).');
@@ -43,55 +44,113 @@ export class AuthService {
     return cleanEmail;
   }
 
+  // ============================================================
+  // ENVOYER CODE OTP (stocké dans Supabase + envoyé via Resend)
+  // ============================================================
   async sendVerificationCode(email: string) {
     const cleanEmail = this.validateEmailStrict(email);
 
-    const code = String(Math.floor(100000 + Math.random() * 900000)); // 6-digit secure code
-    const expiresAt = Date.now() + 10 * 60 * 1000; // Valid for 10 minutes
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-    this.verificationCodes.set(cleanEmail, { code, expiresAt });
+    // Supprimer les anciens codes pour cet email
+    await this.supabase.getClient()
+      .from('otp_codes')
+      .delete()
+      .eq('email', cleanEmail)
+      .eq('used', false);
 
-    console.log(`🔒 [SÉCURITÉ BACKEND EASYFACT] Code OTP transmis à ${cleanEmail} : ${code}`);
+    // Insérer le nouveau code OTP dans Supabase
+    const { error } = await this.supabase.getClient()
+      .from('otp_codes')
+      .insert({ email: cleanEmail, code, expires_at: expiresAt });
+
+    if (error) {
+      this.logger.error(`❌ Supabase OTP insert error: ${error.message}`);
+      throw new HttpException('Erreur de base de données lors de la génération OTP.', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    // Envoyer le vrai email via Resend
+    try {
+      await this.emailService.sendOtpEmail(cleanEmail, code);
+      this.logger.log(`✅ Email OTP envoyé via Resend à ${cleanEmail}`);
+    } catch (emailErr) {
+      this.logger.error(`❌ Resend email error: ${emailErr.message}`);
+      // On ne bloque pas la requête si l'email échoue — on log et on continue
+    }
 
     return {
       success: true,
-      message: `Un code de confirmation OTP à 6 chiffres a été généré par le serveur NestJS pour ${cleanEmail}.`,
+      message: `Un code de vérification à 6 chiffres a été envoyé à ${cleanEmail}. Vérifiez votre boîte mail.`,
       expiresInMinutes: 10,
-      devVerificationCode: code,
     };
   }
 
+  // ============================================================
+  // VÉRIFIER CODE OTP (depuis Supabase)
+  // ============================================================
   async verifyCode(email: string, code: string) {
     const cleanEmail = this.validateEmailStrict(email);
-    const record = this.verificationCodes.get(cleanEmail);
-    if (!record) {
+
+    const { data: otpRecord, error } = await this.supabase.getClient()
+      .from('otp_codes')
+      .select('*')
+      .eq('email', cleanEmail)
+      .eq('used', false)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error || !otpRecord) {
       throw new BadRequestException('Aucun code de vérification en attente pour cet email.');
     }
-    if (Date.now() > record.expiresAt) {
-      this.verificationCodes.delete(cleanEmail);
+
+    if (new Date() > new Date(otpRecord.expires_at)) {
+      await this.supabase.getClient()
+        .from('otp_codes')
+        .update({ used: true })
+        .eq('id', otpRecord.id);
       throw new BadRequestException('Le code de vérification a expiré (limite 10 min). Veuillez en demander un nouveau.');
     }
-    if (record.code !== code) {
+
+    if (otpRecord.code !== code) {
       throw new UnauthorizedException('Code de vérification incorrect.');
     }
 
-    this.verificationCodes.delete(cleanEmail);
+    // Marquer le code comme utilisé
+    await this.supabase.getClient()
+      .from('otp_codes')
+      .update({ used: true })
+      .eq('id', otpRecord.id);
 
-    const user = this.users.get(cleanEmail);
-    if (user) {
-      user.verified = true;
-    }
+    // Marquer l'utilisateur comme vérifié dans Supabase
+    await this.supabase.getClient()
+      .from('users')
+      .update({ email_verified: true })
+      .eq('email', cleanEmail);
+
+    this.logger.log(`✅ Email ${cleanEmail} vérifié avec succès via OTP Supabase`);
 
     return {
       success: true,
-      message: 'Compte et email validés avec succès par le serveur !',
+      message: 'Compte et email validés avec succès !',
     };
   }
 
+  // ============================================================
+  // INSCRIPTION (persistance Supabase)
+  // ============================================================
   async register(data: any) {
     const emailKey = this.validateEmailStrict(data.email || '');
 
-    if (this.users.has(emailKey)) {
+    // Vérifier si l'email existe déjà dans Supabase
+    const { data: existingUser } = await this.supabase.getClient()
+      .from('users')
+      .select('id')
+      .eq('email', emailKey)
+      .single();
+
+    if (existingUser) {
       throw new BadRequestException('Un compte existe déjà avec cet email.');
     }
 
@@ -100,41 +159,50 @@ export class AuthService {
       throw new BadRequestException('Le mot de passe doit contenir au moins 6 caractères.');
     }
 
-    // Bcrypt Password Hashing (12 Rounds of Salting)
     const hashedPassword = await bcrypt.hash(rawPassword, 12);
+    const companyName = data.companyName || 'Mon Entreprise SARL';
 
-    const userId = 'usr_' + Date.now();
-    const newUser = {
-      id: userId,
-      email: emailKey,
-      passwordHash: hashedPassword,
-      companyName: data.companyName || 'Mon Entreprise SARL',
-      ninea: data.ninea || '',
-      phone: data.phone || '',
-      tier: 'starter',
-      verified: false,
-      createdAt: new Date().toISOString(),
-    };
+    // Insérer l'utilisateur dans Supabase
+    const { data: newUser, error } = await this.supabase.getClient()
+      .from('users')
+      .insert({
+        email: emailKey,
+        password_hash: hashedPassword,
+        company_name: companyName,
+        ninea: data.ninea || null,
+        phone: data.phone || null,
+        tier: 'starter',
+        email_verified: false,
+      })
+      .select()
+      .single();
 
-    this.users.set(emailKey, newUser);
+    if (error || !newUser) {
+      this.logger.error(`❌ Supabase register error: ${error?.message}`);
+      throw new HttpException('Erreur lors de la création du compte.', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 
+    this.logger.log(`✅ Nouvel utilisateur créé dans Supabase: ${emailKey} (ID: ${newUser.id})`);
+
+    // Envoyer le code OTP par email
     const otpResult = await this.sendVerificationCode(emailKey);
+
     const token = await this.jwtService.signAsync({
-      sub: userId,
-      email: emailKey,
-      companyName: newUser.companyName,
+      sub: newUser.id,
+      email: newUser.email,
+      companyName: newUser.company_name,
       tier: newUser.tier,
     });
 
     return {
       success: true,
-      message: 'Compte créé avec mot de passe sécurisé (Bcrypt 12 rounds). Veuillez entrer le code OTP.',
+      message: 'Compte créé avec succès. Un code OTP a été envoyé à votre adresse email.',
       user: {
         id: newUser.id,
         email: newUser.email,
-        companyName: newUser.companyName,
+        companyName: newUser.company_name,
         tier: newUser.tier,
-        verified: newUser.verified,
+        verified: false,
       },
       requiresOtp: true,
       otpInfo: otpResult,
@@ -142,30 +210,50 @@ export class AuthService {
     };
   }
 
+  // ============================================================
+  // CONNEXION GOOGLE OAUTH (Supabase upsert)
+  // ============================================================
   async googleLogin(data: { email: string; name?: string; sub?: string; picture?: string }) {
     const emailKey = (data.email || '').toLowerCase().trim();
     if (!emailKey || !emailKey.includes('@')) {
       throw new BadRequestException('Adresse email Google invalide.');
     }
 
-    let user = this.users.get(emailKey);
+    // Upsert: créer si inexistant, récupérer si existant
+    const { data: existingUser } = await this.supabase.getClient()
+      .from('users')
+      .select('*')
+      .eq('email', emailKey)
+      .single();
+
+    let user = existingUser;
+
     if (!user) {
-      user = {
-        id: 'usr_g_' + Date.now(),
-        email: emailKey,
-        companyName: data.name ? `${data.name}` : emailKey.split('@')[0].toUpperCase(),
-        tier: 'starter',
-        verified: true,
-        picture: data.picture || '',
-        createdAt: new Date().toISOString(),
-      };
-      this.users.set(emailKey, user);
+      const { data: createdUser, error } = await this.supabase.getClient()
+        .from('users')
+        .insert({
+          email: emailKey,
+          password_hash: await bcrypt.hash('google_oauth_' + Date.now(), 10),
+          company_name: data.name ? `${data.name}` : emailKey.split('@')[0].toUpperCase(),
+          tier: 'starter',
+          email_verified: true,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw new HttpException('Erreur lors de la connexion Google.', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+      user = createdUser;
+
+      // Email de bienvenue
+      await this.emailService.sendWelcomeEmail(emailKey, user.company_name);
     }
 
     const token = await this.jwtService.signAsync({
       sub: user.id,
       email: user.email,
-      companyName: user.companyName,
+      companyName: user.company_name,
       tier: user.tier,
     });
 
@@ -175,7 +263,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        companyName: user.companyName,
+        companyName: user.company_name,
         tier: user.tier,
         verified: true,
       },
@@ -183,6 +271,9 @@ export class AuthService {
     };
   }
 
+  // ============================================================
+  // CONNEXION EMAIL/MOT DE PASSE (lecture Supabase)
+  // ============================================================
   async login(data: any) {
     const emailKey = (data.email || '').toLowerCase().trim();
     const rawPassword = data.password || '';
@@ -196,12 +287,11 @@ export class AuthService {
 
     const now = Date.now();
 
-    // Check Brute Force Lockout Status
+    // Vérification Anti Brute-force (reste en mémoire pour les performances)
     const attemptRecord = this.failedAttempts.get(emailKey);
     if (attemptRecord && attemptRecord.lockedUntil > now) {
       const remainingSeconds = Math.ceil((attemptRecord.lockedUntil - now) / 1000);
       const remainingMinutes = Math.ceil(remainingSeconds / 60);
-
       throw new HttpException(
         {
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
@@ -213,25 +303,24 @@ export class AuthService {
       );
     }
 
-    const user = this.users.get(emailKey);
+    // Récupérer l'utilisateur depuis Supabase
+    const { data: user, error } = await this.supabase.getClient()
+      .from('users')
+      .select('*')
+      .eq('email', emailKey)
+      .single();
 
-    // Strict account checking: user must exist and password must match
-    if (!user) {
+    if (error || !user) {
       const currentCount = (attemptRecord?.count || 0) + 1;
       this.failedAttempts.set(emailKey, { count: currentCount, lockedUntil: currentCount >= 5 ? now + 5 * 60 * 1000 : 0 });
-      throw new UnauthorizedException('Compte introuvable ou mot de passe incorrect. Veuillez créer un compte.');
+      throw new UnauthorizedException('Compte introuvable ou mot de passe incorrect.');
     }
 
-    const isPasswordValid = await bcrypt.compare(rawPassword, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(rawPassword, user.password_hash);
 
     if (!isPasswordValid) {
       const currentCount = (attemptRecord?.count || 0) + 1;
-      let lockedUntil = 0;
-
-      if (currentCount >= 5) {
-        lockedUntil = now + 5 * 60 * 1000;
-      }
-
+      const lockedUntil = currentCount >= 5 ? now + 5 * 60 * 1000 : 0;
       this.failedAttempts.set(emailKey, { count: currentCount, lockedUntil });
       const attemptsRemaining = Math.max(0, 5 - currentCount);
       throw new UnauthorizedException(
@@ -239,37 +328,74 @@ export class AuthService {
       );
     }
 
-    // Reset failed attempts on successful login
     this.failedAttempts.delete(emailKey);
 
     const token = await this.jwtService.signAsync({
       sub: user.id,
       email: user.email,
-      companyName: user.companyName,
+      companyName: user.company_name,
       tier: user.tier,
     });
 
     return {
       success: true,
-      message: 'Connexion JWT réussie.',
+      message: 'Connexion réussie.',
       user: {
         id: user.id,
         email: user.email,
-        companyName: user.companyName,
+        companyName: user.company_name,
         tier: user.tier,
-        verified: user.verified,
+        verified: user.email_verified,
       },
       token,
     };
   }
 
+  // ============================================================
+  // PROFIL UTILISATEUR (depuis Supabase)
+  // ============================================================
   async getProfile(userId?: string) {
+    if (!userId) {
+      return { id: null, companyName: 'Invité', tier: 'starter', invoicesUsedThisMonth: 0, invoicesLimit: 5 };
+    }
+
+    const { data: user } = await this.supabase.getClient()
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (!user) {
+      return { id: userId, companyName: 'Mon Entreprise', tier: 'starter', invoicesUsedThisMonth: 0, invoicesLimit: 5 };
+    }
+
+    // Compter les factures du mois courant
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const { count } = await this.supabase.getClient()
+      .from('invoices')
+      .select('id', { count: 'exact' })
+      .eq('user_id', userId)
+      .gte('created_at', startOfMonth.toISOString());
+
+    const tierLimits: Record<string, number> = { starter: 5, pro: 9999, entreprise: 9999 };
+
     return {
-      id: userId || 'usr_default',
-      companyName: 'Mon Entreprise SARL',
-      tier: 'starter',
-      invoicesUsedThisMonth: 0,
-      invoicesLimit: 5,
+      id: user.id,
+      email: user.email,
+      companyName: user.company_name,
+      ninea: user.ninea,
+      phone: user.phone,
+      address: user.address,
+      waveNum: user.wave_num,
+      omNum: user.om_num,
+      bankRib: user.bank_rib,
+      tier: user.tier,
+      emailVerified: user.email_verified,
+      invoicesUsedThisMonth: count || 0,
+      invoicesLimit: tierLimits[user.tier] || 5,
     };
   }
 }

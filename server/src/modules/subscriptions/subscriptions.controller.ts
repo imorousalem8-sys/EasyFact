@@ -11,7 +11,19 @@ export class SubscriptionsController {
   }
 
   @Post('subscribe')
-  async subscribe(@Body() body: { planId: string; paymentMethod: string }) {
-    return this.subscriptionsService.subscribe(body.planId, body.paymentMethod);
+  async subscribe(
+    @Body() body: {
+      planId: string;
+      paymentMethod: string;
+      phone?: string;
+      userId?: string;
+      userEmail?: string;
+    }
+  ) {
+    return this.subscriptionsService.subscribe(body.planId, body.paymentMethod, {
+      phone: body.phone,
+      userId: body.userId,
+      userEmail: body.userEmail,
+    });
   }
 }
