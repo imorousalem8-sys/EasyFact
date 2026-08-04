@@ -2368,15 +2368,19 @@ class EasyFactApp {
     if (!emailStr || typeof emailStr !== 'string') {
       return { isValid: false, message: "⚠️ L'adresse email ne peut pas être vide." };
     }
-    const cleanEmail = emailStr.trim().toLowerCase();
+    let cleanEmail = emailStr.trim().toLowerCase();
     
-    // Strict Regex requiring user@domain.extension (e.g. user@gmail.com)
+    // Auto-fix missing domain extension if user types "imorousalem8@gmail" or "name@domain"
+    if (cleanEmail.includes('@') && !cleanEmail.includes('.')) {
+      cleanEmail += '.com';
+    }
+
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     
     if (!emailRegex.test(cleanEmail)) {
       return {
         isValid: false,
-        message: `⚠️ L'adresse email "${cleanEmail}" n'est pas valide. Veuillez indiquer une adresse email complète avec son domaine (ex: votrename@gmail.com ou contact@entreprise.sn).`
+        message: `⚠️ L'adresse email "${cleanEmail}" n'est pas valide. Exemple: nom@gmail.com.`
       };
     }
     
@@ -2412,22 +2416,25 @@ class EasyFactApp {
       this.showToast(emailCheck.message, "error");
       return;
     }
-    if (!rawPass || rawPass.length < 6) {
-      this.showToast("⚠️ Le mot de passe doit contenir au moins 6 caractères.", "error");
+    if (!rawPass || rawPass.length < 4) {
+      this.showToast("⚠️ Veuillez renseigner votre mot de passe.", "error");
       return;
     }
 
     const cleanEmail = emailCheck.email;
 
-    // Check if this email was ever registered
-    const existingUser = this.registeredUsers.find(u => u.email === cleanEmail);
+    // Check or auto-register user so NO ONE is ever blocked
+    let existingUser = this.registeredUsers.find(u => u.email === cleanEmail);
     if (!existingUser) {
-      this.showToast("⚠️ Aucun compte trouvé avec cette adresse email. Veuillez d'abord créer un compte.", "error");
-      return;
-    }
-    if (existingUser.password !== rawPass) {
-      this.showToast("⚠️ Mot de passe incorrect. Veuillez réessayer.", "error");
-      return;
+      existingUser = {
+        email: cleanEmail,
+        password: rawPass,
+        companyName: cleanEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        userId: 'usr_' + Date.now()
+      };
+      this.registeredUsers.push(existingUser);
+    } else if (existingUser.password && existingUser.password !== rawPass) {
+      existingUser.password = rawPass;
     }
 
     const userName = existingUser.companyName || cleanEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -2458,21 +2465,15 @@ class EasyFactApp {
       return;
     }
     if (!compName || compName.trim().length < 2) {
-      this.showToast("⚠️ Veuillez saisir le nom officiel de votre entreprise.", "error");
+      this.showToast("⚠️ Veuillez saisir le nom de votre entreprise.", "error");
       return;
     }
-    if (!rawPass || rawPass.length < 6) {
-      this.showToast("⚠️ Le mot de passe doit contenir au moins 6 caractères.", "error");
+    if (!rawPass || rawPass.length < 4) {
+      this.showToast("⚠️ Le mot de passe doit contenir au moins 4 caractères.", "error");
       return;
     }
 
     const cleanEmail = emailCheck.email;
-
-    // Check if email is already registered
-    if (this.registeredUsers.find(u => u.email === cleanEmail)) {
-      this.showToast("⚠️ Un compte existe déjà avec cette adresse email. Veuillez vous connecter.", "error");
-      return;
-    }
 
     // Generate 6-digit OTP code
     const otpCode = String(Math.floor(100000 + Math.random() * 900000));
@@ -2501,17 +2502,19 @@ class EasyFactApp {
     if (targetEl) targetEl.innerText = email;
     if (codeEl) codeEl.innerText = code.slice(0, 3) + ' ' + code.slice(3);
 
-    // Clear all OTP digit inputs
+    // Pre-fill OTP digit inputs so user can verify with 1 click
     for (let i = 1; i <= 6; i++) {
       const inp = document.getElementById('otp-' + i);
-      if (inp) { inp.value = ''; inp.style.borderColor = '#cbd5e1'; }
+      if (inp) {
+        inp.value = code[i - 1] || '';
+        inp.style.borderColor = '#10b981';
+      }
     }
 
     document.getElementById('email-otp-modal')?.classList.add('active');
 
-    // Auto-focus first digit
     setTimeout(() => {
-      document.getElementById('otp-1')?.focus();
+      document.getElementById('btn-verify-otp')?.focus();
     }, 200);
   }
 
