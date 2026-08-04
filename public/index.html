@@ -21,6 +21,12 @@
   <!-- html2pdf.js for Single Page PDF Export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   
+  <!-- Official Google Identity Services SDK -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- EasyFact i18n Translation Engine -->
+  <script src="i18n.js"></script>
+  
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -37,20 +43,7 @@
         </div>
       </div>
 
-      <div class="header-center">
-        <!-- Device Simulator Switcher -->
-        <div class="device-switcher">
-          <button class="device-btn active" data-device="desktop" title="Vue PC">
-            <i class="fa-solid fa-desktop"></i> <span>PC</span>
-          </button>
-          <button class="device-btn" data-device="tablet" title="Vue Tablette">
-            <i class="fa-solid fa-tablet-screen-button"></i> <span>Tablette</span>
-          </button>
-          <button class="device-btn" data-device="mobile" title="Vue Mobile (iOS/Android)">
-            <i class="fa-solid fa-mobile-screen-button"></i> <span>Mobile</span>
-          </button>
-        </div>
-      </div>
+      <div class="header-center"></div>
 
       <div class="header-right">
         <!-- Dark Mode Toggle Button -->
@@ -184,22 +177,22 @@
           <div class="landing-hero-section">
             <div class="landing-hero-badge">
               <span class="pulse-dot-green"></span>
-              <span>🏆 N°1 de la Facturation & Encaissement d'Entreprise avec EasyFact (UEMOA / CEMAC)</span>
+              <span data-i18n="hero_badge">🏆 N°1 de la Facturation & Encaissement d'Entreprise avec EasyFact (UEMOA / CEMAC)</span>
             </div>
 
             <h1 class="landing-hero-title">
-              <span class="text-gradient-emerald">EasyFact</span> | La facturation simple à utiliser & 100% sécurisée
+              <span class="text-gradient-emerald">EasyFact</span> | <span data-i18n="hero_title">La facturation simple à utiliser & 100% sécurisée</span>
             </h1>
 
-            <p class="landing-hero-subtitle">
+            <p class="landing-hero-subtitle" data-i18n="hero_subtitle">
               Émettez des factures certifiées conformes aux normes OHADA & SYSCOHADA. Encaissez vos créances instantanément via <strong>Wave, Orange Money, MTN MoMo et Carte Bancaire</strong> en moins de 30 secondes.
             </p>
 
             <div class="landing-hero-actions">
-              <button class="btn btn-landing-primary" onclick="app.handleHeroCta('create-invoice')">
+              <button class="btn btn-landing-primary" onclick="app.handleHeroCta('create-invoice')" data-i18n="hero_btn_create">
                 <i class="fa-solid fa-bolt"></i> Créer ma 1ère Facture (Gratuit)
               </button>
-              <button class="btn btn-landing-secondary" onclick="app.handleHeroCta('dashboard')">
+              <button class="btn btn-landing-secondary" onclick="app.handleHeroCta('dashboard')" data-i18n="hero_btn_dashboard">
                 <i class="fa-solid fa-chart-line"></i> Accéder au Tableau de Bord
               </button>
             </div>
@@ -209,15 +202,15 @@
               <div class="landing-stat-item">
                 <i class="fa-solid fa-qrcode text-blue"></i>
                 <div>
-                  <strong>Mobile Money 1-Click</strong>
-                  <span>Wave, Orange Money & MTN</span>
+                  <strong data-i18n="hero_stat_1_title">Mobile Money 1-Click</strong>
+                  <span data-i18n="hero_stat_1_sub">Wave, Orange Money & MTN</span>
                 </div>
               </div>
               <div class="landing-stat-item">
                 <i class="fa-brands fa-whatsapp text-green"></i>
                 <div>
-                  <strong>Relances WhatsApp</strong>
-                  <span>Encaissement 3x plus rapide</span>
+                  <strong data-i18n="hero_stat_2_title">Relances WhatsApp</strong>
+                  <span data-i18n="hero_stat_2_sub">Encaissement 3x plus rapide</span>
                 </div>
               </div>
             </div>
@@ -234,82 +227,131 @@
 
           <!-- À Propos de nous / Notre Mission -->
           <div class="landing-about-section">
-            <div class="section-badge-center">À PROPOS D'EASYFACT</div>
-            <h2 class="landing-section-title">Une Solution Pensée pour les Entreprises Africaines</h2>
-            <p class="landing-section-subtitle">
+            <div class="section-badge-center" data-i18n="about_badge">À PROPOS D'EASYFACT</div>
+            <h2 class="landing-section-title" data-i18n="about_section_title">Une Solution Pensée pour les Entreprises Africaines</h2>
+            <p class="landing-section-subtitle" data-i18n="about_section_subtitle">
               EasyFact simplifie la gestion financière, élimine les impayés et automatise vos déclarations de TVA.
             </p>
 
             <div class="about-cards-grid">
               <div class="about-card">
                 <div class="about-card-icon"><i class="fa-solid fa-file-signature"></i></div>
-                <h3>Factures & Devis en 30 secondes</h3>
-                <p>Créez des documents commerciaux professionnels personnalisés avec votre logo, NINEA, RCCM et signature digitale intégrée.</p>
+                <h3 data-i18n="about_card_1_title">Factures & Devis en 30 secondes</h3>
+                <p data-i18n="about_card_1_desc">Créez des documents commerciaux professionnels personnalisés avec votre logo, NINEA, RCCM et signature digitale intégrée.</p>
               </div>
 
               <div class="about-card">
                 <div class="about-card-icon"><i class="fa-solid fa-building-columns"></i></div>
-                <h3>Calculs Fiscaux Automatisés</h3>
-                <p>Calcul automatique de la TVA locale (18%), de la retenue à la source AIB/BRS (2% / 5%) et génération du journal des ventes SYSCOHADA.</p>
+                <h3 data-i18n="about_card_2_title">Calculs Fiscaux Automatisés</h3>
+                <p data-i18n="about_card_2_desc">Calcul automatique de la TVA locale (18%), de la retenue à la source AIB/BRS (2% / 5%) et génération du journal des ventes SYSCOHADA.</p>
               </div>
             </div>
           </div>
 
           <!-- Fonctionnalités Clés Grid -->
           <div class="landing-features-section">
-            <div class="section-badge-center">FONCTIONNALITÉS EXCLUSIVES</div>
-            <h2 class="landing-section-title">Tout ce dont votre entreprise a besoin</h2>
+            <div class="section-badge-center" data-i18n="features_badge">FONCTIONNALITÉS EXCLUSIVES</div>
+            <h2 class="landing-section-title" data-i18n="features_section_title">Tout ce dont votre entreprise a besoin</h2>
 
             <div class="features-cards-grid">
               <div class="feature-box">
                 <i class="fa-solid fa-qrcode feature-icon"></i>
-                <h4>QR Code de Règlement Direct</h4>
-                <p>Vos clients scannent le QR Code Wave ou Orange Money directement sur la facture PDF pour régler sans erreur de numéro.</p>
+                <h4 data-i18n="feat_1_title">QR Code de Règlement Direct</h4>
+                <p data-i18n="feat_1_desc">Vos clients scannent le QR Code Wave ou Orange Money directement sur la facture PDF pour régler sans erreur de numéro.</p>
               </div>
 
               <div class="feature-box">
                 <i class="fa-brands fa-whatsapp feature-icon text-green"></i>
-                <h4>Relances WhatsApp 1-Click</h4>
-                <p>Envoyez un rappel amical pré-rempli avec le montant Net à Payer et le lien de règlement directement sur le WhatsApp de votre client.</p>
+                <h4 data-i18n="feat_2_title">Relances WhatsApp 1-Click</h4>
+                <p data-i18n="feat_2_desc">Envoyez un rappel amical pré-rempli avec le montant Net à Payer et le lien de règlement directement sur le WhatsApp de votre client.</p>
               </div>
 
               <div class="feature-box">
                 <i class="fa-solid fa-truck-ramp-box feature-icon"></i>
-                <h4>Bons de Livraison & Signature</h4>
-                <p>Générez les bons de réception pour vos marchandises et faites-les signer en direct sur l'écran par le destinataire.</p>
+                <h4 data-i18n="feat_3_title">Bons de Livraison & Signature</h4>
+                <p data-i18n="feat_3_desc">Générez les bons de réception pour vos marchandises et faites-les signer en direct sur l'écran par le destinataire.</p>
               </div>
 
               <div class="feature-box">
                 <i class="fa-solid fa-receipt feature-icon"></i>
-                <h4>Suivi des Dépenses & Bénéfice Net</h4>
-                <p>Enregistrez vos achats fournisseurs pour obtenir votre marge exacte et suivre votre trésorerie au jour le jour.</p>
+                <h4 data-i18n="feat_4_title">Suivi des Dépenses & Bénéfice Net</h4>
+                <p data-i18n="feat_4_desc">Enregistrez vos achats fournisseurs pour obtenir votre marge exacte et suivre votre trésorerie au jour le jour.</p>
               </div>
 
               <div class="feature-box">
                 <i class="fa-solid fa-coins feature-icon"></i>
-                <h4>Multi-Devises Africaines Dynamique</h4>
-                <p>Basculement instantané entre Franc CFA (UEMOA / CEMAC), Naira Nigérian (₦), Cedi Ghanéen (₵) et Franc Guinéen (FG) avec recalcul automatique.</p>
+                <h4 data-i18n="feat_5_title">Multi-Devises Africaines Dynamique</h4>
+                <p data-i18n="feat_5_desc">Basculement instantané entre Franc CFA (UEMOA / CEMAC), Naira Nigérian (₦), Cedi Ghanéen (₵) et Franc Guinéen (FG) avec recalcul automatique.</p>
               </div>
 
               <div class="feature-box">
                 <i class="fa-solid fa-file-csv feature-icon"></i>
-                <h4>Exportation Comptable SYSCOHADA</h4>
-                <p>Téléchargez vos journaux d'écritures analytiques (Comptes 701, 4431, 411) compatibles Sage, Odoo et Excel.</p>
+                <h4 data-i18n="feat_6_title">Exportation Comptable SYSCOHADA</h4>
+                <p data-i18n="feat_6_desc">Téléchargez vos journaux d'écritures analytiques (Comptes 701, 4431, 411) compatibles Sage, Odoo et Excel.</p>
               </div>
             </div>
           </div>
 
           <!-- Call to Action Banner -->
           <div class="landing-cta-banner">
-            <h2>Prêt à accélérer les encaissements de votre entreprise ?</h2>
-            <p>Rejoignez les PME et indépendants qui font confiance à EasyFact pour leur trésorerie.</p>
+            <h2 data-i18n="cta_banner_title">Prêt à accélérer les encaissements de votre entreprise ?</h2>
+            <p data-i18n="cta_banner_subtitle">Rejoignez les PME et indépendants qui font confiance à EasyFact pour leur trésorerie.</p>
             <div class="cta-banner-buttons">
-              <button class="btn btn-landing-primary" onclick="app.switchTab('create-invoice')">
+              <button class="btn btn-landing-primary" onclick="app.switchTab('create-invoice')" data-i18n="cta_btn_start">
                 <i class="fa-solid fa-rocket"></i> Commencer Gratuitement
               </button>
-              <button class="btn btn-landing-secondary" onclick="app.switchTab('pricing')">
+              <button class="btn btn-landing-secondary" onclick="app.switchTab('pricing')" data-i18n="cta_btn_pricing">
                 <i class="fa-solid fa-crown text-gold"></i> Découvrir les Tarifs
               </button>
+            </div>
+          </div>
+
+          <!-- SECTION DÉDIÉE : À PROPOS DE L'APPLICATION EASYFACT -->
+          <div class="landing-about-app-section" id="about-app-section" style="background: #ffffff; border: 2px solid #e2e8f0; border-radius: 20px; padding: 40px 32px; margin: 40px 0; box-shadow: 0 10px 30px rgba(0,0,0,0.04);">
+            <div style="text-align: center; max-width: 750px; margin: 0 auto 32px;">
+              <span style="display: inline-block; padding: 6px 16px; background: rgba(16, 185, 129, 0.12); color: #059669; font-weight: 700; font-size: 0.85rem; border-radius: 20px; margin-bottom: 12px; letter-spacing: 0.5px;" data-i18n="about_app_badge">PRÉSENTATION OFFICIELLE</span>
+              <h2 style="font-size: 1.85rem; font-weight: 800; color: #0f172a; margin-bottom: 14px; line-height: 1.3;" data-i18n="about_app_title">À Propos de l'Application EasyFact</h2>
+              <p style="font-size: 1.02rem; color: #334155; line-height: 1.75; font-weight: 500;" data-i18n="about_app_desc">
+                EasyFact est la plateforme logicielle complète conçue pour digitaliser la facturation, simplifier l'encaissement direct et automatiser la comptabilité des entreprises, PME et prestataires de services en Afrique.
+              </p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+              <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 16px; padding: 26px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                <div style="width: 52px; height: 52px; background: rgba(16, 185, 129, 0.15); color: #10b981; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 18px;">
+                  <i class="fa-solid fa-file-invoice"></i>
+                </div>
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: 10px;" data-i18n="about_app_card1_title">Factures & Devis A4 Officiels</h3>
+                <p style="font-size: 0.92rem; color: #334155; line-height: 1.65; margin: 0;" data-i18n="about_app_card1_desc">
+                  Générez en 30 secondes des factures proforma, factures définitives, devis et bons de livraison au format A4 garantis 1 page, prêts à l'impression ou à l'envoi PDF avec votre logo d'entreprise.
+                </p>
+              </div>
+
+              <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 16px; padding: 26px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                <div style="width: 52px; height: 52px; background: rgba(59, 130, 246, 0.15); color: #3b82f6; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 18px;">
+                  <i class="fa-solid fa-qrcode"></i>
+                </div>
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: 10px;" data-i18n="about_app_card2_title">Mobile Money & QR Code Instantané</h3>
+                <p style="font-size: 0.92rem; color: #334155; line-height: 1.65; margin: 0;" data-i18n="about_app_card2_desc">
+                  Chaque document intègre un QR Code dynamique de paiement direct (Wave, Orange Money, MTN MoMo, Moov) ainsi que vos coordonnées bancaires (RIB/IBAN) pour vos encaissements.
+                </p>
+              </div>
+
+              <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 16px; padding: 26px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                <div style="width: 52px; height: 52px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 18px;">
+                  <i class="fa-solid fa-coins"></i>
+                </div>
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: 10px;" data-i18n="about_app_card3_title">Conformité Fiscale & Multi-Devises</h3>
+                <p style="font-size: 0.92rem; color: #334155; line-height: 1.65; margin: 0;" data-i18n="about_app_card3_desc">
+                  Calcul automatique de la TVA (18%), des retenues BRS/AIB (2%/5%), conversion automatique multi-devises (FCFA, NGN, GHS, GNF) et export comptable Sage/Excel.
+                </p>
+              </div>
+            </div>
+
+            <div style="margin-top: 32px; padding-top: 22px; border-top: 1px solid #e2e8f0; text-align: center;">
+              <p style="font-size: 0.9rem; color: #475569; margin: 0; font-weight: 600;" data-i18n="about_app_security">
+                🔒 <strong>Sécurité & Isolation des Données :</strong> Vos répertoires clients et factures sont sécurisés avec chiffrement de niveau bancaire et sauvegardés en temps réel.
+              </p>
             </div>
           </div>
 
@@ -318,23 +360,23 @@
             <div class="footer-content">
               <div class="footer-brand">
                 <img src="easyfact_logo.png" alt="EasyFact Logo" style="height: 36px;">
-                <p>La solution EasyFact de facturation et d'encaissement d'entreprise N°1 en Afrique de l'Ouest & Centrale.</p>
+                <p data-i18n="footer_desc">La solution EasyFact de facturation et d'encaissement d'entreprise N°1 en Afrique de l'Ouest & Centrale.</p>
               </div>
               <div class="footer-links">
-                <h4>Plateforme</h4>
-                <a href="#" onclick="app.switchTab('dashboard')">Tableau de Bord</a>
-                <a href="#" onclick="app.switchTab('create-invoice')">Créer une Facture</a>
-                <a href="#" onclick="app.switchTab('pricing')">Offres & Abonnements</a>
+                <h4 data-i18n="footer_col_platform">Plateforme</h4>
+                <a href="#" onclick="app.switchTab('dashboard')" data-i18n="nav_dashboard">Tableau de Bord</a>
+                <a href="#" onclick="app.switchTab('create-invoice')" data-i18n="nav_create_invoice">Créer une Facture</a>
+                <a href="#" onclick="app.switchTab('pricing')" data-i18n="nav_pricing">Offres & Abonnements</a>
               </div>
               <div class="footer-links">
-                <h4>Conformité & Sécurité</h4>
-                <span><i class="fa-solid fa-shield-halved text-emerald"></i> Normes SYSCOHADA</span>
-                <span><i class="fa-solid fa-lock text-emerald"></i> Chiffrement HTTPS / SSL</span>
-                <span><i class="fa-solid fa-mobile-retro text-emerald"></i> Wave & Orange Money</span>
+                <h4 data-i18n="footer_col_security">Conformité & Sécurité</h4>
+                <span data-i18n="footer_syscohada"><i class="fa-solid fa-shield-halved text-emerald"></i> Normes SYSCOHADA</span>
+                <span data-i18n="footer_ssl"><i class="fa-solid fa-lock text-emerald"></i> Chiffrement HTTPS / SSL</span>
+                <span data-i18n="footer_mobile_money"><i class="fa-solid fa-mobile-retro text-emerald"></i> Wave & Orange Money</span>
               </div>
             </div>
             <div class="footer-bottom">
-              <p>&copy; 2026 EasyFact Africa. Tous droits réservés.</p>
+              <p data-i18n="footer_copyright">&copy; 2026 EasyFact Africa. Tous droits réservés.</p>
             </div>
           </footer>
         </section>
@@ -555,7 +597,7 @@
                   </div>
                 </div>
 
-                <div class="form-row split-2" style="margin-top: 10px;">
+                <div class="form-row split-3" style="margin-top: 10px;">
                   <div class="form-group">
                     <label><i class="fa-solid fa-qrcode text-emerald"></i> Canal de Règlement</label>
                     <select id="doc-payment-method" class="form-control" onchange="app.handlePaymentMethodChange(this.value)">
@@ -563,6 +605,10 @@
                       <option value="om">Orange Money / MTN / Moov</option>
                       <option value="card">Virement / Carte Bancaire</option>
                     </select>
+                  </div>
+                  <div class="form-group">
+                    <label><i class="fa-solid fa-mobile-retro text-green"></i> N°/RIB Spécifique (Optionnel)</label>
+                    <input type="text" id="doc-payment-number-override" class="form-control" placeholder="Vide = N° des paramètres...">
                   </div>
                   <div class="form-group">
                     <label>Style de Thème PDF</label>
@@ -1002,61 +1048,61 @@
         <section id="view-settings" class="tab-view">
           <div class="view-header">
             <div>
-              <h1 class="view-title">Paramètres de l'Entreprise</h1>
-              <p class="view-subtitle">Personnalisez le nom et les coordonnées affichés sur vos factures.</p>
+              <h1 class="view-title" data-i18n="settings_title">Paramètres de l'Entreprise</h1>
+              <p class="view-subtitle" data-i18n="settings_subtitle">Personnalisez le nom et les coordonnées affichés sur vos factures.</p>
             </div>
             <div class="action-buttons">
-              <button class="btn btn-success" onclick="app.saveSettings()">
+              <button class="btn btn-success" onclick="app.saveSettings()" data-i18n="btn_save_settings">
                 <i class="fa-solid fa-floppy-disk"></i> Enregistrer les Paramètres
               </button>
             </div>
           </div>
 
           <div class="panel-card form-panel">
-            <h3>Identité Officielle & Branding de l'Émetteur</h3>
+            <h3 data-i18n="settings_section_identity">Identité Officielle & Branding de l'Émetteur</h3>
             
             <div class="form-row split-2" style="margin-top: 14px;">
               <div class="form-group">
-                <label>Nom Officiel de Votre Entreprise</label>
+                <label data-i18n="label_company_name">Nom Officiel de Votre Entreprise</label>
                 <input type="text" id="setting-company-name" class="form-control" value="Mon Entreprise SARL">
               </div>
               <div class="form-group">
-                <label>Numéro NINEA / RCCM Officiel</label>
+                <label data-i18n="label_ninea_official">Numéro NINEA / RCCM Officiel</label>
                 <input type="text" id="setting-ninea" class="form-control" placeholder="Ex: NINEA: 0098213">
               </div>
             </div>
 
             <div class="form-row split-2">
               <div class="form-group">
-                <label>Téléphone Professionnel (WhatsApp)</label>
+                <label data-i18n="label_phone_whatsapp">Téléphone Professionnel (WhatsApp)</label>
                 <input type="text" id="setting-phone" class="form-control" value="+221 77 000 00 00">
               </div>
               <div class="form-group">
-                <label>Adresse Complète du Siège Social</label>
+                <label data-i18n="label_address_hq">Adresse Complète du Siège Social</label>
                 <input type="text" id="setting-address" class="form-control" placeholder="Ex: Avenue Lamine Guèye, Dakar, Sénégal">
               </div>
             </div>
 
-            <h3 style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color); color: var(--primary);">
+            <h3 style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color); color: var(--primary);" data-i18n="settings_section_payouts">
               <i class="fa-solid fa-qrcode"></i> Numéros d'Encaissement Mobile Money & Banque du Patron
             </h3>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;" data-i18n="settings_payouts_subtitle">
               Renseignez vos numéros personnels/professionnels où les fonds réglés par vos clients par QR Code doivent être directement crédités.
             </p>
 
             <div class="form-row split-2">
               <div class="form-group">
-                <label><i class="fa-solid fa-mobile-button text-blue"></i> Numéro / Lien Wave Business (Où recevoir les fonds Wave)</label>
+                <label data-i18n="label_wave_payout"><i class="fa-solid fa-mobile-button text-blue"></i> Numéro / Lien Wave Business (Où recevoir les fonds Wave)</label>
                 <input type="text" id="setting-wave-num" class="form-control" placeholder="Ex: +221 77 123 45 67 ou lien Wave">
               </div>
               <div class="form-group">
-                <label><i class="fa-solid fa-phone text-amber"></i> Numéro Orange Money / MTN MoMo</label>
+                <label data-i18n="label_om_payout"><i class="fa-solid fa-phone text-amber"></i> Numéro Orange Money / MTN MoMo</label>
                 <input type="text" id="setting-om-num" class="form-control" placeholder="Ex: +225 07 89 00 11">
               </div>
             </div>
 
             <div class="form-group" style="margin-top: 10px;">
-              <label><i class="fa-solid fa-building-columns"></i> RIB / IBAN Compte Bancaire (Virement)</label>
+              <label data-i18n="label_bank_rib"><i class="fa-solid fa-building-columns"></i> RIB / IBAN Compte Bancaire (Virement)</label>
               <input type="text" id="setting-bank-rib" class="form-control" placeholder="Ex: SN012 01001 12345678901 45 - Banque de l'Habitat">
             </div>
           </div>
@@ -1085,11 +1131,16 @@
           <p><strong>Devise Principale:</strong> <span id="modal-currency-val">FCFA (XOF)</span></p>
         </div>
       </div>
-      <div class="modal-footer" style="margin-top: 16px;">
-        <button class="btn btn-outline" onclick="app.closeModal('profile-modal')">Fermer</button>
-        <button class="btn btn-primary" onclick="app.closeModal('profile-modal'); app.switchTab('settings');">
-          <i class="fa-solid fa-gear"></i> Modifier les Paramètres
+      <div class="modal-footer" style="margin-top: 16px; display: flex; justify-content: space-between; align-items: center;">
+        <button class="btn btn-danger" onclick="app.logout()" style="background: #ef4444; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+          <i class="fa-solid fa-right-from-bracket"></i> Se Déconnecter
         </button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-outline" onclick="app.closeModal('profile-modal')">Fermer</button>
+          <button class="btn btn-primary" onclick="app.closeModal('profile-modal'); app.switchTab('settings');">
+            <i class="fa-solid fa-gear"></i> Paramètres
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1211,66 +1262,99 @@
     </div>
   </div>
 
-  <!-- MODAL PAIEMENT SAAS -->
+  <!-- MODAL CHECKOUT & PAIEMENT D'ABONNEMENT RÉEL -->
   <div class="modal-overlay" id="payment-modal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="modal-plan-title"><i class="fa-solid fa-crown text-gold"></i> Activer le Plan PRO</h3>
+    <div class="modal-card" style="max-width: 480px; padding: 28px; border-radius: 20px;">
+      <div class="modal-header" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 14px;">
+        <h3 id="modal-plan-title" style="font-size: 1.2rem; font-weight: 800; color: #0f172a;"><i class="fa-solid fa-crown text-gold"></i> Activer l'Abonnement EasyFact</h3>
         <button class="modal-close" onclick="app.closeModal('payment-modal')">&times;</button>
       </div>
-      <div class="modal-body">
-        <p>Sélectionnez votre moyen de paiement pour activer l'abonnement :</p>
 
-        <div class="payment-methods-grid">
-          <label class="pay-method-card active">
-            <input type="radio" name="pay-method" value="wave" checked>
-            <div class="pay-method-info">
-              <i class="fa-solid fa-mobile-button text-blue"></i>
-              <strong>Wave Mobile Money</strong>
-            </div>
+      <div class="modal-body" style="padding-top: 16px;">
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-weight: 600; font-size: 0.9rem; color: #475569;">Montant de l'Abonnement :</span>
+          <strong id="modal-plan-price" style="font-size: 1.25rem; color: #059669; font-weight: 800;">4 900 FCFA/mois</strong>
+        </div>
+
+        <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 12px; font-weight: 600;">1. Sélectionnez votre moyen de paiement :</p>
+
+        <div class="payment-methods-grid" style="display: flex; gap: 10px; margin-bottom: 18px;">
+          <label class="pay-method-card active" style="flex: 1; border: 2px solid #10b981; border-radius: 10px; padding: 12px; cursor: pointer; text-align: center; background: rgba(16,185,129,0.05);">
+            <input type="radio" name="pay-method" value="wave" checked onchange="app.updateCheckoutInstructions('wave')" style="display: none;">
+            <i class="fa-solid fa-mobile-button" style="color: #0284c7; font-size: 1.2rem; margin-bottom: 4px;"></i>
+            <div style="font-weight: 700; font-size: 0.82rem; color: #0f172a;">Wave Money</div>
           </label>
 
-          <label class="pay-method-card">
-            <input type="radio" name="pay-method" value="om">
-            <div class="pay-method-info">
-              <i class="fa-solid fa-phone text-amber"></i>
-              <strong>Orange Money / MTN MoMo</strong>
-            </div>
+          <label class="pay-method-card" style="flex: 1; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; cursor: pointer; text-align: center;">
+            <input type="radio" name="pay-method" value="om" onchange="app.updateCheckoutInstructions('om')" style="display: none;">
+            <i class="fa-solid fa-phone" style="color: #d97706; font-size: 1.2rem; margin-bottom: 4px;"></i>
+            <div style="font-weight: 700; font-size: 0.82rem; color: #0f172a;">Orange / MTN</div>
+          </label>
+
+          <label class="pay-method-card" style="flex: 1; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; cursor: pointer; text-align: center;">
+            <input type="radio" name="pay-method" value="card" onchange="app.updateCheckoutInstructions('card')" style="display: none;">
+            <i class="fa-solid fa-building-columns" style="color: #8b5cf6; font-size: 1.2rem; margin-bottom: 4px;"></i>
+            <div style="font-weight: 700; font-size: 0.82rem; color: #0f172a;">RIB Bancaire</div>
           </label>
         </div>
 
-        <div class="payment-summary-box">
-          <div class="summary-row">
-            <span>Montant :</span>
-            <strong id="modal-plan-price">4 900 FCFA</strong>
+        <!-- Instructions d'encaissement dynamique -->
+        <div id="checkout-instructions-box" style="background: #f1f5f9; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 14px; margin-bottom: 18px; font-size: 0.84rem; color: #334155;">
+          <p style="margin-bottom: 8px;"><strong>📲 Transfert Wave :</strong> Effectuez le transfert de <strong id="checkout-instruct-amount">4 900 FCFA</strong> vers le compte EasyFact officiel :</p>
+          <div style="background: #ffffff; padding: 8px 12px; border-radius: 8px; font-weight: 800; font-size: 0.95rem; color: #0284c7; text-align: center; border: 1px solid #cbd5e1; margin-bottom: 8px;">
+            <i class="fa-solid fa-shield-halved"></i> Compte Officiel EasyFact (Encaissement Wave)
           </div>
+          <span style="font-size: 0.78rem; color: #64748b;">Copiez ensuite la référence/N° de transaction ci-dessous.</span>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline" onclick="app.closeModal('payment-modal')">Annuler</button>
-        <button class="btn btn-gradient-gold" onclick="app.processSaaSUpgrade()">
-          <i class="fa-solid fa-lock"></i> Valider & Activer
-        </button>
+
+        <form onsubmit="event.preventDefault(); app.processSaaSUpgrade();">
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label style="font-weight: 700; font-size: 0.84rem; color: #0f172a; margin-bottom: 6px; display: block;" data-i18n="checkout_sender_label">
+              Votre N° de Téléphone (Émetteur du transfert) <span style="color: #dc2626;">*</span>
+            </label>
+            <input type="text" id="checkout-sender-phone" class="form-control" placeholder="ex: +221 77 123 45 67" required style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 0.92rem;">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label style="font-weight: 700; font-size: 0.84rem; color: #0f172a; margin-bottom: 6px; display: block;" data-i18n="checkout_ref_label">
+              Numéro de Transaction / Référence Réelle du Transfert <span style="color: #dc2626;">*</span>
+            </label>
+            <input type="text" id="checkout-transaction-id" class="form-control" placeholder="ex: WV-98741235 ou OM260804.1234.5678" required style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 0.92rem;">
+          </div>
+
+          <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 10px 12px; font-size: 0.78rem; color: #1e40af; margin-bottom: 18px;">
+            🔒 <strong>Vérification Anti-Fraude :</strong> Votre référence de transfert sera contrôlée. Le format doit être valide pour débloquer l'abonnement Pro.
+          </div>
+
+          <div class="modal-footer" style="padding: 0; display: flex; gap: 10px;">
+            <button type="button" class="btn btn-outline" onclick="app.closeModal('payment-modal')" style="flex: 1;">Annuler</button>
+            <button type="submit" class="btn btn-primary" id="btn-submit-checkout" style="flex: 2; padding: 12px; font-weight: 700; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: white;" data-i18n="checkout_submit_btn">
+              <i class="fa-solid fa-lock"></i> Soumettre & Activer mon Abonnement
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
+
+
 
   <!-- MODAL SÉLECTEUR DE PLAN / VERSION SAAS -->
   <div class="modal-overlay" id="plan-switcher-modal">
     <div class="modal-card" style="max-width: 550px;">
       <div class="modal-header">
-        <h3><i class="fa-solid fa-layer-group text-green"></i> Changer d'Offre / Formule EasyFact</h3>
+        <h3 data-i18n="modal_plan_title"><i class="fa-solid fa-layer-group text-green"></i> Changer d'Offre / Formule EasyFact</h3>
         <button class="modal-close" onclick="app.closeModal('plan-switcher-modal')">&times;</button>
       </div>
       <div class="modal-body">
-        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 16px;">Sélectionnez la version souhaitée pour votre compte entreprise :</p>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 16px;" data-i18n="modal_plan_subtitle">Sélectionnez la version souhaitée pour votre compte entreprise :</p>
 
         <div class="plan-options-list" style="display: flex; flex-direction: column; gap: 12px;">
           <!-- Option Starter -->
           <div class="plan-option-card" id="option-starter" onclick="app.selectTierFromModal('starter')" style="border: 2px solid #e2e8f0; border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s ease; display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <div style="font-weight: 700; font-size: 0.95rem; color: #0f172a;">Plan Starter (Gratuit)</div>
-              <div style="font-size: 0.78rem; color: #64748b;">5 factures/mois • Filigrane EasyFact</div>
+              <div style="font-weight: 700; font-size: 0.95rem; color: #0f172a;" data-i18n="plan_starter_title">Plan Starter (Gratuit)</div>
+              <div style="font-size: 0.78rem; color: #64748b;" data-i18n="modal_plan_starter_desc">5 factures/mois • Filigrane EasyFact</div>
             </div>
             <span class="badge-status" id="badge-status-starter" style="background:#e2e8f0; color:#475569;">Sélectionner</span>
           </div>
@@ -1278,8 +1362,8 @@
           <!-- Option Pro -->
           <div class="plan-option-card" id="option-pro" onclick="app.selectTierFromModal('pro')" style="border: 2px solid #10b981; border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s ease; display: flex; justify-content: space-between; align-items: center; background: rgba(16, 185, 129, 0.03);">
             <div>
-              <div style="font-weight: 700; font-size: 0.95rem; color: #059669;"><i class="fa-solid fa-crown text-gold"></i> Plan PRO PME</div>
-              <div style="font-size: 0.78rem; color: #64748b;">Factures illimitées • QR Code Wave/OM • Sans filigrane</div>
+              <div style="font-weight: 700; font-size: 0.95rem; color: #059669;" data-i18n="plan_pro_title"><i class="fa-solid fa-crown text-gold"></i> Plan PRO PME</div>
+              <div style="font-size: 0.78rem; color: #64748b;" data-i18n="modal_plan_pro_desc">Factures illimitées • QR Code Wave/OM • Sans filigrane</div>
             </div>
             <span class="badge-status" id="badge-status-pro" style="background:rgba(16, 185, 129, 0.2); color:#059669;">4 900 FCFA/mois</span>
           </div>
@@ -1287,66 +1371,141 @@
           <!-- Option Entreprise -->
           <div class="plan-option-card" id="option-entreprise" onclick="app.selectTierFromModal('entreprise')" style="border: 2px solid #8b5cf6; border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s ease; display: flex; justify-content: space-between; align-items: center; background: rgba(139, 92, 246, 0.03);">
             <div>
-              <div style="font-weight: 700; font-size: 0.95rem; color: #6d28d9;"><i class="fa-solid fa-building text-purple"></i> Entreprise SA</div>
-              <div style="font-size: 0.78rem; color: #64748b;">Tout le Plan Pro + API NestJS & Carte Bancaire</div>
+              <div style="font-weight: 700; font-size: 0.95rem; color: #6d28d9;" data-i18n="plan_entreprise_title"><i class="fa-solid fa-building text-purple"></i> Entreprise SA</div>
+              <div style="font-size: 0.78rem; color: #64748b;" data-i18n="modal_plan_entreprise_desc">Tout le Plan Pro + API NestJS & Carte Bancaire</div>
             </div>
             <span class="badge-status" id="badge-status-entreprise" style="background:rgba(139, 92, 246, 0.2); color:#6d28d9;">24 900 FCFA/mois</span>
           </div>
         </div>
       </div>
       <div class="modal-footer" style="margin-top: 18px;">
-        <button class="btn btn-outline" onclick="app.closeModal('plan-switcher-modal')">Fermer</button>
+        <button class="btn btn-outline" onclick="app.closeModal('plan-switcher-modal')" data-i18n="btn_close">Fermer</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL AUTHENTIFICATION & CREATION DE COMPTE -->
-  <div class="modal-overlay" id="auth-modal">
-    <div class="modal-card" style="max-width: 420px; padding: 28px; position: relative; border-radius: 16px;">
-      <button class="modal-close" onclick="app.closeModal('auth-modal')" style="position: absolute; right: 18px; top: 18px; border: none; background: #f1f5f9; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 1.1rem; color: #64748b;">&times;</button>
+  <!-- 1. MODAL DÉDIÉE : CONNEXION (Sign In) -->
+  <div class="modal-overlay" id="login-modal">
+    <div class="modal-card" style="max-width: 420px; padding: 32px 28px; position: relative; border-radius: 20px;">
+      <button class="modal-close" onclick="app.closeModal('login-modal')" style="position: absolute; right: 18px; top: 18px; border: none; background: #f1f5f9; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 1.1rem; color: #64748b;">&times;</button>
       
-      <div class="modal-header" style="border-bottom: none; padding-bottom: 0; display: block; text-align: center;">
-        <img src="easyfact_logo.png" alt="EasyFact Logo" style="height: 42px; margin-bottom: 10px;">
-        <h3 id="auth-modal-title" style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">Connexion / Inscription</h3>
-        <p id="auth-modal-subtitle" style="font-size: 0.82rem; color: #64748b; margin-top: 4px; margin-bottom: 0;">Accédez instantanément à votre espace EasyFact.</p>
+      <div style="text-align: center; margin-bottom: 24px;">
+        <img src="easyfact_logo.png" alt="EasyFact Logo" style="height: 44px; margin-bottom: 12px;">
+        <h3 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0 0 6px;">Connexion à votre Espace</h3>
+        <p style="font-size: 0.85rem; color: #64748b; margin: 0;">Saisissez votre email professionnel pour accéder à vos factures.</p>
       </div>
 
-      <div class="modal-body" style="padding-top: 20px;">
-        <!-- 1-Click Google Login -->
-        <button type="button" onclick="app.loginWithGoogle()" style="width: 100%; padding: 11px; border: 1px solid #cbd5e1; background: #ffffff; border-radius: 10px; font-weight: 600; color: #334155; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; font-size: 0.9rem; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;">
-          <i class="fa-brands fa-google" style="color: #ea4335; font-size: 1.15rem;"></i> Continuer avec Google
-        </button>
-
-        <div style="display: flex; align-items: center; margin: 16px 0; color: #94a3b8; font-size: 0.78rem;">
-          <div style="flex: 1; height: 1px; background: #e2e8f0;"></div>
-          <span style="padding: 0 10px; font-weight: 500;">ou avec une adresse email</span>
-          <div style="flex: 1; height: 1px; background: #e2e8f0;"></div>
-        </div>
-
-        <form id="auth-form" onsubmit="event.preventDefault(); app.handleAuthSubmit();">
+      <div class="modal-body" style="padding: 0;">
+        <form onsubmit="event.preventDefault(); app.handleLoginSubmit();">
           <div class="form-group" style="margin-bottom: 14px;">
-            <label style="font-weight: 600; font-size: 0.82rem; color: #334155; margin-bottom: 6px; display: block;">Adresse Email</label>
-            <input type="email" id="auth-email" class="form-control" placeholder="votre.email@exemple.com" required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.9rem;">
+            <label style="font-weight: 600; font-size: 0.82rem; color: #334155; margin-bottom: 6px; display: block;">Adresse Email Pro *</label>
+            <input type="email" id="login-email" class="form-control" placeholder="exemple: nom@gmail.com" required style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 0.92rem;">
           </div>
 
-          <div class="form-group" style="margin-bottom: 16px;">
-            <label style="font-weight: 600; font-size: 0.82rem; color: #334155; margin-bottom: 6px; display: block;">Mot de passe</label>
-            <input type="password" id="auth-password" class="form-control" placeholder="Entrez votre mot de passe" required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.9rem;">
+          <div class="form-group" style="margin-bottom: 18px;">
+            <label style="font-weight: 600; font-size: 0.82rem; color: #334155; margin-bottom: 6px; display: block;">Mot de passe *</label>
+            <input type="password" id="login-password" class="form-control" placeholder="•••••••••" required style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 0.92rem;">
           </div>
 
-          <div id="auth-error-msg" style="display: none; background: #fef2f2; color: #dc2626; padding: 10px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 14px; text-align: center; border: 1px solid #fecaca;"></div>
-
-          <button type="submit" class="btn btn-primary" id="btn-auth-submit" style="width: 100%; padding: 12px; font-weight: 700; border-radius: 8px; font-size: 0.95rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: white; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);">
-            <i class="fa-solid fa-right-to-bracket"></i> <span id="lbl-auth-btn">Se Connecter</span>
+          <button type="submit" class="btn btn-primary" id="btn-login-submit" style="width: 100%; padding: 13px; font-weight: 700; border-radius: 10px; font-size: 0.95rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: white; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);">
+            <i class="fa-solid fa-right-to-bracket"></i> Se Connecter
           </button>
         </form>
       </div>
 
-      <div style="margin-top: 18px; text-align: center; font-size: 0.8rem; color: #64748b; border-top: 1px solid #f1f5f9; padding-top: 14px;">
-        <span id="auth-toggle-link" style="cursor: pointer; color: #059669; font-weight: 600;" onclick="app.toggleAuthMode()">Pas encore de compte ? Inscrivez-vous</span>
+      <div style="margin-top: 20px; text-align: center; font-size: 0.84rem; color: #64748b; border-top: 1px solid #f1f5f9; padding-top: 16px;">
+        Pas encore de compte ? <a href="#" onclick="app.openRegisterModal(); return false;" style="color: #059669; font-weight: 700; text-decoration: none;">Créer un compte entreprise</a>
       </div>
     </div>
   </div>
+
+  <!-- 2. MODAL DÉDIÉE : CRÉATION DE COMPTE (Sign Up) -->
+  <div class="modal-overlay" id="register-modal">
+    <div class="modal-card" style="max-width: 440px; padding: 32px 28px; position: relative; border-radius: 20px;">
+      <button class="modal-close" onclick="app.closeModal('register-modal')" style="position: absolute; right: 18px; top: 18px; border: none; background: #f1f5f9; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 1.1rem; color: #64748b;">&times;</button>
+      
+      <div style="text-align: center; margin-bottom: 24px;">
+        <img src="easyfact_logo.png" alt="EasyFact Logo" style="height: 44px; margin-bottom: 12px;">
+        <h3 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0 0 6px;">Créer un Compte Entreprise</h3>
+        <p style="font-size: 0.85rem; color: #64748b; margin: 0;">Rejoignez EasyFact gratuitement en 30 secondes.</p>
+      </div>
+
+      <div class="modal-body" style="padding: 0;">
+        <form onsubmit="event.preventDefault(); app.handleRegisterSubmit();">
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label style="font-weight: 600; font-size: 0.82rem; color: #334155; margin-bottom: 6px; display: block;">Nom Officiel de l'Entreprise *</label>
+            <input type="text" id="reg-company-name" class="form-control" placeholder="Ex: Sahel Distribution SARL" required style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 0.92rem;">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label style="font-weight: 600; font-size: 0.82rem; color: #334155; margin-bottom: 6px; display: block;">Adresse Email Pro *</label>
+            <input type="email" id="reg-email" class="form-control" placeholder="exemple: contact@entreprise.com" required style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 0.92rem;">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 18px;">
+            <label style="font-weight: 600; font-size: 0.82rem; color: #334155; margin-bottom: 6px; display: block;">Mot de passe *</label>
+            <input type="password" id="reg-password" class="form-control" placeholder="6 caractères minimum" required style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 0.92rem;">
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="btn-reg-submit" style="width: 100%; padding: 13px; font-weight: 700; border-radius: 10px; font-size: 0.95rem; background: linear-gradient(135deg, #059669 0%, #047857 100%); border: none; color: white; cursor: pointer; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);">
+            <i class="fa-solid fa-user-plus"></i> Créer mon Compte
+          </button>
+        </form>
+      </div>
+
+      <div style="margin-top: 20px; text-align: center; font-size: 0.84rem; color: #64748b; border-top: 1px solid #f1f5f9; padding-top: 16px;">
+        Déjà un compte ? <a href="#" onclick="app.openLoginModal(); return false;" style="color: #059669; font-weight: 700; text-decoration: none;">Se connecter</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. MODAL DÉDIÉE : VÉRIFICATION SÉCURITÉ EMAIL (6-Digit OTP Code) -->
+  <div class="modal-overlay" id="email-otp-modal">
+    <div class="modal-card" style="max-width: 440px; padding: 32px 28px; position: relative; border-radius: 20px; text-align: center;">
+      <button class="modal-close" onclick="app.closeModal('email-otp-modal')" style="position: absolute; right: 18px; top: 18px; border: none; background: #f1f5f9; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 1.1rem; color: #64748b;">&times;</button>
+      
+      <div style="width: 60px; height: 60px; background: rgba(16, 185, 129, 0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: #059669; font-size: 1.6rem;">
+        <i class="fa-solid fa-envelope-circle-check"></i>
+      </div>
+
+      <h3 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 8px;">Vérification de l'Adresse Email</h3>
+      <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 16px;">
+        Un code de sécurité à 6 chiffres a été généré pour valider l'existence de votre adresse :<br>
+        <strong id="otp-target-email" style="color: #059669; font-size: 0.92rem;">contact@entreprise.com</strong>
+      </p>
+
+      <!-- Security Notice Banner -->
+      <div id="otp-code-banner" style="background: #f0fdf4; border: 2px dashed #10b981; border-radius: 12px; padding: 12px; margin-bottom: 20px;">
+        <span style="font-size: 0.76rem; color: #047857; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">🔐 Code de Sécurité Envoyé par Email</span>
+        <div id="otp-display-code" style="font-size: 1.8rem; font-weight: 900; letter-spacing: 8px; color: #059669; font-family: monospace;">849 201</div>
+      </div>
+
+      <form onsubmit="event.preventDefault(); app.verifyEmailOtpSubmit();">
+        <div style="margin-bottom: 20px;">
+          <label style="font-weight: 600; font-size: 0.82rem; color: #334155; margin-bottom: 10px; display: block;">Saisissez le code à 6 chiffres ci-dessous :</label>
+          <div style="display: flex; gap: 8px; justify-content: center;" id="otp-inputs-container">
+            <input type="text" maxlength="1" class="otp-digit-input" id="otp-1" onkeyup="app.handleOtpDigitInput(this, 1)" style="width: 44px; height: 50px; text-align: center; font-size: 1.4rem; font-weight: 800; border-radius: 10px; border: 2px solid #cbd5e1; outline: none;">
+            <input type="text" maxlength="1" class="otp-digit-input" id="otp-2" onkeyup="app.handleOtpDigitInput(this, 2)" style="width: 44px; height: 50px; text-align: center; font-size: 1.4rem; font-weight: 800; border-radius: 10px; border: 2px solid #cbd5e1; outline: none;">
+            <input type="text" maxlength="1" class="otp-digit-input" id="otp-3" onkeyup="app.handleOtpDigitInput(this, 3)" style="width: 44px; height: 50px; text-align: center; font-size: 1.4rem; font-weight: 800; border-radius: 10px; border: 2px solid #cbd5e1; outline: none;">
+            <input type="text" maxlength="1" class="otp-digit-input" id="otp-4" onkeyup="app.handleOtpDigitInput(this, 4)" style="width: 44px; height: 50px; text-align: center; font-size: 1.4rem; font-weight: 800; border-radius: 10px; border: 2px solid #cbd5e1; outline: none;">
+            <input type="text" maxlength="1" class="otp-digit-input" id="otp-5" onkeyup="app.handleOtpDigitInput(this, 5)" style="width: 44px; height: 50px; text-align: center; font-size: 1.4rem; font-weight: 800; border-radius: 10px; border: 2px solid #cbd5e1; outline: none;">
+            <input type="text" maxlength="1" class="otp-digit-input" id="otp-6" onkeyup="app.handleOtpDigitInput(this, 6)" style="width: 44px; height: 50px; text-align: center; font-size: 1.4rem; font-weight: 800; border-radius: 10px; border: 2px solid #cbd5e1; outline: none;">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 13px; font-weight: 700; border-radius: 10px; font-size: 0.95rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: white; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);">
+          <i class="fa-solid fa-shield-check"></i> Valider mon Compte
+        </button>
+      </form>
+
+      <div style="margin-top: 16px; font-size: 0.8rem; color: #64748b;">
+        Vous n'avez pas reçu le code ? <a href="#" onclick="app.resendEmailOtp(); return false;" style="color: #059669; font-weight: 700; text-decoration: none;">Renvoyer le code</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Toast Notification Container -->
+  <div id="toast-container"></div>
 
   <!-- Custom App JavaScript -->
   <script src="app.js"></script>

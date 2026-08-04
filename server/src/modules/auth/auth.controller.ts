@@ -1,4 +1,5 @@
-import { Controller, Post, Body, Get } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Req, Res } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -25,9 +26,26 @@ export class AuthController {
     return this.authService.login(body);
   }
 
-  @Post('google')
-  async googleLogin(@Body() body: any) {
-    return this.authService.googleLogin(body);
+  // Google OAuth entry point
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth() {
+    // Handled by passport, redirects to Google
+  }
+
+  // Google OAuth callback
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(@Req() req: any, @Res() res: any) {
+    try {
+      const result = await this.authService.googleLogin(req.user);
+      if (result && result.token) {
+        return res.redirect(`/?token=${encodeURIComponent(result.token)}`);
+      }
+      return res.redirect('/?error=oauth_failed');
+    } catch (err) {
+      return res.redirect('/?error=oauth_error');
+    }
   }
 
   @Get('profile')

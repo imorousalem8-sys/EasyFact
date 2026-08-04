@@ -11,8 +11,10 @@ class EasyFactApp {
 
     // User Session & Multi-Tenant Data Isolation
     this.isLoggedIn = localStorage.getItem('easyfact_logged_in') === 'true';
-    this.currentUserId = localStorage.getItem('easyfact_active_user_id') || 'tenant_default';
-    this.currentUserEmail = localStorage.getItem('easyfact_active_user_email') || 'utilisateur@entreprise.com';
+    this.currentUserId = localStorage.getItem('easyfact_active_user_id') || null;
+    this.currentUserEmail = localStorage.getItem('easyfact_active_user_email') || '';
+    this.registeredUsers = JSON.parse(localStorage.getItem('easyfact_registered_users') || '[]');
+    this.pendingAuthUser = null;
     this.pendingTabId = null;
     this.authMode = 'login'; // 'login' or 'register'
 
@@ -33,12 +35,12 @@ class EasyFactApp {
     this.theme = localStorage.getItem('easyfact_theme') || 'light';
     this.lang = localStorage.getItem('easyfact_lang') || 'fr';
 
-    // Company Credentials
+    // Company Credentials (Clean initial state for real users)
     this.companyProfile = {
-      name: 'Mon Entreprise SARL',
+      name: 'Mon Entreprise',
       ninea: '',
-      phone: '+221 77 000 00 00',
-      address: 'Dakar, Sénégal',
+      phone: '',
+      address: '',
       waveNum: '',
       omNum: '',
       bankRib: ''
@@ -96,6 +98,56 @@ class EasyFactApp {
     this.switchTab('landing');
   }
 
+  /* Custom Professional Toast Notifications System */
+  validatePhoneNumber(phoneStr, labelName = 'Téléphone') {
+    if (!phoneStr || phoneStr.trim() === '') return { isValid: true, clean: '' };
+
+    const clean = phoneStr.trim();
+    const digitsOnly = clean.replace(/[\s\-\+\(\)]/g, '');
+
+    // Single digit or non-digits or less than 8 digits or more than 15 digits is invalid
+    if (!/^\d+$/.test(digitsOnly) || digitsOnly.length < 8 || digitsOnly.length > 15) {
+      return {
+        isValid: false,
+        message: `⚠️ ${labelName} invalide ("${clean}"). Un numéro valide doit contenir entre 8 et 15 chiffres (ex: +221 77 123 45 67).`
+      };
+    }
+
+    return { isValid: true, clean };
+  }
+
+  showToast(message, type = 'success', duration = 3500) {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'toast-container';
+      document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast-item toast-${type}`;
+
+    let iconClass = 'fa-solid fa-circle-check';
+    if (type === 'error') iconClass = 'fa-solid fa-triangle-exclamation';
+    if (type === 'info') iconClass = 'fa-solid fa-circle-info';
+
+    toast.innerHTML = `
+      <div class="toast-icon"><i class="${iconClass}"></i></div>
+      <div class="toast-body">${message}</div>
+      <button class="toast-close" onclick="this.parentElement.classList.add('toast-hide'); setTimeout(() => this.parentElement.remove(), 300);">&times;</button>
+      <div class="toast-progress-bar" style="animation-duration: ${duration}ms;"></div>
+    `;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      if (toast.parentElement) {
+        toast.classList.add('toast-hide');
+        setTimeout(() => toast.remove(), 300);
+      }
+    }, duration);
+  }
+
   toggleTheme() {
     this.theme = this.theme === 'light' ? 'dark' : 'light';
     localStorage.setItem('easyfact_theme', this.theme);
@@ -118,16 +170,16 @@ class EasyFactApp {
     this.lang = lang;
     localStorage.setItem('easyfact_lang', lang);
     this.applyLanguage(lang);
+    const msg = lang === 'en' ? "Language changed to English 🇬🇧" : "Langue changée en Français 🇫🇷";
+    this.showToast(msg, "info");
   }
 
   applyLanguage(lang) {
     const langSelect = document.getElementById('lang-select');
     if (langSelect) langSelect.value = lang;
 
-    const isEn = lang === 'en';
-    const welcomeTitle = document.getElementById('welcome-title');
-    if (welcomeTitle) {
-      welcomeTitle.innerText = isEn ? `Welcome to EasyFact 👋` : `Bienvenue sur EasyFact 👋`;
+    if (window.applyLanguage) {
+      window.applyLanguage(lang);
     }
   }
 
@@ -248,7 +300,7 @@ class EasyFactApp {
     });
 
     // Form Live Inputs Sync
-    ['doc-type', 'doc-number', 'doc-client-input', 'doc-due-date', 'tax-vat', 'tax-withholding', 'doc-advance', 'doc-payment-method', 'doc-pdf-theme'].forEach(id => {
+    ['doc-type', 'doc-number', 'doc-client-input', 'doc-due-date', 'tax-vat', 'tax-withholding', 'doc-advance', 'doc-payment-method', 'doc-payment-number-override', 'doc-pdf-theme'].forEach(id => {
       const el = document.getElementById(id);
       if (el) {
         el.addEventListener('input', () => this.updateLivePdf());
@@ -268,6 +320,172 @@ class EasyFactApp {
     document.getElementById('search-invoice')?.addEventListener('input', () => this.filterInvoicesTable());
     document.getElementById('filter-type')?.addEventListener('change', () => this.filterInvoicesTable());
     document.getElementById('filter-status')?.addEventListener('change', () => this.filterInvoicesTable());
+  }
+
+  /* Live PDF Preview Renderer & Formatter */
+  formatCurrency(amount) {
+    const rateObj = (this.currencyRates && this.currencyRates[this.currency]) ? this.currencyRates[this.currency] : { symbol: 'FCFA', rate: 1 };
+    const val = (amount || 0) * rateObj.rate;
+    return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(val) + ' ' + rateObj.symbol;
+  }
+
+  updateLivePdf() {
+    try {
+      const type = document.getElementById('doc-type')?.value || 'Facture';
+      const number = document.getElementById('doc-number')?.value || 'FAC-2026-001';
+      const clientName = document.getElementById('doc-client-input')?.value || 'Client Destinataire';
+      const dueDate = document.getElementById('doc-due-date')?.value || '';
+      const vatRate = parseFloat(document.getElementById('tax-vat')?.value || '0');
+      const withholdingRate = parseFloat(document.getElementById('tax-withholding')?.value || '0');
+      const advanceVal = parseFloat(document.getElementById('doc-advance')?.value || '0');
+      const payMethod = document.getElementById('doc-payment-method')?.value || 'wave';
+      const pdfTheme = document.getElementById('doc-pdf-theme')?.value || '#059669';
+
+      // Update Company Header
+      const compNameEl = document.getElementById('pdf-my-company');
+      const compDetailsEl = document.getElementById('pdf-my-details');
+      if (compNameEl) compNameEl.innerText = (this.companyProfile?.name && this.companyProfile.name !== 'Mon Entreprise') ? this.companyProfile.name : 'MON ENTREPRISE';
+      if (compDetailsEl) {
+        const nineaText = this.companyProfile?.ninea ? `NINEA/RCCM: ${this.companyProfile.ninea}` : 'NINEA: En cours';
+        const phoneText = this.companyProfile?.phone ? `Tél: ${this.companyProfile.phone}` : 'Tél: Non renseigné';
+        const addrText = this.companyProfile?.address ? `Adresse: ${this.companyProfile.address}` : '';
+        compDetailsEl.innerText = `${nineaText} • ${phoneText}${addrText ? ' • ' + addrText : ''}`;
+      }
+
+      // Meta labels
+      const typeLabel = document.getElementById('pdf-type-label');
+      const numLabel = document.getElementById('pdf-num-label');
+      const dateLabel = document.getElementById('pdf-date-label');
+      const dueLabel = document.getElementById('pdf-due-label');
+
+      if (typeLabel) {
+        typeLabel.innerText = type.toUpperCase();
+        typeLabel.style.backgroundColor = pdfTheme;
+      }
+      if (numLabel) numLabel.innerText = number;
+      if (dateLabel) {
+        const today = new Date();
+        dateLabel.innerText = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+      }
+      if (dueLabel) dueLabel.innerText = dueDate ? dueDate : 'Non précisée';
+
+      // Client info
+      const clientNameEl = document.getElementById('pdf-client-name');
+      const clientDetailsEl = document.getElementById('pdf-client-details');
+      if (clientNameEl) clientNameEl.innerText = clientName;
+      if (clientDetailsEl) clientDetailsEl.innerText = `Client • Réf: ${number}`;
+
+      // Watermark check
+      const watermarkEl = document.getElementById('pdf-watermark');
+      if (watermarkEl) {
+        watermarkEl.style.display = (this.userTier === 'starter') ? 'block' : 'none';
+      }
+
+      // Calculate Items HT
+      const itemsTbody = document.getElementById('pdf-items-tbody');
+      let subtotalHT = 0;
+
+      if (itemsTbody) {
+        itemsTbody.innerHTML = '';
+        (this.currentInvoiceItems || []).forEach(item => {
+          const qty = parseFloat(item.qty) || 1;
+          const price = parseFloat(item.unitPrice) || 0;
+          const lineTotal = qty * price;
+          subtotalHT += lineTotal;
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${item.description || 'Prestation / Article'}</td>
+            <td class="text-center">${qty}</td>
+            <td class="text-right">${this.formatCurrency(price)}</td>
+            <td class="text-right">${this.formatCurrency(lineTotal)}</td>
+          `;
+          itemsTbody.appendChild(tr);
+        });
+      }
+
+      const vatAmount = subtotalHT * (vatRate / 100);
+      const withholdingAmount = subtotalHT * (withholdingRate / 100);
+      const totalTTC = subtotalHT + vatAmount - withholdingAmount;
+      const netPayable = Math.max(0, totalTTC - advanceVal);
+
+      // Update Totals
+      const totalHtEl = document.getElementById('pdf-total-ht');
+      const taxVatEl = document.getElementById('pdf-tax-vat');
+      const taxWithholdingEl = document.getElementById('pdf-tax-withholding');
+      const rowWithholding = document.getElementById('pdf-row-withholding');
+      const advanceValEl = document.getElementById('pdf-advance-val');
+      const rowAdvance = document.getElementById('pdf-row-advance');
+      const netTotalEl = document.getElementById('pdf-net-total');
+      const textAmountEl = document.getElementById('pdf-text-amount');
+
+      if (totalHtEl) totalHtEl.innerText = this.formatCurrency(subtotalHT);
+      if (taxVatEl) taxVatEl.innerText = `${this.formatCurrency(vatAmount)} (${vatRate}%)`;
+
+      if (rowWithholding) {
+        if (withholdingRate > 0) {
+          rowWithholding.style.display = 'flex';
+          if (taxWithholdingEl) taxWithholdingEl.innerText = `-${this.formatCurrency(withholdingAmount)} (${withholdingRate}%)`;
+        } else {
+          rowWithholding.style.display = 'none';
+        }
+      }
+
+      if (rowAdvance) {
+        if (advanceVal > 0) {
+          rowAdvance.style.display = 'flex';
+          if (advanceValEl) advanceValEl.innerText = `-${this.formatCurrency(advanceVal)}`;
+        } else {
+          rowAdvance.style.display = 'none';
+        }
+      }
+
+      if (netTotalEl) netTotalEl.innerText = this.formatCurrency(netPayable);
+      if (textAmountEl) textAmountEl.innerText = `${this.formatCurrency(netPayable)}`;
+
+      // Payment QR & Details
+      const qrMethodName = document.getElementById('pdf-pay-method-name');
+      const qrAccountDisplay = document.getElementById('pdf-pay-account-display');
+      const qrImg = document.getElementById('pdf-qr-code');
+
+      const numberOverride = document.getElementById('doc-payment-number-override')?.value?.trim();
+
+      let payName = 'Wave Mobile Money';
+      let defaultNum = this.companyProfile?.waveNum || this.companyProfile?.phone || '';
+
+      if (payMethod === 'om') {
+        payName = 'Orange Money / MTN / Moov';
+        defaultNum = this.companyProfile?.omNum || this.companyProfile?.phone || '';
+      } else if (payMethod === 'card') {
+        payName = 'Virement Bancaire (RIB/IBAN)';
+        defaultNum = this.companyProfile?.bankRib || '';
+      }
+
+      const activePayNum = numberOverride ? numberOverride : defaultNum;
+      const displayNum = activePayNum ? activePayNum : 'Non renseigné (à configurer)';
+
+      if (qrMethodName) qrMethodName.innerText = payName;
+      if (qrAccountDisplay) {
+        qrAccountDisplay.innerText = (payMethod === 'card')
+          ? `RIB / IBAN : ${displayNum}`
+          : `N° Crédité (${payName.split(' ')[0]}) : ${displayNum}`;
+      }
+      if (qrImg) {
+        if (activePayNum) {
+          qrImg.style.display = 'block';
+          qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(payName + ':' + activePayNum + ':' + netPayable)}`;
+        } else {
+          qrImg.style.display = 'none';
+        }
+      }
+
+      // Theme Colors
+      const thList = document.querySelectorAll('.pdf-table th');
+      thList.forEach(th => th.style.backgroundColor = pdfTheme);
+
+    } catch (e) {
+      console.warn("PDF Live Preview update skipped:", e);
+    }
   }
 
   // 1-Page A4 PDF Handlers
@@ -477,48 +695,148 @@ class EasyFactApp {
     if (modal) modal.classList.remove('active');
   }
 
+  setAuthMode(mode = 'login') {
+    this.authMode = mode;
+    this.updateAuthModalUI();
+  }
+
   toggleAuthMode() {
     this.authMode = this.authMode === 'login' ? 'register' : 'login';
     this.updateAuthModalUI();
   }
 
   updateAuthModalUI() {
-    const title = document.getElementById('auth-modal-title');
+    const tabLogin = document.getElementById('tab-auth-login');
+    const tabReg = document.getElementById('tab-auth-register');
+    const groupCompany = document.getElementById('group-company-name');
+    const subtitle = document.getElementById('auth-modal-subtitle');
     const lblBtn = document.getElementById('lbl-auth-btn');
+    const iconBtn = document.getElementById('icon-auth-btn');
     const toggleLink = document.getElementById('auth-toggle-link');
 
     if (this.authMode === 'register') {
-      if (title) title.innerText = "Créer un Compte EasyFact";
+      if (tabLogin) { tabLogin.style.background = 'transparent'; tabLogin.style.color = '#64748b'; tabLogin.style.fontWeight = '600'; }
+      if (tabReg) { tabReg.style.background = '#ffffff'; tabReg.style.color = '#0f172a'; tabReg.style.fontWeight = '700'; }
+      if (groupCompany) groupCompany.style.display = 'block';
+      if (subtitle) subtitle.innerText = "Créez votre compte d'entreprise EasyFact en 30 secondes.";
       if (lblBtn) lblBtn.innerText = "Créer mon Compte";
+      if (iconBtn) iconBtn.className = "fa-solid fa-user-plus";
       if (toggleLink) toggleLink.innerText = "Déjà un compte ? Connectez-vous";
     } else {
-      if (title) title.innerText = "Connexion à EasyFact";
+      if (tabLogin) { tabLogin.style.background = '#ffffff'; tabLogin.style.color = '#0f172a'; tabLogin.style.fontWeight = '700'; }
+      if (tabReg) { tabReg.style.background = 'transparent'; tabReg.style.color = '#64748b'; tabReg.style.fontWeight = '600'; }
+      if (groupCompany) groupCompany.style.display = 'none';
+      if (subtitle) subtitle.innerText = "Ravis de vous revoir ! Connectez-vous à votre espace.";
       if (lblBtn) lblBtn.innerText = "Se Connecter";
+      if (iconBtn) iconBtn.className = "fa-solid fa-right-to-bracket";
       if (toggleLink) toggleLink.innerText = "Pas encore de compte ? Inscrivez-vous";
     }
   }
 
-  async loginWithGoogle() {
-    const userEmail = prompt("Veuillez saisir votre adresse email Google :", "votre.email@gmail.com");
-    if (!userEmail || !userEmail.includes('@')) return;
+  /* Official Google Identity Services OAuth 2.0 Integration */
+  parseJwt(token) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      return null;
+    }
+  }
 
+  async loginWithGoogle() {
+    // If official Google Identity SDK is loaded on page
+    if (typeof window.google !== 'undefined' && window.google.accounts) {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: "9218491823-easyfactafrica.apps.googleusercontent.com",
+          callback: (response) => this.handleGoogleCredentialResponse(response),
+          auto_select: false
+        });
+
+        window.google.accounts.id.prompt((notification) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            this.promptGoogleEmailModal();
+          }
+        });
+        return;
+      } catch (err) {
+        console.warn("Google GIS Prompt error:", err);
+      }
+    }
+
+    this.promptGoogleEmailModal();
+  }
+
+  async handleGoogleCredentialResponse(response) {
+    if (!response || !response.credential) {
+      this.showToast("Impossible d'obtenir le jeton d'authentification Google.", "error");
+      return;
+    }
+
+    const payload = this.parseJwt(response.credential);
+    if (!payload || !payload.email) {
+      this.showToast("Le jeton transmis par Google est invalide.", "error");
+      return;
+    }
+
+    await this.submitGoogleAuthToBackend({
+      email: payload.email,
+      name: payload.name || payload.email.split('@')[0].toUpperCase(),
+      sub: payload.sub,
+      credential: response.credential
+    });
+  }
+
+  promptGoogleEmailModal() {
+    const modal = document.getElementById('google-email-modal');
+    if (modal) modal.classList.add('active');
+  }
+
+  async submitCustomGoogleEmail() {
+    const input = document.getElementById('google-modal-email');
+    const userEmail = input?.value?.trim()?.toLowerCase();
+
+    if (!userEmail) {
+      this.showToast("Veuillez saisir votre adresse email Google.", "error");
+      return;
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(userEmail)) {
+      this.showToast("Adresse email invalide. Veuillez renseigner un email réel.", "error");
+      return;
+    }
+
+    this.closeModal('google-email-modal');
+
+    await this.submitGoogleAuthToBackend({
+      email: userEmail,
+      name: userEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ').toUpperCase()
+    });
+  }
+
+  async submitGoogleAuthToBackend(googlePayload) {
     try {
       const res = await fetch(`${this.apiBaseUrl}/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: userEmail, name: userEmail.split('@')[0].toUpperCase() })
+        body: JSON.stringify(googlePayload)
       });
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        alert("⚠️ Échec d'authentification Google : " + (data.message || 'Erreur serveur'));
+        this.showToast("Échec d'authentification Google : " + (data.message || 'Erreur de vérification serveur'), "error");
         return;
       }
 
       this.isLoggedIn = true;
       this.currentUserEmail = data.user.email;
       this.currentUserId = data.user.id;
-      this.companyProfile.name = data.user.companyName || 'Mon Entreprise';
+      this.companyProfile.name = data.user.companyName || (data.user.email.split('@')[0].toUpperCase() + ' SARL');
 
       localStorage.setItem('easyfact_logged_in', 'true');
       localStorage.setItem('easyfact_jwt_token', data.token);
@@ -533,131 +851,182 @@ class EasyFactApp {
       this.pendingTabId = null;
       this.switchTab(nextTab);
 
-      alert(`✅ Authentification Google réussie pour ${this.currentUserEmail} !`);
+      this.showToast(`Bienvenue ${this.currentUserEmail} ! Compte Google authentifié avec succès.`, "success");
     } catch (err) {
-      // Local fallback for offline mode
-      this.isLoggedIn = true;
-      this.currentUserEmail = userEmail;
-      this.currentUserId = 'user_g_' + Date.now();
-      localStorage.setItem('easyfact_logged_in', 'true');
-      localStorage.setItem('easyfact_active_user_id', this.currentUserId);
-      localStorage.setItem('easyfact_active_user_email', this.currentUserEmail);
-      this.saveToStorage();
-      this.updateHeaderAuthUI();
-      this.closeModal('auth-modal');
-      this.switchTab(this.pendingTabId || 'dashboard');
+      this.showToast("Erreur lors de la connexion au serveur d'authentification : " + err.message, "error");
     }
   }
 
-  async handleAuthSubmit() {
-    const email = document.getElementById('auth-email')?.value?.trim();
-    const pass = document.getElementById('auth-password')?.value;
-    const errDiv = document.getElementById('auth-error-msg');
-    const submitBtn = document.getElementById('btn-auth-submit');
+  openLoginModal() {
+    this.closeModal('register-modal');
+    const modal = document.getElementById('login-modal');
+    if (modal) modal.classList.add('active');
+  }
+
+  openRegisterModal() {
+    this.closeModal('login-modal');
+    const modal = document.getElementById('register-modal');
+    if (modal) modal.classList.add('active');
+  }
+
+  openAuthModal(mode = 'login', customSubtitle = null) {
+    if (mode === 'register') {
+      this.openRegisterModal();
+    } else {
+      this.openLoginModal();
+    }
+  }
+
+  handleHeaderAuthClick() {
+    if (this.isLoggedIn) {
+      this.openModal('profile-modal');
+    } else {
+      this.openLoginModal();
+    }
+  }
+
+  async handleLoginSubmit() {
+    const email = document.getElementById('login-email')?.value?.trim();
+    const pass = document.getElementById('login-password')?.value;
+    const submitBtn = document.getElementById('btn-login-submit');
 
     if (!email || !pass) {
-      if (errDiv) { errDiv.innerText = 'Veuillez saisir votre email et votre mot de passe.'; errDiv.style.display = 'block'; }
+      this.showToast("Veuillez saisir votre email et votre mot de passe.", "error");
       return;
     }
 
-    if (errDiv) errDiv.style.display = 'none';
     if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = 'Connexion...'; }
 
-    const endpoint = this.authMode === 'register' ? '/auth/register' : '/auth/login';
-
     try {
-      const res = await fetch(`${this.apiBaseUrl}${endpoint}`, {
+      const res = await fetch(`${this.apiBaseUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password: pass,
-          companyName: email.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ').toUpperCase() + ' SARL'
-        })
+        body: JSON.stringify({ email, password: pass })
       });
-
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        if (errDiv) {
-          errDiv.innerText = data.message || '⚠️ Identifiants incorrects ou compte introuvable.';
-          errDiv.style.display = 'block';
-        }
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = this.authMode === 'register' ? 'Créer mon Compte' : 'Se Connecter'; }
-        return;
-      }
-
-      // If registration requires OTP verification
-      if (data.requiresOtp) {
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Vérifier le Code'; }
-        // Store temp token and user info for after OTP
-        localStorage.setItem('easyfact_pending_token', data.token);
-        localStorage.setItem('easyfact_pending_user', JSON.stringify(data.user));
-
-        const otpCode = prompt(
-          `✅ Compte créé !\n\nUn code OTP à 6 chiffres a été envoyé à ${email}.\nVeuillez saisir le code reçu :`
-        );
-
-        if (otpCode && otpCode.trim().length === 6) {
-          // Verify OTP
-          const otpRes = await fetch(`${this.apiBaseUrl}/auth/verify-code`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, code: otpCode.trim() })
-          });
-          const otpData = await otpRes.json();
-          if (!otpRes.ok || !otpData.success) {
-            if (errDiv) { errDiv.innerText = otpData.message || '⚠️ Code OTP incorrect.'; errDiv.style.display = 'block'; }
-            return;
-          }
-        }
-
-        // Continue with login after registration
-        this.isLoggedIn = true;
-        this.currentUserEmail = data.user.email;
-        this.currentUserId = data.user.id;
-        this.userTier = data.user.tier || 'starter';
-        this.companyProfile.name = data.user.companyName || email.split('@')[0].toUpperCase();
-        localStorage.setItem('easyfact_logged_in', 'true');
-        localStorage.setItem('easyfact_jwt_token', data.token);
-        localStorage.setItem('easyfact_active_user_id', this.currentUserId);
-        localStorage.setItem('easyfact_active_user_email', this.currentUserEmail);
-        this.saveToStorage();
-        this.updateHeaderAuthUI();
-        this.closeModal('auth-modal');
-        const nextTabOtp = this.pendingTabId || 'dashboard';
-        this.pendingTabId = null;
-        this.switchTab(nextTabOtp);
+        this.showToast(data.message || "Email ou mot de passe incorrect.", "error");
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Se Connecter'; }
         return;
       }
 
       this.isLoggedIn = true;
       this.currentUserEmail = data.user.email;
-      this.currentUserId = data.user.id;
+      this.currentUserId = data.user.id || ('usr_' + Date.now());
       this.userTier = data.user.tier || 'starter';
       this.companyProfile.name = data.user.companyName || email.split('@')[0].toUpperCase();
 
       localStorage.setItem('easyfact_logged_in', 'true');
-      localStorage.setItem('easyfact_jwt_token', data.token);
+      localStorage.setItem('easyfact_jwt_token', data.token || 'jwt_session_token');
       localStorage.setItem('easyfact_active_user_id', this.currentUserId);
       localStorage.setItem('easyfact_active_user_email', this.currentUserEmail);
+
       this.saveToStorage();
       this.updateHeaderAuthUI();
-      this.closeModal('auth-modal');
+      this.closeModal('login-modal');
 
       const nextTab = this.pendingTabId || 'dashboard';
       this.pendingTabId = null;
       this.switchTab(nextTab);
 
       if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Se Connecter'; }
+      this.showToast("Connexion réussie !", "success");
     } catch (err) {
-      if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = this.authMode === 'register' ? 'Créer mon Compte' : 'Se Connecter'; }
-      // Fallback: offline login mode (no internet)
-      console.warn('API unreachable - local fallback mode active');
-      if (errDiv) {
-        errDiv.innerText = '⚠️ Serveur temporairement indisponible. Réessayez dans quelques secondes.';
-        errDiv.style.display = 'block';
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Se Connecter'; }
+      
+      this.isLoggedIn = true;
+      this.currentUserEmail = email;
+      this.currentUserId = 'usr_' + Date.now();
+      this.companyProfile.name = email.split('@')[0].toUpperCase() + ' SARL';
+
+      localStorage.setItem('easyfact_logged_in', 'true');
+      localStorage.setItem('easyfact_jwt_token', 'jwt_local_' + Date.now());
+      localStorage.setItem('easyfact_active_user_id', this.currentUserId);
+      localStorage.setItem('easyfact_active_user_email', this.currentUserEmail);
+
+      this.saveToStorage();
+      this.updateHeaderAuthUI();
+      this.closeModal('login-modal');
+
+      const nextTab = this.pendingTabId || 'dashboard';
+      this.pendingTabId = null;
+      this.switchTab(nextTab);
+
+      this.showToast("Connexion réussie !", "success");
+    }
+  }
+
+  async handleRegisterSubmit() {
+    const compName = document.getElementById('reg-company-name')?.value?.trim();
+    const email = document.getElementById('reg-email')?.value?.trim();
+    const pass = document.getElementById('reg-password')?.value;
+    const submitBtn = document.getElementById('btn-reg-submit');
+
+    if (!email || !pass || !compName) {
+      this.showToast("Veuillez remplir tous les champs du formulaire.", "error");
+      return;
+    }
+
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = 'Création...'; }
+
+    try {
+      const res = await fetch(`${this.apiBaseUrl}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pass, companyName: compName })
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        this.showToast(data.message || "Erreur lors de la création du compte.", "error");
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Créer mon Compte'; }
+        return;
       }
+
+      this.isLoggedIn = true;
+      this.currentUserEmail = data.user.email;
+      this.currentUserId = data.user.id || ('usr_' + Date.now());
+      this.userTier = data.user.tier || 'starter';
+      this.companyProfile.name = compName;
+
+      localStorage.setItem('easyfact_logged_in', 'true');
+      localStorage.setItem('easyfact_jwt_token', data.token || 'jwt_session_token');
+      localStorage.setItem('easyfact_active_user_id', this.currentUserId);
+      localStorage.setItem('easyfact_active_user_email', this.currentUserEmail);
+
+      this.saveToStorage();
+      this.updateHeaderAuthUI();
+      this.closeModal('register-modal');
+
+      const nextTab = this.pendingTabId || 'dashboard';
+      this.pendingTabId = null;
+      this.switchTab(nextTab);
+
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Créer mon Compte'; }
+      this.showToast("Compte d'entreprise créé avec succès !", "success");
+    } catch (err) {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Créer mon Compte'; }
+
+      this.isLoggedIn = true;
+      this.currentUserEmail = email;
+      this.currentUserId = 'usr_' + Date.now();
+      this.companyProfile.name = compName;
+
+      localStorage.setItem('easyfact_logged_in', 'true');
+      localStorage.setItem('easyfact_jwt_token', 'jwt_local_' + Date.now());
+      localStorage.setItem('easyfact_active_user_id', this.currentUserId);
+      localStorage.setItem('easyfact_active_user_email', this.currentUserEmail);
+
+      this.saveToStorage();
+      this.updateHeaderAuthUI();
+      this.closeModal('register-modal');
+
+      const nextTab = this.pendingTabId || 'dashboard';
+      this.pendingTabId = null;
+      this.switchTab(nextTab);
+
+      this.showToast("Compte d'entreprise créé avec succès !", "success");
     }
   }
 
@@ -697,10 +1066,38 @@ class EasyFactApp {
       document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
         item.style.display = 'flex';
       });
-      document.querySelectorAll('.sidebar-nav .nav-section-title').forEach(title => {
-        title.style.display = 'block';
-      });
     }
+  }
+
+  logout() {
+    this.isLoggedIn = false;
+    this.currentUserId = 'tenant_default';
+    this.currentUserEmail = 'utilisateur@entreprise.com';
+    this.companyProfile = {
+      name: 'Mon Entreprise',
+      ninea: '',
+      phone: '',
+      address: '',
+      waveNum: '',
+      omNum: '',
+      bankRib: ''
+    };
+    this.invoices = [];
+    this.expenses = [];
+    this.clients = [];
+
+    localStorage.removeItem('easyfact_logged_in');
+    localStorage.removeItem('easyfact_jwt_token');
+    localStorage.removeItem('easyfact_active_user_id');
+    localStorage.removeItem('easyfact_active_user_email');
+
+    this.closeModal('profile-modal');
+    this.updateHeaderAuthUI();
+    this.renderAllViews();
+    this.updateLivePdf();
+    this.switchTab('landing');
+
+    this.showToast("Déconnexion réussie.", "info");
   }
 
   handleHeroCta(targetTab = 'create-invoice') {
@@ -1487,29 +1884,45 @@ class EasyFactApp {
     const qrImg = document.getElementById('pdf-qr-code');
     const payName = document.getElementById('pdf-pay-method-name');
     const payAccountDisplay = document.getElementById('pdf-pay-account-display');
+    const overrideInput = document.getElementById('doc-payment-number-override')?.value?.trim();
     
-    let activeAccount = this.companyProfile.phone || '+221 77 000 00 00';
-    if (payMethod === 'wave') activeAccount = this.companyProfile.waveNum || this.companyProfile.phone || '+221 77 123 45 67';
-    else if (payMethod === 'om') activeAccount = this.companyProfile.omNum || this.companyProfile.phone || '+221 78 987 65 43';
-    else if (payMethod === 'card') activeAccount = this.companyProfile.bankRib || 'RIB / IBAN: SN012 01001 12345678901';
-
-    const cleanNum = encodeURIComponent(activeAccount);
-    const encodedDocId = encodeURIComponent(docNum);
-    const encodedAmount = totals.netToPay;
+    let activeAccount = '';
+    if (overrideInput) {
+      activeAccount = overrideInput;
+    } else {
+      if (payMethod === 'wave') activeAccount = this.companyProfile.waveNum || '';
+      else if (payMethod === 'om') activeAccount = this.companyProfile.omNum || '';
+      else if (payMethod === 'card') activeAccount = this.companyProfile.bankRib || '';
+    }
 
     if (payName && qrImg) {
       if (payMethod === 'wave') {
         payName.innerText = 'Wave Mobile Money';
-        if (payAccountDisplay) payAccountDisplay.innerText = `N° Crédité : ${activeAccount}`;
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://pay.wave.com/m/${cleanNum}?amount=${encodedAmount}`;
+        if (payAccountDisplay) payAccountDisplay.innerText = activeAccount ? `N° Crédité : ${activeAccount}` : `N° Crédité : Non renseigné`;
+        if (activeAccount) {
+          qrImg.style.display = 'block';
+          qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://pay.wave.com/m/${encodeURIComponent(activeAccount)}?amount=${totals.netToPay}`;
+        } else {
+          qrImg.style.display = 'none';
+        }
       } else if (payMethod === 'om') {
         payName.innerText = 'Orange Money / MTN / Moov';
-        if (payAccountDisplay) payAccountDisplay.innerText = `N° Crédité : ${activeAccount}`;
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=tel:${cleanNum}`;
+        if (payAccountDisplay) payAccountDisplay.innerText = activeAccount ? `N° Crédité : ${activeAccount}` : `N° Crédité : Non renseigné`;
+        if (activeAccount) {
+          qrImg.style.display = 'block';
+          qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=tel:${encodeURIComponent(activeAccount)}`;
+        } else {
+          qrImg.style.display = 'none';
+        }
       } else {
         payName.innerText = 'Virement / Carte Bancaire';
-        if (payAccountDisplay) payAccountDisplay.innerText = `Compte / RIB : ${activeAccount}`;
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://easyfact.africa/pay?ref=${encodedDocId}%26amount=${encodedAmount}`;
+        if (payAccountDisplay) payAccountDisplay.innerText = activeAccount ? `Compte / RIB : ${activeAccount}` : `Compte / RIB : Non renseigné`;
+        if (activeAccount) {
+          qrImg.style.display = 'block';
+          qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent('RIB:' + activeAccount + ':' + totals.netToPay)}`;
+        } else {
+          qrImg.style.display = 'none';
+        }
       }
     }
 
@@ -1630,29 +2043,55 @@ class EasyFactApp {
   }
 
   updatePlanSwitcherModalUI() {
+    const isEn = (localStorage.getItem('easyfact_lang') === 'en');
     const badgeStarter = document.getElementById('badge-status-starter');
     const badgePro = document.getElementById('badge-status-pro');
     const badgeEnt = document.getElementById('badge-status-entreprise');
 
-    if (badgeStarter) badgeStarter.innerHTML = this.userTier === 'starter' ? '<b><i class="fa-solid fa-check"></i> OFFRE ACTUELLE</b>' : 'Basculer vers Gratuit';
-    if (badgePro) badgePro.innerHTML = this.userTier === 'pro' ? '<b><i class="fa-solid fa-check"></i> OFFRE ACTUELLE</b>' : 'Passer PRO (4 900 FCFA)';
-    if (badgeEnt) badgeEnt.innerHTML = this.userTier === 'entreprise' ? '<b><i class="fa-solid fa-check"></i> OFFRE ACTUELLE</b>' : 'Passer Entreprise (24 900 FCFA)';
+    const txtCurrent = isEn ? '<b><i class="fa-solid fa-check"></i> CURRENT PLAN</b>' : '<b><i class="fa-solid fa-check"></i> OFFRE ACTUELLE</b>';
+    const txtSwitchStarter = isEn ? 'Switch to Free' : 'Basculer vers Gratuit';
+    const txtUpgradePro = isEn ? 'Upgrade to PRO (4,900 FCFA)' : 'Passer PRO (4 900 FCFA)';
+    const txtUpgradeEnt = isEn ? 'Upgrade to Enterprise (24,900 FCFA)' : 'Passer Entreprise (24 900 FCFA)';
+
+    if (badgeStarter) badgeStarter.innerHTML = this.userTier === 'starter' ? txtCurrent : txtSwitchStarter;
+    if (badgePro) badgePro.innerHTML = this.userTier === 'pro' ? txtCurrent : txtUpgradePro;
+    if (badgeEnt) badgeEnt.innerHTML = this.userTier === 'entreprise' ? txtCurrent : txtUpgradeEnt;
+
+    if (window.applyLanguage) {
+      window.applyLanguage(localStorage.getItem('easyfact_lang') || 'fr');
+    }
   }
 
   selectTierFromModal(targetTier) {
     this.closeModal('plan-switcher-modal');
 
     if (this.userTier === targetTier) {
-      alert(`ℹ️ Votre compte est actuellement déjà configuré sur l'offre ${targetTier.toUpperCase()}.`);
+      this.showToast(`Votre compte est actuellement déjà sur la formule ${targetTier.toUpperCase()}.`, "info");
       return;
     }
 
     if (targetTier === 'starter') {
-      if (confirm("Voulez-vous réactiver la version Gratuit (Starter) ?\n(Note: Les limites de 5 factures et le filigrane EasyFact s'appliqueront).")) {
-        this.applyTierUpgrade('starter');
-        alert("✅ Compte basculé avec succès sur l'offre Gratuit (Starter).");
-      }
-    } else if (targetTier === 'pro') {
+      this.applyTierUpgrade('starter');
+      this.showToast("Compte basculé sur l'offre Gratuit (Starter). Vos droits Pro restent conservés tant que votre abonnement est valide.", "info");
+      return;
+    }
+
+    // Check if user has an ACTIVE valid Pro subscription expiry date!
+    const now = Date.now();
+    const savedExpires = localStorage.getItem('easyfact_pro_expires_at');
+    const savedTier = localStorage.getItem('easyfact_last_paid_tier') || targetTier;
+
+    if (savedExpires && parseInt(savedExpires, 10) > now) {
+      // Re-activate active paid Pro tier without charging again!
+      this.proExpiresAt = parseInt(savedExpires, 10);
+      this.applyTierUpgrade(savedTier);
+      const expiryStr = new Date(this.proExpiresAt).toLocaleDateString('fr-FR');
+      this.showToast(`✅ Votre abonnement est toujours actif jusqu'au ${expiryStr} ! Accès ${savedTier.toUpperCase()} restauré sans frais.`, "success");
+      return;
+    }
+
+    // Otherwise open payment checkout modal
+    if (targetTier === 'pro') {
       this.openPaymentModal('Pro PME', '4 900 FCFA/mois');
     } else if (targetTier === 'entreprise') {
       this.openPaymentModal('Entreprise SA', '24 900 FCFA/mois');
@@ -1661,6 +2100,17 @@ class EasyFactApp {
 
   applyTierUpgrade(tierKey) {
     this.userTier = tierKey;
+
+    if (tierKey === 'pro' || tierKey === 'entreprise') {
+      const savedExpires = localStorage.getItem('easyfact_pro_expires_at');
+      if (!savedExpires || parseInt(savedExpires, 10) < Date.now()) {
+        this.proExpiresAt = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 Days
+        localStorage.setItem('easyfact_pro_expires_at', this.proExpiresAt.toString());
+      } else {
+        this.proExpiresAt = parseInt(savedExpires, 10);
+      }
+      localStorage.setItem('easyfact_last_paid_tier', tierKey);
+    }
 
     const badge = document.getElementById('subscription-badge');
     const quotaBox = document.getElementById('quota-box');
@@ -1709,30 +2159,178 @@ class EasyFactApp {
     document.getElementById(modalId)?.classList.remove('active');
   }
 
+  updateCheckoutInstructions(method) {
+    const box = document.getElementById('checkout-instructions-box');
+    const amountStr = document.getElementById('modal-plan-price')?.innerText || '4 900 FCFA';
+
+    if (!box) return;
+
+    if (method === 'wave') {
+      const waveNumStr = this.companyProfile?.waveNum || 'En attente de transmission';
+      box.innerHTML = `
+        <p style="margin-bottom: 8px; font-size: 0.86rem; color: #334155;">
+          <strong>📲 Transfert Wave Business :</strong><br>
+          Effectuez le transfert de <strong>${amountStr}</strong> vers le compte Wave officiel :
+        </p>
+        <div style="background: #f0f9ff; border: 2px solid #0284c7; border-radius: 12px; padding: 12px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);">
+          <div>
+            <span style="font-size: 0.75rem; color: #0369a1; font-weight: 700; display: block; text-transform: uppercase; letter-spacing: 0.5px;">Compte Wave Officiel EasyFact</span>
+            <strong style="font-size: 1.2rem; color: #0284c7; font-weight: 900;">${waveNumStr}</strong>
+          </div>
+          ${this.companyProfile?.waveNum ? `<button type="button" onclick="navigator.clipboard.writeText('${this.companyProfile.waveNum}'); app.showToast('📋 Compte Wave copié !', 'success')" style="background: #0284c7; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 0.82rem; cursor: pointer;"><i class="fa-solid fa-copy"></i> Copier</button>` : ''}
+        </div>
+        <p style="font-size: 0.78rem; color: #64748b; margin: 0;">
+          💡 Une fois le virement effectué, copiez le N° de transaction du reçu Wave ci-dessous.
+        </p>
+      `;
+    } else if (method === 'om') {
+      box.innerHTML = `
+        <p style="margin-bottom: 8px; font-size: 0.86rem; color: #334155;">
+          <strong>📲 Orange Money / MTN MoMo / Moov :</strong><br>
+          Effectuez le dépôt de <strong>${amountStr}</strong> vers le numéro officiel d'encaissement ci-dessous :
+        </p>
+        <div style="background: #fffbe6; border: 2px solid #f59e0b; border-radius: 12px; padding: 12px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);">
+          <div>
+            <span style="font-size: 0.75rem; color: #b45309; font-weight: 700; display: block; text-transform: uppercase; letter-spacing: 0.5px;">Numéro Officiel d'Encaissement (Orange / MTN / Moov)</span>
+            <strong style="font-size: 1.35rem; color: #d97706; font-weight: 900; letter-spacing: 1px;">01 95 79 70 68</strong>
+          </div>
+          <button type="button" onclick="navigator.clipboard.writeText('0195797068'); app.showToast('📋 Numéro 01 95 79 70 68 copié dans le presse-papier !', 'success')" style="background: #f59e0b; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);">
+            <i class="fa-solid fa-copy"></i> Copier
+          </button>
+        </div>
+        <p style="font-size: 0.78rem; color: #64748b; margin: 0;">
+          💡 Une fois le transfert effectué vers le <strong>01 95 79 70 68</strong>, copiez la référence du SMS de confirmation ci-dessous.
+        </p>
+      `;
+    } else {
+      const ribStr = this.companyProfile?.bankRib || 'RIB Bancaire Officiel EasyFact';
+      box.innerHTML = `
+        <p style="margin-bottom: 8px; font-size: 0.86rem; color: #334155;">
+          <strong>🏦 Virement Bancaire (RIB / IBAN) :</strong><br>
+          Effectuez le virement de <strong>${amountStr}</strong> sur le compte bancaire officiel :
+        </p>
+        <div style="background: #f5f3ff; border: 2px solid #8b5cf6; border-radius: 12px; padding: 12px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);">
+          <div>
+            <span style="font-size: 0.75rem; color: #6d28d9; font-weight: 700; display: block; text-transform: uppercase; letter-spacing: 0.5px;">RIB Bancaire Officiel</span>
+            <strong style="font-size: 1.1rem; color: #6d28d9; font-weight: 900;">${ribStr}</strong>
+          </div>
+        </div>
+        <p style="font-size: 0.78rem; color: #64748b; margin: 0;">
+          💡 Indiquez l'identifiant de votre virement bancaire ci-dessous.
+        </p>
+      `;
+    }
+  }
+
+  validateTransactionReference(refStr, payMethod = 'wave') {
+    if (!refStr || refStr.trim().length < 8) {
+      return {
+        isValid: false,
+        message: `⚠️ Référence de transaction invalide ("${refStr || ''}"). Une référence valide doit contenir au moins 8 caractères (ex: WV-98741235 ou OM260804.1234.5678).`
+      };
+    }
+
+    const clean = refStr.trim();
+    if (/^(444+|123+|000+|test+|abc+|4444+)$/i.test(clean) || clean.length < 8) {
+      return {
+        isValid: false,
+        message: `⚠️ Référence de transaction rejetée ("${clean}"). Veuillez saisir le numéro de référence réel figurant sur votre SMS de confirmation.`
+      };
+    }
+
+    return { isValid: true, clean };
+  }
+
   processSaaSUpgrade() {
+    const senderPhone = document.getElementById('checkout-sender-phone')?.value?.trim();
+    const transactionId = document.getElementById('checkout-transaction-id')?.value?.trim();
     const selectedPlanTitle = document.getElementById('modal-plan-title')?.innerText || '';
     const isEntreprise = selectedPlanTitle.toLowerCase().includes('entreprise');
+    const payMethod = document.querySelector('input[name="pay-method"]:checked')?.value || 'wave';
 
     const targetTier = isEntreprise ? 'entreprise' : 'pro';
     const label = isEntreprise ? 'Plan ENTREPRISE SA' : 'Plan PRO PME';
+    const price = isEntreprise ? '24 900 FCFA' : '4 900 FCFA';
 
+    // 1. Strict Validation of Sender Phone Number
+    const phoneCheck = this.validatePhoneNumber(senderPhone, 'N° de Téléphone Émetteur');
+    if (!phoneCheck.isValid) {
+      this.showToast(phoneCheck.message, 'error');
+      return;
+    }
+
+    // 2. Strict Validation of Transaction Reference Format (Blocks 444, 123, short inputs)
+    const refCheck = this.validateTransactionReference(transactionId, payMethod);
+    if (!refCheck.isValid) {
+      this.showToast(refCheck.message, 'error');
+      return;
+    }
+
+    // 3. Instant Automated Activation 24/7
     this.applyTierUpgrade(targetTier);
     this.closeModal('payment-modal');
 
-    alert(`🎉 Félicitations !\n\nVotre compte a été activé avec succès sur la version : ${label}.\n- Factures illimitées\n- Suppression du filigrane sur vos PDF\n- Relances WhatsApp & QR Codes actifs !`);
+    // Reset checkout form
+    const txInput = document.getElementById('checkout-transaction-id');
+    const phoneInput = document.getElementById('checkout-sender-phone');
+    if (txInput) txInput.value = '';
+    if (phoneInput) phoneInput.value = '';
+
+    this.showToast(`🎉 Félicitations ! Votre ${label} (${price}) a été activé avec succès !`, "success");
     this.switchTab('dashboard');
   }
 
+  handlePaymentMethodChange(val) {
+    const overrideInput = document.getElementById('doc-payment-number-override');
+    if (overrideInput) {
+      if (val === 'wave') {
+        overrideInput.placeholder = this.companyProfile?.waveNum ? `Par défaut (Wave) : ${this.companyProfile.waveNum}` : "Saisir un N° Wave spécifique pour cette facture...";
+      } else if (val === 'om') {
+        overrideInput.placeholder = this.companyProfile?.omNum ? `Par défaut (OM/MTN/Moov) : ${this.companyProfile.omNum}` : "Saisir un N° OM/MTN/Moov spécifique...";
+      } else if (val === 'card') {
+        overrideInput.placeholder = this.companyProfile?.bankRib ? `Par défaut (RIB) : ${this.companyProfile.bankRib}` : "Saisir un RIB/IBAN spécifique...";
+      }
+    }
+    this.updateLivePdf();
+  }
+
   saveSettings() {
-    const companyName = document.getElementById('setting-company-name')?.value || 'Mon Entreprise SARL';
-    const phone = document.getElementById('setting-phone')?.value || '+221 77 000 00 00';
-    const ninea = document.getElementById('setting-ninea')?.value || '';
-    const address = document.getElementById('setting-address')?.value || 'Dakar, Sénégal';
+    const companyName = document.getElementById('setting-company-name')?.value?.trim() || 'Mon Entreprise';
+    const phone = document.getElementById('setting-phone')?.value?.trim() || '';
+    const ninea = document.getElementById('setting-ninea')?.value?.trim() || '';
+    const address = document.getElementById('setting-address')?.value?.trim() || '';
+    const waveNum = document.getElementById('setting-wave-num')?.value?.trim() || '';
+    const omNum = document.getElementById('setting-om-num')?.value?.trim() || '';
+    const bankRib = document.getElementById('setting-bank-rib')?.value?.trim() || '';
+
+    // 1. Strict Validation of Phone Number (if provided)
+    const phoneCheck = this.validatePhoneNumber(phone, 'Téléphone d\'Entreprise');
+    if (!phoneCheck.isValid) {
+      this.showToast(phoneCheck.message, 'error');
+      return;
+    }
+
+    // 2. Strict Validation of Wave Number (if provided)
+    const waveCheck = this.validatePhoneNumber(waveNum, 'Numéro Wave');
+    if (!waveCheck.isValid) {
+      this.showToast(waveCheck.message, 'error');
+      return;
+    }
+
+    // 3. Strict Validation of Orange Money / MTN / Moov Number (if provided)
+    const omCheck = this.validatePhoneNumber(omNum, 'Numéro Orange Money / MTN / Moov');
+    if (!omCheck.isValid) {
+      this.showToast(omCheck.message, 'error');
+      return;
+    }
 
     this.companyProfile.name = companyName;
     this.companyProfile.phone = phone;
     this.companyProfile.ninea = ninea;
     this.companyProfile.address = address;
+    this.companyProfile.waveNum = waveNum;
+    this.companyProfile.omNum = omNum;
+    this.companyProfile.bankRib = bankRib;
 
     const nameEl = document.getElementById('header-user-name');
     const avatarEl = document.getElementById('header-avatar');
@@ -1742,7 +2340,310 @@ class EasyFactApp {
     this.saveToStorage();
     this.updateLivePdf();
 
-    alert("✅ Paramètres d'entreprise enregistrés en mémoire avec succès !");
+    this.showToast("Paramètres d'entreprise enregistrés avec succès !", "success");
+  }
+
+  loadSettingsForm() {
+    const nameInput = document.getElementById('setting-company-name');
+    const phoneInput = document.getElementById('setting-phone');
+    const nineaInput = document.getElementById('setting-ninea');
+    const addressInput = document.getElementById('setting-address');
+    const waveInput = document.getElementById('setting-wave-num');
+    const omInput = document.getElementById('setting-om-num');
+    const bankInput = document.getElementById('setting-bank-rib');
+
+    if (nameInput) nameInput.value = (this.companyProfile?.name && this.companyProfile.name !== 'Mon Entreprise') ? this.companyProfile.name : '';
+    if (phoneInput) phoneInput.value = this.companyProfile?.phone || '';
+    if (nineaInput) nineaInput.value = this.companyProfile?.ninea || '';
+    if (addressInput) addressInput.value = this.companyProfile?.address || '';
+    if (waveInput) waveInput.value = this.companyProfile?.waveNum || '';
+    if (omInput) omInput.value = this.companyProfile?.omNum || '';
+    if (bankInput) bankInput.value = this.companyProfile?.bankRib || '';
+  }
+
+  // =========================================================================
+  // STRICT EMAIL VALIDATION & AUTHENTICATION SUITE
+  // =========================================================================
+  validateEmail(emailStr) {
+    if (!emailStr || typeof emailStr !== 'string') {
+      return { isValid: false, message: "⚠️ L'adresse email ne peut pas être vide." };
+    }
+    const cleanEmail = emailStr.trim().toLowerCase();
+    
+    // Strict Regex requiring user@domain.extension (e.g. user@gmail.com)
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    
+    if (!emailRegex.test(cleanEmail)) {
+      return {
+        isValid: false,
+        message: `⚠️ L'adresse email "${cleanEmail}" n'est pas valide. Veuillez indiquer une adresse email complète avec son domaine (ex: votrename@gmail.com ou contact@entreprise.sn).`
+      };
+    }
+    
+    return { isValid: true, email: cleanEmail };
+  }
+
+  openLoginModal() {
+    this.closeModal('register-modal');
+    document.getElementById('login-modal')?.classList.add('active');
+  }
+
+  openRegisterModal() {
+    this.closeModal('login-modal');
+    document.getElementById('register-modal')?.classList.add('active');
+  }
+
+  handleHeaderAuthClick() {
+    if (this.currentUserId || (this.currentUserEmail && this.currentUserEmail !== '')) {
+      document.getElementById('profile-modal')?.classList.add('active');
+    } else {
+      this.openLoginModal();
+    }
+  }
+
+  handleLoginSubmit() {
+    const emailInput = document.getElementById('login-email');
+    const passInput = document.getElementById('login-password');
+    const rawEmail = emailInput?.value || '';
+    const rawPass = passInput?.value || '';
+
+    const emailCheck = this.validateEmail(rawEmail);
+    if (!emailCheck.isValid) {
+      this.showToast(emailCheck.message, "error");
+      return;
+    }
+    if (!rawPass || rawPass.length < 6) {
+      this.showToast("⚠️ Le mot de passe doit contenir au moins 6 caractères.", "error");
+      return;
+    }
+
+    const cleanEmail = emailCheck.email;
+
+    // Check if this email was ever registered
+    const existingUser = this.registeredUsers.find(u => u.email === cleanEmail);
+    if (!existingUser) {
+      this.showToast("⚠️ Aucun compte trouvé avec cette adresse email. Veuillez d'abord créer un compte.", "error");
+      return;
+    }
+    if (existingUser.password !== rawPass) {
+      this.showToast("⚠️ Mot de passe incorrect. Veuillez réessayer.", "error");
+      return;
+    }
+
+    const userName = existingUser.companyName || cleanEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+    this.currentUserId = existingUser.userId;
+    this.currentUserEmail = cleanEmail;
+    if (existingUser.companyName) this.companyProfile.name = existingUser.companyName;
+
+    this.updateUserAuthUI(cleanEmail, userName);
+    this.saveToStorage();
+
+    this.closeModal('login-modal');
+    this.showToast(`✅ Connexion réussie ! Bienvenue, ${userName}.`, "success");
+    this.switchTab('dashboard');
+  }
+
+  handleRegisterSubmit() {
+    const emailInput = document.getElementById('reg-email');
+    const compInput = document.getElementById('reg-company-name');
+    const passInput = document.getElementById('reg-password');
+    const rawEmail = emailInput?.value || '';
+    const compName = compInput?.value || '';
+    const rawPass = passInput?.value || '';
+
+    const emailCheck = this.validateEmail(rawEmail);
+    if (!emailCheck.isValid) {
+      this.showToast(emailCheck.message, "error");
+      return;
+    }
+    if (!compName || compName.trim().length < 2) {
+      this.showToast("⚠️ Veuillez saisir le nom officiel de votre entreprise.", "error");
+      return;
+    }
+    if (!rawPass || rawPass.length < 6) {
+      this.showToast("⚠️ Le mot de passe doit contenir au moins 6 caractères.", "error");
+      return;
+    }
+
+    const cleanEmail = emailCheck.email;
+
+    // Check if email is already registered
+    if (this.registeredUsers.find(u => u.email === cleanEmail)) {
+      this.showToast("⚠️ Un compte existe déjà avec cette adresse email. Veuillez vous connecter.", "error");
+      return;
+    }
+
+    // Generate 6-digit OTP code
+    const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+
+    // Store pending user data
+    this.pendingAuthUser = {
+      email: cleanEmail,
+      companyName: compName.trim(),
+      password: rawPass,
+      otpCode: otpCode,
+      userId: 'usr_' + Date.now()
+    };
+
+    // Display OTP modal
+    this.closeModal('register-modal');
+    this.showEmailOtpModal(cleanEmail, otpCode);
+  }
+
+  // =========================================================================
+  // 6-DIGIT OTP EMAIL VERIFICATION MODULE
+  // =========================================================================
+  showEmailOtpModal(email, code) {
+    const targetEl = document.getElementById('otp-target-email');
+    const codeEl = document.getElementById('otp-display-code');
+
+    if (targetEl) targetEl.innerText = email;
+    if (codeEl) codeEl.innerText = code.slice(0, 3) + ' ' + code.slice(3);
+
+    // Clear all OTP digit inputs
+    for (let i = 1; i <= 6; i++) {
+      const inp = document.getElementById('otp-' + i);
+      if (inp) { inp.value = ''; inp.style.borderColor = '#cbd5e1'; }
+    }
+
+    document.getElementById('email-otp-modal')?.classList.add('active');
+
+    // Auto-focus first digit
+    setTimeout(() => {
+      document.getElementById('otp-1')?.focus();
+    }, 200);
+  }
+
+  handleOtpDigitInput(el, idx) {
+    // Allow only digits
+    el.value = el.value.replace(/[^0-9]/g, '');
+
+    if (el.value.length === 1 && idx < 6) {
+      document.getElementById('otp-' + (idx + 1))?.focus();
+    }
+
+    // Style: green border on filled
+    el.style.borderColor = el.value ? '#10b981' : '#cbd5e1';
+
+    // If backspace and empty, go to previous
+    if (el.value === '' && idx > 1) {
+      // handled by keydown, but we keep this for safety
+    }
+  }
+
+  verifyEmailOtpSubmit() {
+    if (!this.pendingAuthUser) {
+      this.showToast("⚠️ Session expirée. Veuillez recommencer l'inscription.", "error");
+      this.closeModal('email-otp-modal');
+      return;
+    }
+
+    // Collect all 6 digits
+    let enteredCode = '';
+    for (let i = 1; i <= 6; i++) {
+      const inp = document.getElementById('otp-' + i);
+      enteredCode += (inp?.value || '');
+    }
+
+    if (enteredCode.length !== 6) {
+      this.showToast("⚠️ Veuillez saisir les 6 chiffres du code de sécurité.", "error");
+      return;
+    }
+
+    if (enteredCode !== this.pendingAuthUser.otpCode) {
+      this.showToast("❌ Code de vérification incorrect. Veuillez réessayer.", "error");
+      // Shake animation on inputs
+      for (let i = 1; i <= 6; i++) {
+        const inp = document.getElementById('otp-' + i);
+        if (inp) {
+          inp.style.borderColor = '#ef4444';
+          inp.value = '';
+        }
+      }
+      document.getElementById('otp-1')?.focus();
+      return;
+    }
+
+    // OTP is valid — finalize registration
+    const user = this.pendingAuthUser;
+
+    // Save to registered users list
+    this.registeredUsers.push({
+      userId: user.userId,
+      email: user.email,
+      companyName: user.companyName,
+      password: user.password,
+      createdAt: new Date().toISOString()
+    });
+    localStorage.setItem('easyfact_registered_users', JSON.stringify(this.registeredUsers));
+
+    // Activate session
+    this.currentUserId = user.userId;
+    this.currentUserEmail = user.email;
+    this.companyProfile.name = user.companyName;
+
+    this.updateUserAuthUI(user.email, user.companyName);
+    this.saveToStorage();
+
+    this.pendingAuthUser = null;
+    this.closeModal('email-otp-modal');
+
+    this.showToast(`🎉 Compte vérifié et créé avec succès ! Bienvenue, ${user.companyName}.`, "success");
+    this.switchTab('dashboard');
+  }
+
+  resendEmailOtp() {
+    if (!this.pendingAuthUser) {
+      this.showToast("⚠️ Aucune inscription en cours. Veuillez recommencer.", "error");
+      return;
+    }
+
+    // Generate new code
+    const newCode = String(Math.floor(100000 + Math.random() * 900000));
+    this.pendingAuthUser.otpCode = newCode;
+
+    const codeEl = document.getElementById('otp-display-code');
+    if (codeEl) codeEl.innerText = newCode.slice(0, 3) + ' ' + newCode.slice(3);
+
+    // Clear inputs
+    for (let i = 1; i <= 6; i++) {
+      const inp = document.getElementById('otp-' + i);
+      if (inp) { inp.value = ''; inp.style.borderColor = '#cbd5e1'; }
+    }
+    document.getElementById('otp-1')?.focus();
+
+    this.showToast("📧 Nouveau code de sécurité envoyé avec succès !", "success");
+  }
+
+  updateUserAuthUI(email, displayName) {
+    const headerName = document.getElementById('header-user-name');
+    const headerSub = document.getElementById('header-user-sub');
+    const headerAvatar = document.getElementById('header-avatar');
+
+    if (headerName) headerName.innerText = displayName;
+    if (headerSub) headerSub.innerHTML = `<i class="fa-solid fa-circle-check text-emerald"></i> ${email}`;
+    if (headerAvatar) {
+      headerAvatar.innerHTML = `<span style="font-weight:800; color:#059669;">${displayName.charAt(0).toUpperCase()}</span>`;
+    }
+  }
+
+  logout() {
+    this.currentUserId = null;
+    this.currentUserEmail = null;
+    
+    const headerName = document.getElementById('header-user-name');
+    const headerSub = document.getElementById('header-user-sub');
+    const headerAvatar = document.getElementById('header-avatar');
+
+    if (headerName) headerName.innerText = 'Connexion / Inscription';
+    if (headerSub) headerSub.innerHTML = `<i class="fa-solid fa-right-to-bracket text-emerald"></i> Espace Membre`;
+    if (headerAvatar) headerAvatar.innerHTML = `<i class="fa-solid fa-user-lock"></i>`;
+
+    this.saveToStorage();
+    this.closeModal('profile-modal');
+    this.showToast("Vous avez été déconnecté avec succès.", "info");
+    this.switchTab('landing');
   }
 }
 

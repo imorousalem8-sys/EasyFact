@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "node -e \"const fs=require('fs'); ['index.html','styles.css','app.js'].forEach(f => { if(fs.existsSync(f)) { if(!fs.existsSync('public')) fs.mkdirSync('public',{recursive:true}); fs.copyFileSync(f,'public/'+f); } }); ['easyfact_logo.png','easyfact_icon.png','easyfact_hero.png'].forEach(f => { if(fs.existsSync(f) && !fs.existsSync('public/'+f)) { fs.copyFileSync(f,'public/'+f); } });\" && cd server && npm install --include=dev && npm run build",
+  "buildCommand": "node build.js",
   "outputDirectory": "public",
   "functions": {
     "api/index.ts": {

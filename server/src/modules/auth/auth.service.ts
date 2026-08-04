@@ -221,6 +221,33 @@ export class AuthService {
         .update(this.buildVerifiedUpdate())
         .eq('email', cleanEmail);
       this.logger.log(`✅ Email ${cleanEmail} vérifié`);
+
+      // Générer le JWT pour l'utilisateur
+      const { data: user } = await this.supabase.getClient()
+        .from('users')
+        .select('id, email, company_name, tier')
+        .eq('email', cleanEmail)
+        .single();
+
+      const token = await this.jwtService.signAsync({
+        sub: user.id,
+        email: user.email,
+        companyName: user.company_name,
+        tier: user.tier,
+      });
+
+      return {
+        success: true,
+        message: 'Compte et email validés avec succès !',
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          companyName: user.company_name,
+          tier: user.tier,
+          verified: true,
+        },
+      };
     }
 
     return { success: true, message: 'Compte et email validés avec succès !' };
@@ -451,4 +478,67 @@ export class AuthService {
       invoicesLimit: tierLimits[user.tier] || 5,
     };
   }
+
+  // ============================================================
+  // GOOGLE OAUTH LOGIN LOGIC
+  // ============================================================
+  async googleLogin(googleUser: any) {
+    if (!googleUser || !googleUser.email) {
+      throw new BadRequestException('Informations utilisateur Google non valides.');
+    }
+    const cleanEmail = googleUser.email.trim().toLowerCase();
+
+    let { data: user } = await this.supabase.getClient()
+      .from('users')
+      .select('*')
+      .eq('email', cleanEmail)
+      .single();
+
+    if (!user) {
+      await this.detectSchemaColumns();
+      const newUserData: any = {
+        email: cleanEmail,
+        company_name: googleUser.name || cleanEmail.split('@')[0],
+        tier: 'starter',
+        created_at: new Date().toISOString(),
+      };
+      if (this.hasEmailVerifiedCol) {
+        newUserData.email_verified = true;
+      } else {
+        newUserData.wave_num = 'VER:true';
+      }
+
+      const { data: newUser, error } = await this.supabase.getClient()
+        .from('users')
+        .insert(newUserData)
+        .select()
+        .single();
+
+      if (error) {
+        this.logger.error('Erreur création utilisateur Google:', error);
+      }
+      user = newUser || newUserData;
+    }
+
+    const token = await this.jwtService.signAsync({
+      sub: user.id || 'google_' + Date.now(),
+      email: user.email,
+      companyName: user.company_name,
+      tier: user.tier || 'starter',
+    });
+
+    return {
+      success: true,
+      message: 'Connexion Google réussie !',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        companyName: user.company_name,
+        tier: user.tier || 'starter',
+        verified: true,
+      },
+    };
+  }
 }
+

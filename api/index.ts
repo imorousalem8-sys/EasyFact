@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../server/src/app.module';
 import { ExpressAdapter } from '@nestjs/platform-express';
-import * as express from 'express';
+import express from 'express';
 
 const server = express();
 
@@ -25,14 +25,9 @@ async function bootstrap() {
 
       app.setGlobalPrefix('api');
       app.enableCors({
-        origin: [
-          'https://easy-fact.vercel.app',
-          'http://localhost:3000',
-          'http://localhost:5173',
-          '*',
-        ],
+        origin: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'apikey'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'apikey', 'X-Requested-With'],
         credentials: true,
       });
 

@@ -19,3 +19,5 @@ server/.env
 scratch/
 .DS_Store
 Thumbs.db
+
+.vercel
