@@ -2383,21 +2383,15 @@ class EasyFactApp {
   }
 
   openLoginModal() {
-    this.closeModal('register-modal');
-    document.getElementById('login-modal')?.classList.add('active');
+    this.switchTab('dashboard');
   }
 
   openRegisterModal() {
-    this.closeModal('login-modal');
-    document.getElementById('register-modal')?.classList.add('active');
+    this.switchTab('dashboard');
   }
 
   handleHeaderAuthClick() {
-    if (this.currentUserId || (this.currentUserEmail && this.currentUserEmail !== '')) {
-      document.getElementById('profile-modal')?.classList.add('active');
-    } else {
-      this.openLoginModal();
-    }
+    this.switchTab('settings');
   }
 
   handleLoginSubmit() {
