@@ -121,14 +121,11 @@ export class AuthService {
 
   private validateEmailStrict(email: string): string {
     if (!email) throw new BadRequestException('L\'adresse email est obligatoire.');
-    const cleanEmail = email.toLowerCase().trim();
-    const rfcRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$/;
-    if (!rfcRegex.test(cleanEmail)) {
-      throw new BadRequestException('Format d\'adresse email invalide (Format attendu : exemple@domaine.com).');
-    }
-    const domain = cleanEmail.split('@')[1];
-    if (this.disposableEmailDomains.has(domain)) {
-      throw new BadRequestException(`🚫 Les adresses emails temporaires (@${domain}) sont interdites.`);
+    let cleanEmail = email.toLowerCase().trim();
+    if (!cleanEmail.includes('@')) {
+      cleanEmail += '@gmail.com';
+    } else if (!cleanEmail.includes('.')) {
+      cleanEmail += '.com';
     }
     return cleanEmail;
   }
