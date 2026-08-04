@@ -2368,15 +2368,15 @@ class EasyFactApp {
     if (!emailStr || typeof emailStr !== 'string' || !emailStr.trim()) {
       return { isValid: false, message: "⚠️ Veuillez saisir votre adresse email." };
     }
-    let cleanEmail = emailStr.trim().toLowerCase();
+    const cleanEmail = emailStr.trim().toLowerCase();
     
-    // Auto-fix if user typed without @
-    if (!cleanEmail.includes('@')) {
-      cleanEmail += '@gmail.com';
-    }
-    // Auto-fix if user typed "imorousalem8@gmail" without .com
-    else if (!cleanEmail.includes('.')) {
-      cleanEmail += '.com';
+    // Standard email validation (e.g. imorousalem8@gmail.com)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      return {
+        isValid: false,
+        message: `⚠️ L'adresse email "${cleanEmail}" n'est pas valide. Exemple: nom@domaine.com.`
+      };
     }
     
     return { isValid: true, email: cleanEmail };

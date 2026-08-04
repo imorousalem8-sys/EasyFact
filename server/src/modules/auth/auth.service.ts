@@ -121,11 +121,10 @@ export class AuthService {
 
   private validateEmailStrict(email: string): string {
     if (!email) throw new BadRequestException('L\'adresse email est obligatoire.');
-    let cleanEmail = email.toLowerCase().trim();
-    if (!cleanEmail.includes('@')) {
-      cleanEmail += '@gmail.com';
-    } else if (!cleanEmail.includes('.')) {
-      cleanEmail += '.com';
+    const cleanEmail = email.toLowerCase().trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      throw new BadRequestException('Veuillez fournir une adresse email valide (ex: nom@domaine.com).');
     }
     return cleanEmail;
   }
