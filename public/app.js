@@ -119,7 +119,7 @@ class EasyFactApp {
     try { this.renderAllViews(); } catch(e) { console.warn('renderAllViews warning:', e); }
     try { this.updateLivePdf(); } catch(e) { console.warn('updateLivePdf warning:', e); }
     try { this.updateHeaderAuthUI(); } catch(e) { console.warn('updateHeaderAuthUI warning:', e); }
-    try { this.switchTab('dashboard'); } catch(e) { console.warn('switchTab warning:', e); }
+    try { this.switchTab('landing'); } catch(e) { console.warn('switchTab warning:', e); }
   }
 
   /* Custom Professional Toast Notifications System */

@@ -170,9 +170,66 @@
       <main class="content-area">
 
         <!-- ============================================================
+             0. LANDING VIEW (PAGE D'ACCUEIL D'ORIGINE AVEC VISUEL EASYFACT_HERO.PNG)
+        ============================================================ -->
+        <section id="view-landing" class="tab-view active">
+          <!-- Hero Section -->
+          <div class="landing-hero-section">
+            <div class="landing-hero-badge">
+              <span class="pulse-dot-green"></span>
+              <span data-i18n="hero_badge">🏆 N°1 de la Facturation & Encaissement d'Entreprise avec EasyFact (UEMOA / CEMAC)</span>
+            </div>
+
+            <h1 class="landing-hero-title">
+              <span class="text-gradient-emerald">EasyFact</span> | <span data-i18n="hero_title">La facturation simple à utiliser & 100% sécurisée</span>
+            </h1>
+
+            <p class="landing-hero-subtitle" data-i18n="hero_subtitle">
+              Émettez des factures certifiées conformes aux normes OHADA & SYSCOHADA. Encaissez vos créances instantanément via <strong>Wave, Orange Money, MTN MoMo et Carte Bancaire</strong> en moins de 30 secondes.
+            </p>
+
+            <div class="landing-hero-actions">
+              <button class="btn btn-landing-primary" onclick="app.switchTab('create-invoice')" data-i18n="hero_btn_create">
+                <i class="fa-solid fa-bolt"></i> Créer ma 1ère Facture (Gratuit)
+              </button>
+              <button class="btn btn-landing-secondary" onclick="app.switchTab('dashboard')" data-i18n="hero_btn_dashboard">
+                <i class="fa-solid fa-chart-line"></i> Accéder au Tableau de Bord
+              </button>
+            </div>
+
+            <!-- Floating Trust Badges -->
+            <div class="landing-stats-bar">
+              <div class="landing-stat-item">
+                <i class="fa-solid fa-qrcode text-blue"></i>
+                <div>
+                  <strong data-i18n="hero_stat_1_title">Mobile Money 1-Click</strong>
+                  <span data-i18n="hero_stat_1_sub">Wave, Orange Money & MTN</span>
+                </div>
+              </div>
+              <div class="landing-stat-item">
+                <i class="fa-brands fa-whatsapp text-green"></i>
+                <div>
+                  <strong data-i18n="hero_stat_2_title">Relances WhatsApp</strong>
+                  <span data-i18n="hero_stat_2_sub">Encaissement 3x plus rapide</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notre Photo Officielle d'Accueil (easyfact_hero.png) -->
+            <div class="hero-showcase-container">
+              <img src="easyfact_hero.png" alt="Interface Officielle EasyFact" class="hero-showcase-img-main">
+              <div class="hero-overlay-card" style="margin-top: 14px; display: inline-block; padding: 8px 20px; background: rgba(16,185,129,0.18); color: #059669; font-weight: 700; border-radius: 20px; border: 1px solid rgba(16,185,129,0.3);">
+                <i class="fa-solid fa-circle-check text-green"></i>
+                <span>QR Code Wave, Orange Money, MTN MoMo & Paystack Auto-généré</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================
              1. DASHBOARD VIEW (TABLEAU DE BORD FINANCIER)
         ============================================================ -->
-        <section id="view-dashboard" class="tab-view active">
+        <section id="view-dashboard" class="tab-view">
           <div class="view-header">
             <div>
               <h1 class="view-title" id="welcome-title">Bienvenue sur EasyFact Africa ⚡</h1>
