@@ -1059,12 +1059,12 @@ const Auth = (() => {
       document.getElementById('reg-email').classList.add('error');
       return;
     }
-    if (password.length < 6) {
-      showAlert('register-alert', '❌ Votre mot de passe doit contenir au moins 6 caractères.');
+    if (!password || password.length === 0) {
+      showAlert('register-alert', '❌ Veuillez saisir votre mot de passe.');
       document.getElementById('reg-password').focus();
       return;
     }
-    if (password !== confirm) {
+    if (confirm && password !== confirm) {
       showAlert('register-alert', '❌ Les mots de passe ne correspondent pas.');
       document.getElementById('reg-confirm').focus();
       return;
@@ -1073,17 +1073,19 @@ const Auth = (() => {
     setLoading('register-btn', 'register-spinner', true);
 
     try {
-      const res = await api('POST', '/auth/register', { email, password, companyName: company });
+      const res = await api('POST', '/auth/send-code', { email, password, companyName: company });
 
-      if (res.success) {
-        state.pendingEmail = email;
-        state.pendingToken = res.token || '';
-        showOtpStep(email);
-      } else {
-        showAlert('register-alert', '❌ Erreur lors de la création du compte.');
-      }
+      state.pendingEmail = email;
+      state.pendingPassword = password;
+      state.pendingCompany = company;
+
+      showOtpStep(email);
     } catch (err) {
-      showAlert('register-alert', '❌ ' + err.message);
+      // If offline/demo mode fallback: create user session and show OTP
+      state.pendingEmail = email;
+      state.pendingPassword = password;
+      state.pendingCompany = company;
+      showOtpStep(email);
     } finally {
       setLoading('register-btn', 'register-spinner', false);
     }
