@@ -1041,3 +1041,107 @@ body { background-color: var(--bg-dark); color: var(--text-main); min-height: 10
   box-shadow: 0 8px 20px rgba(16, 185, 129, 0.15);
 }
 
+/* ==========================================================================
+   3D AFRICAN TARGET COUNTRIES SHOWCASE STYLING (BÉNIN, CI, CAMEROUN, GHANA, NIGERIA)
+   ========================================================================== */
+.african-countries-showcase {
+  margin: 10px 0 24px;
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(15, 41, 66, 0.03), rgba(16, 185, 129, 0.05));
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 20px;
+}
+
+.showcase-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.showcase-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  font-weight: 700;
+  font-size: 0.78rem;
+  border-radius: 20px;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.showcase-header h2 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.cards-3d-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  perspective: 1000px;
+}
+
+.card-3d {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+  position: relative;
+  transform: translateZ(0);
+}
+
+.card-3d:hover {
+  transform: translateY(-8px) rotateX(4deg) scale(1.03);
+  box-shadow: 0 20px 35px -8px rgba(16, 185, 129, 0.25);
+  border-color: #10b981;
+}
+
+.card-3d.active-country {
+  border: 2px solid #10b981;
+  background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
+  box-shadow: 0 12px 28px rgba(16, 185, 129, 0.2);
+}
+
+.flag-3d {
+  font-size: 2.4rem;
+  line-height: 1;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.15));
+  transition: transform 0.3s ease;
+}
+
+.card-3d:hover .flag-3d {
+  transform: scale(1.15) rotate(3deg);
+}
+
+.card-3d-info h3 {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+}
+
+.tax-tag {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #059669;
+  background: rgba(16, 185, 129, 0.12);
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-bottom: 6px;
+}
+
+.card-3d-info p {
+  font-size: 0.7rem;
+  color: #64748b;
+  margin: 0;
+  font-weight: 500;
+}
+
