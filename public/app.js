@@ -19,10 +19,10 @@ class EasyFactApp {
     this.currentCompanyName = localStorage.getItem('easyfact_company_name') || 'Mon Entreprise';
     this.userTierFromAuth = localStorage.getItem('easyfact_tier') || 'starter';
 
-    // Redirect to login if no valid session
+    // Allow unauthenticated visitors to view the landing page and app preview
     if (!this.jwtToken) {
-      window.location.href = '/auth.html';
-      return;
+      this.isLoggedIn = false;
+      this.currentUserId = 'usr_guest';
     }
 
     this.registeredUsers = JSON.parse(localStorage.getItem('easyfact_registered_users') || '[]');
@@ -109,7 +109,7 @@ class EasyFactApp {
     this.renderAllViews();
     this.updateLivePdf();
     this.updateHeaderAuthUI();
-    this.switchTab('dashboard');
+    this.switchTab(this.isLoggedIn ? 'dashboard' : 'landing');
   }
 
   /* Custom Professional Toast Notifications System */
@@ -1113,10 +1113,17 @@ class EasyFactApp {
     this.showToast("Déconnexion réussie.", "info");
   }
 
+  handleHeaderAuthClick() {
+    if (!this.isLoggedIn) {
+      window.location.href = '/auth.html';
+    } else {
+      this.switchTab('settings');
+    }
+  }
+
   handleHeroCta(targetTab = 'create-invoice') {
     if (!this.isLoggedIn) {
-      this.pendingTabId = targetTab;
-      this.openAuthModal('register', "🔒 Créez votre compte gratuit ou connectez-vous pour commencer.");
+      window.location.href = '/auth.html';
     } else {
       this.switchTab(targetTab);
     }
