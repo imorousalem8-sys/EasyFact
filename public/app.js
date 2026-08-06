@@ -249,6 +249,63 @@ class EasyFactApp {
     window.open(`https://wa.me/?text=${encoded}`, '_blank');
   }
 
+  printSinglePage() {
+    window.print();
+  }
+
+  downloadSinglePagePdf() {
+    const element = document.getElementById('pdf-document');
+    if (!element) {
+      this.showToast("Erreur: Document PDF non trouvé.", "error");
+      return;
+    }
+    const num = document.getElementById('doc-number')?.value || 'FACTURE';
+    const opt = {
+      margin:       0,
+      filename:     `${num}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    if (window.html2pdf) {
+      window.html2pdf().set(opt).from(element).save();
+      this.showToast(`Téléchargement de ${num}.pdf en cours...`, "success");
+    } else {
+      window.print();
+    }
+  }
+
+  openQrModal() {
+    const num = document.getElementById('doc-number')?.value || 'FAC-2026-001';
+    const method = document.getElementById('doc-payment-method')?.value || 'wave';
+    const amount = document.getElementById('pdf-net-total')?.innerText || 'FCFA';
+
+    let modal = document.getElementById('qr-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'qr-modal';
+      modal.className = 'modal-overlay';
+      document.body.appendChild(modal);
+    }
+
+    const qrData = encodeURIComponent(`EASYFACT:${num}:${method}:${amount}`);
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${qrData}`;
+
+    modal.innerHTML = `
+      <div class="modal-card" style="max-width: 400px; text-align: center; padding: 28px; background:#fff; border-radius:16px; position:relative;">
+        <button onclick="document.getElementById('qr-modal').classList.remove('active')" style="position:absolute; top:12px; right:12px; border:none; background:none; font-size:1.2rem; cursor:pointer;">&times;</button>
+        <div style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">📱 QR Code d'Encaissement Mobile Money</div>
+        <p style="font-size: 0.82rem; color: #64748b; margin-bottom: 20px;">Facture ${num} • Montant : <strong style="color:#10b981;">${amount}</strong></p>
+        <div style="background: #ffffff; border: 2px solid #10b981; border-radius: 16px; padding: 16px; display: inline-block; box-shadow: 0 10px 25px rgba(16,185,129,0.15);">
+          <img src="${qrUrl}" alt="QR Code Encaissement" style="width: 200px; height: 200px; display: block; border-radius: 8px;">
+        </div>
+        <p style="font-size: 0.78rem; color: #059669; font-weight: 600; margin-top: 16px;">Scannez avec Wave, Orange Money ou MTN pour payer instantanément.</p>
+        <button class="btn btn-primary" onclick="document.getElementById('qr-modal').classList.remove('active')" style="margin-top: 20px; width: 100%;">Fermer</button>
+      </div>
+    `;
+    modal.classList.add('active');
+  }
+
   /* User Session Memory & LocalStorage Persistence Handler */
   saveToStorage() {
     try {
