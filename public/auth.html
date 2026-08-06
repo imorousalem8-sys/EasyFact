@@ -614,7 +614,22 @@
 
       <div class="divider"><span>ou continuer avec</span></div>
 
-      <button class="btn-google" id="btn-google-login" onclick="Auth.loginWithGoogle()">
+      <div id="g_id_onload"
+           data-client_id="674903265274-oknqihg9j3hdcfss8qtf5iohh0462i7n.apps.googleusercontent.com"
+           data-callback="handleGoogleCallback"
+           data-auto_select="false">
+      </div>
+      <div class="g_id_signin" style="display:flex; justify-content:center; margin-top:12px;"
+           data-type="standard"
+           data-shape="rectangular"
+           data-theme="outline"
+           data-text="signin_with"
+           data-size="large"
+           data-logo_alignment="left"
+           data-width="380">
+      </div>
+
+      <button class="btn-google" id="btn-google-login" onclick="Auth.loginWithGoogle()" style="margin-top:10px;">
         <div class="google-icon"></div>
         Se connecter avec Google
       </button>
@@ -876,6 +891,12 @@ const Auth = (() => {
     else { btn.disabled = false; btn.classList.remove('loading'); }
   }
 
+  // ---- Email Validator ----
+  function isValidEmail(email) {
+    if (!email) return false;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  }
+
   // ---- Field validators ----
   function validateEmailField(inputId, hintId) {
     const input = document.getElementById(inputId);
@@ -886,12 +907,6 @@ const Auth = (() => {
     if (!isValidEmail(val)) {
       input.className = 'form-input error';
       hint.textContent = '❌ Adresse email invalide (ex: nom@domaine.com)';
-      hint.className = 'field-hint error';
-      return false;
-    }
-    if (isDisposable(val)) {
-      input.className = 'form-input error';
-      hint.textContent = '❌ Emails temporaires non acceptés. Utilisez votre vraie adresse.';
       hint.className = 'field-hint error';
       return false;
     }
