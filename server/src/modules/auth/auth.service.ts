@@ -137,20 +137,25 @@ export class AuthService {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Try Supabase otp_codes table
+    // Try Supabase otp_codes or "otp code" table
     try {
+      // Determine table name dynamically ('otp_codes' or 'otp code')
+      let tableName = 'otp_codes';
+      const { error: testErr } = await this.supabase.getClient().from('otp_codes').select('id').limit(1);
+      if (testErr) tableName = 'otp code';
+
       await this.supabase.getClient()
-        .from('otp_codes')
+        .from(tableName)
         .delete()
         .eq('email', cleanEmail)
         .eq('used', false);
 
       const { error } = await this.supabase.getClient()
-        .from('otp_codes')
+        .from(tableName)
         .insert({ email: cleanEmail, code, expires_at: expiresAt.toISOString() });
 
       if (error) throw new Error(error.message);
-      this.logger.log(`✅ OTP code stored in Supabase for ${cleanEmail}`);
+      this.logger.log(`✅ OTP code stored in Supabase table (${tableName}) for ${cleanEmail}`);
     } catch (dbErr) {
       // Fallback: in-memory OTP store
       this.logger.warn(`⚠️ Supabase OTP fallback to memory: ${dbErr.message}`);
@@ -178,9 +183,10 @@ export class AuthService {
   async verifyCode(email: string, code: string) {
     const cleanEmail = this.validateEmailStrict(email);
 
-    // Try Supabase first
+    // Try Supabase first (detect table 'otp_codes' or 'otp code')
     let verified = false;
-    const { data: otpRecord, error } = await this.supabase.getClient()
+    let otpTableName = 'otp_codes';
+    let { data: otpRecord, error } = await this.supabase.getClient()
       .from('otp_codes')
       .select('*')
       .eq('email', cleanEmail)
@@ -189,13 +195,27 @@ export class AuthService {
       .limit(1)
       .single();
 
+    if (error) {
+      otpTableName = 'otp code';
+      const retry = await this.supabase.getClient()
+        .from('otp code')
+        .select('*')
+        .eq('email', cleanEmail)
+        .eq('used', false)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      otpRecord = retry.data;
+      error = retry.error;
+    }
+
     if (!error && otpRecord) {
       if (new Date() > new Date(otpRecord.expires_at)) {
-        await this.supabase.getClient().from('otp_codes').update({ used: true }).eq('id', otpRecord.id);
+        await this.supabase.getClient().from(otpTableName).update({ used: true }).eq('id', otpRecord.id);
         throw new BadRequestException('Le code OTP a expiré. Demandez un nouveau code.');
       }
       if (otpRecord.code !== code) throw new UnauthorizedException('Code OTP incorrect.');
-      await this.supabase.getClient().from('otp_codes').update({ used: true }).eq('id', otpRecord.id);
+      await this.supabase.getClient().from(otpTableName).update({ used: true }).eq('id', otpRecord.id);
       verified = true;
     } else {
       // Fallback: memory OTP
