@@ -65,14 +65,27 @@
           </select>
         </div>
 
+        <!-- Country & Tax Profile Selector -->
+        <div class="lang-selector-wrapper">
+          <i class="fa-solid fa-flag lang-icon"></i>
+          <select id="country-select" class="lang-select" onchange="app.switchCountry(this.value)" title="Pays & Fiscalité Africaine">
+            <option value="CI">🇨🇮 Côte d'Ivoire (TVA 18% • Wave / Orange / MTN)</option>
+            <option value="SN">🇸🇳 Sénégal (TVA 18% • Wave / Orange / Free)</option>
+            <option value="BJ">🇧🇯 Bénin (TVA 18% • IFU • Wave / MTN / Moov)</option>
+            <option value="CM">🇨🇲 Cameroun (TVA 19.2% • NIU • Orange / MTN)</option>
+            <option value="GH">🇬🇭 Ghana (VAT 15% • GRA TIN • MTN MoMo)</option>
+            <option value="NG">🇳🇬 Nigeria (VAT 7.5% • CAC TIN • Bank / OPay)</option>
+          </select>
+        </div>
+
         <!-- Currency Selector -->
         <div class="currency-selector-wrapper">
           <i class="fa-solid fa-coins currency-icon"></i>
           <select id="currency-select" class="currency-select" title="Devise Principale Africaine">
-            <option value="XOF">FCFA (UEMOA - Bénin, Sénégal, CI, Togo...)</option>
+            <option value="XOF">FCFA (UEMOA - Côte d'Ivoire, Bénin, Sénégal...)</option>
             <option value="XAF">FCFA (CEMAC - Cameroun, Gabon, Congo...)</option>
-            <option value="NGN">Naira Nigérian (NGN ₦)</option>
             <option value="GHS">Cedi Ghanéen (GHS ₵)</option>
+            <option value="NGN">Naira Nigérian (NGN ₦)</option>
             <option value="GNF">Franc Guinéen (GNF FG)</option>
           </select>
         </div>
@@ -511,6 +524,9 @@
 
               <button class="btn btn-success" id="btn-save-invoice">
                 <i class="fa-solid fa-floppy-disk"></i> Enregistrer & Émettre
+              </button>
+              <button class="btn btn-emerald" id="btn-whatsapp-share" onclick="app.shareInvoiceWhatsApp()" style="background:#25D366; color:white; border:none; margin-left:8px;" title="Envoyer directement la facture au client par WhatsApp">
+                <i class="fa-brands fa-whatsapp"></i> WhatsApp 1-Clic
               </button>
             </div>
           </div>

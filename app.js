@@ -30,7 +30,17 @@ class EasyFactApp {
     this.pendingTabId = null;
     this.authMode = 'login'; // 'login' or 'register'
 
-    // Financial Configuration & Currencies
+    // Financial Configuration & Currencies for African Markets
+    this.country = localStorage.getItem('easyfact_country') || 'CI';
+    this.countryProfiles = {
+      CI: { name: "Côte d'Ivoire 🇨🇮", currency: 'XOF', vat: 18, taxLabel: 'NINEA/NCC', methods: 'Wave, Orange Money, MTN, Moov' },
+      SN: { name: "Sénégal 🇸🇳", currency: 'XOF', vat: 18, taxLabel: 'NINEA', methods: 'Wave, Orange Money, Free' },
+      BJ: { name: "Bénin 🇧🇯", currency: 'XOF', vat: 18, taxLabel: 'IFU', methods: 'Wave, MTN MoMo, Moov Money' },
+      CM: { name: "Cameroun 🇨🇲", currency: 'XAF', vat: 19.2, taxLabel: 'NIU', methods: 'Orange Money, MTN MoMo' },
+      GH: { name: "Ghana 🇬🇭", currency: 'GHS', vat: 15, taxLabel: 'GRA TIN', methods: 'MTN MoMo, Vodafone Cash' },
+      NG: { name: "Nigeria 🇳🇬", currency: 'NGN', vat: 7.5, taxLabel: 'CAC TIN', methods: 'Bank Transfer, OPay, Paystack' }
+    };
+
     this.currency = 'XOF';
     this.currencyRates = {
       XOF: { symbol: 'FCFA', rate: 1, label: 'Franc CFA (UEMOA)' },
@@ -195,6 +205,48 @@ class EasyFactApp {
     if (window.applyLanguage) {
       window.applyLanguage(lang);
     }
+  }
+
+  switchCountry(code) {
+    this.country = code;
+    localStorage.setItem('easyfact_country', code);
+    const profile = (this.countryProfiles && this.countryProfiles[code]) ? this.countryProfiles[code] : this.countryProfiles['CI'];
+
+    // Auto adapt currency
+    this.currency = profile.currency;
+    const currencySelect = document.getElementById('currency-select');
+    if (currencySelect) currencySelect.value = profile.currency;
+
+    // Auto adapt VAT rate input if creating invoice
+    const vatInput = document.getElementById('tax-vat');
+    if (vatInput) vatInput.value = profile.vat;
+
+    this.saveToStorage();
+    this.renderAllViews();
+    this.updateLivePdf();
+    this.showToast(`Profil pays activé : ${profile.name} (TVA ${profile.vat}% • ${profile.methods})`, "info");
+  }
+
+  shareInvoiceWhatsApp(invNumber) {
+    let inv = (this.invoices || []).find(i => i.invoice_number === invNumber || i.id === invNumber);
+    if (!inv && this.invoices && this.invoices.length > 0) inv = this.invoices[0];
+
+    const clientName = inv?.client_name || 'Client';
+    const num = inv?.invoice_number || 'FAC-2026-001';
+    const amount = inv ? this.formatCurrency(inv.net_to_pay || inv.amount_ht || 0) : 'FCFA';
+    const company = (this.companyProfile?.name && this.companyProfile.name !== 'Mon Entreprise') ? this.companyProfile.name : 'EasyFact';
+
+    const message = `📄 *FACTURE ${num}* — ${company}\n\n` +
+      `Bonjour ${clientName},\n` +
+      `Voici les détails de votre facture :\n` +
+      `• Montant Net à Payer : *${amount}*\n` +
+      `• Échéance : ${inv?.due_date || 'A réception'}\n\n` +
+      `💳 *Encaissement Mobile Money* (Wave / Orange Money / MTN MoMo) :\n` +
+      `Règlement instantané disponible.\n\n` +
+      `Merci pour votre confiance ! ⚡`;
+
+    const encoded = encodeURIComponent(message);
+    window.open(`https://wa.me/?text=${encoded}`, '_blank');
   }
 
   /* User Session Memory & LocalStorage Persistence Handler */
