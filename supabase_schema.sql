@@ -1,19 +1,13 @@
 -- ==========================================================================
--- EASYFACT AFRICA - PRODUCTION SUPABASE DATABASE SCHEMA MIGRATION v2.0
--- Instructions :
--- 1. Ouvrez : https://supabase.com/dashboard/project/szjsxufiollglpsgzxqa/sql/new
--- 2. Collez ce script complet dans l'éditeur SQL
--- 3. Cliquez sur Run (bouton vert)
+-- EASYFACT AFRICA - OFFICIAL SUPABASE POSTGRESQL DATABASE SCHEMA (ENGLISH)
 -- ==========================================================================
 
--- ============================================================
 -- 1. Users & Companies Profile Table
--- ============================================================
 CREATE TABLE IF NOT EXISTS public.users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
-  password_hash TEXT NOT NULL,
-  company_name TEXT NOT NULL DEFAULT 'Mon Entreprise SARL',
+  password_hash TEXT NOT NULL DEFAULT '',
+  company_name TEXT NOT NULL DEFAULT 'My Company',
   ninea TEXT,
   phone TEXT,
   address TEXT,
@@ -26,9 +20,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ============================================================
--- 2. OTP Verification Codes Table (remplace Map<> mémoire)
--- ============================================================
+-- 2. OTP Verification Codes Table
 CREATE TABLE IF NOT EXISTS public.otp_codes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT NOT NULL,
@@ -38,9 +30,7 @@ CREATE TABLE IF NOT EXISTS public.otp_codes (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ============================================================
 -- 3. CRM Clients Table
--- ============================================================
 CREATE TABLE IF NOT EXISTS public.clients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
@@ -52,16 +42,14 @@ CREATE TABLE IF NOT EXISTS public.clients (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ============================================================
 -- 4. Invoices Table
--- ============================================================
 CREATE TABLE IF NOT EXISTS public.invoices (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
   invoice_number TEXT NOT NULL,
   client_name TEXT NOT NULL,
-  type TEXT NOT NULL DEFAULT 'Facture',
-  status TEXT NOT NULL DEFAULT 'Payé',
+  type TEXT NOT NULL DEFAULT 'Invoice',
+  status TEXT NOT NULL DEFAULT 'Paid',
   amount_ht NUMERIC(12,2) NOT NULL DEFAULT 0,
   tax_vat NUMERIC(12,2) NOT NULL DEFAULT 0,
   tax_withholding NUMERIC(12,2) NOT NULL DEFAULT 0,
@@ -73,22 +61,18 @@ CREATE TABLE IF NOT EXISTS public.invoices (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ============================================================
 -- 5. Expenses Table
--- ============================================================
 CREATE TABLE IF NOT EXISTS public.expenses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
   category TEXT NOT NULL,
   description TEXT NOT NULL,
   amount_ht NUMERIC(12,2) NOT NULL DEFAULT 0,
-  method TEXT DEFAULT 'Wave / Caisse',
+  method TEXT DEFAULT 'Mobile Money / Cash',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ============================================================
--- 6. Subscriptions & Mobile Money Payments Table (NOUVEAU v2.0)
--- ============================================================
+-- 6. Subscriptions & Payments Table
 CREATE TABLE IF NOT EXISTS public.subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
@@ -104,9 +88,7 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ============================================================
--- Enable Row Level Security (RLS)
--- ============================================================
+-- Row Level Security (RLS) Enablement
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.otp_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
@@ -114,19 +96,26 @@ ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 
--- ============================================================
--- Access Policies (Service Role Access via server-side API key)
--- ============================================================
+-- Access Policies (Allow full access for service role)
+DROP POLICY IF EXISTS "Allow full access for users" ON public.users;
 CREATE POLICY "Allow full access for users" ON public.users FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow full access for otp_codes" ON public.otp_codes;
 CREATE POLICY "Allow full access for otp_codes" ON public.otp_codes FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow full access for clients" ON public.clients;
 CREATE POLICY "Allow full access for clients" ON public.clients FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow full access for invoices" ON public.invoices;
 CREATE POLICY "Allow full access for invoices" ON public.invoices FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow full access for expenses" ON public.expenses;
 CREATE POLICY "Allow full access for expenses" ON public.expenses FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow full access for subscriptions" ON public.subscriptions;
 CREATE POLICY "Allow full access for subscriptions" ON public.subscriptions FOR ALL USING (true);
 
--- ============================================================
--- Indexes for Performance
--- ============================================================
+-- Performance Indexes
 CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
 CREATE INDEX IF NOT EXISTS idx_otp_codes_email ON public.otp_codes(email);
 CREATE INDEX IF NOT EXISTS idx_clients_user_id ON public.clients(user_id);
@@ -134,15 +123,8 @@ CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON public.invoices(user_id);
 CREATE INDEX IF NOT EXISTS idx_expenses_user_id ON public.expenses(user_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON public.subscriptions(user_id);
 
--- ============================================================
--- 7. Colonnes Manquantes (ALTER TABLE — compatibilité v2.0)
--- ============================================================
+-- Ensure Columns Exist (Migrations)
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS password_hash TEXT NOT NULL DEFAULT '';
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS notes TEXT;
-
--- ==========================================================================
--- FIN DU SCRIPT - Cliquez sur "Run" pour créer toutes les tables
--- Vérifiez dans : https://supabase.com/dashboard/project/szjsxufiollglpsgzxqa/editor
--- ==========================================================================
