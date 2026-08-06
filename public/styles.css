@@ -1145,3 +1145,30 @@ body { background-color: var(--bg-dark); color: var(--text-main); min-height: 10
   font-weight: 500;
 }
 
+/* ==========================================================================
+   HERO SHOWCASE GLASSMORPHISM STYLING (EASYFACT_HERO.PNG)
+   ========================================================================== */
+.hero-showcase-container {
+  position: relative;
+  margin: 32px auto 0;
+  max-width: 980px;
+  border-radius: 24px;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(15, 41, 66, 0.95), rgba(16, 185, 129, 0.3));
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+  backdrop-filter: blur(12px);
+}
+
+.hero-showcase-img-main {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 18px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hero-showcase-container:hover .hero-showcase-img-main {
+  transform: scale(1.01);
+}
+
