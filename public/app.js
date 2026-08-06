@@ -9,10 +9,22 @@ class EasyFactApp {
       ? 'http://localhost:3000/api'
       : '/api';
 
-    // User Session & Multi-Tenant Data Isolation
-    this.isLoggedIn = localStorage.getItem('easyfact_logged_in') === 'true';
+    // -------------------------------------------------------
+    // REAL AUTH SESSION — JWT from auth.html login
+    // -------------------------------------------------------
+    this.jwtToken = localStorage.getItem('easyfact_token') || null;
+    this.isLoggedIn = !!this.jwtToken;
     this.currentUserId = localStorage.getItem('easyfact_active_user_id') || null;
     this.currentUserEmail = localStorage.getItem('easyfact_active_user_email') || '';
+    this.currentCompanyName = localStorage.getItem('easyfact_company_name') || 'Mon Entreprise';
+    this.userTierFromAuth = localStorage.getItem('easyfact_tier') || 'starter';
+
+    // Redirect to login if no valid session
+    if (!this.jwtToken) {
+      window.location.href = '/auth.html';
+      return;
+    }
+
     this.registeredUsers = JSON.parse(localStorage.getItem('easyfact_registered_users') || '[]');
     this.pendingAuthUser = null;
     this.pendingTabId = null;
@@ -43,6 +55,8 @@ class EasyFactApp {
       address: '',
       waveNum: '',
       omNum: '',
+      moovNum: '',
+      mtnNum: '',
       bankRib: ''
     };
 
@@ -95,7 +109,7 @@ class EasyFactApp {
     this.renderAllViews();
     this.updateLivePdf();
     this.updateHeaderAuthUI();
-    this.switchTab('landing');
+    this.switchTab('dashboard');
   }
 
   /* Custom Professional Toast Notifications System */
@@ -219,6 +233,17 @@ class EasyFactApp {
         if (data.freeInvoicesUsed !== undefined) this.freeInvoicesUsed = data.freeInvoicesUsed;
         if (data.userTier) this.userTier = data.userTier;
         if (data.currency) this.currency = data.currency;
+      }
+
+      // Pre-fill company name from real JWT auth session (first-time login)
+      const authCompanyName = localStorage.getItem('easyfact_company_name');
+      if (authCompanyName && (!this.companyProfile.name || this.companyProfile.name === 'Mon Entreprise')) {
+        this.companyProfile.name = authCompanyName;
+      }
+      // Pre-fill tier from real JWT auth session
+      const authTier = localStorage.getItem('easyfact_tier');
+      if (authTier && this.userTier === 'starter') {
+        this.userTier = authTier;
       }
     } catch (e) {
       console.error("Erreur de chargement de mémoire local:", e);
@@ -858,31 +883,19 @@ class EasyFactApp {
   }
 
   openLoginModal() {
-    this.closeModal('register-modal');
-    const modal = document.getElementById('login-modal');
-    if (modal) modal.classList.add('active');
+    this.switchTab('dashboard');
   }
 
   openRegisterModal() {
-    this.closeModal('login-modal');
-    const modal = document.getElementById('register-modal');
-    if (modal) modal.classList.add('active');
+    this.switchTab('dashboard');
   }
 
-  openAuthModal(mode = 'login', customSubtitle = null) {
-    if (mode === 'register') {
-      this.openRegisterModal();
-    } else {
-      this.openLoginModal();
-    }
+  openAuthModal() {
+    this.switchTab('dashboard');
   }
 
   handleHeaderAuthClick() {
-    if (this.isLoggedIn) {
-      this.openModal('profile-modal');
-    } else {
-      this.openLoginModal();
-    }
+    this.switchTab('settings');
   }
 
   async handleLoginSubmit() {
@@ -1110,14 +1123,21 @@ class EasyFactApp {
   }
 
   updateHeaderAuthUI() {
-    const nameEl = document.getElementById('header-user-name');
-    const subEl = document.getElementById('header-user-sub');
+    const nameEl   = document.getElementById('header-user-name');
+    const subEl    = document.getElementById('header-user-sub');
     const avatarEl = document.getElementById('header-avatar');
 
     if (this.isLoggedIn) {
-      if (nameEl) nameEl.innerText = this.companyProfile.name || this.currentUserEmail;
-      if (subEl) subEl.innerHTML = `<i class="fa-solid fa-circle text-emerald"></i> Connecté (${this.userTier.toUpperCase()})`;
-      if (avatarEl) avatarEl.innerText = (this.companyProfile.name || 'E').charAt(0).toUpperCase();
+      // Use real company name from JWT auth session
+      const displayName = this.companyProfile.name
+        || this.currentCompanyName
+        || this.currentUserEmail
+        || 'Mon Entreprise';
+      const tier = (this.userTier || this.userTierFromAuth || 'starter').toUpperCase();
+
+      if (nameEl) nameEl.innerText = displayName;
+      if (subEl) subEl.innerHTML = `<i class="fa-solid fa-circle-check text-emerald"></i> Connecté (${tier})`;
+      if (avatarEl) avatarEl.innerText = displayName.charAt(0).toUpperCase();
     } else {
       if (nameEl) nameEl.innerText = 'Connexion / Inscription';
       if (subEl) subEl.innerHTML = `<i class="fa-solid fa-right-to-bracket text-emerald"></i> Espace Membre`;
@@ -1129,24 +1149,18 @@ class EasyFactApp {
 
   logout() {
     if (confirm("Êtes-vous sûr de vouloir vous déconnecter d'EasyFact ?")) {
-      this.isLoggedIn = false;
-      this.currentUserEmail = null;
-      this.currentUserId = 'guest';
-      this.invoices = [];
-      this.expenses = [];
-      this.deliveryNotes = [];
-      this.clients = [];
-      this.products = [];
-
+      // Clear real JWT session
+      localStorage.removeItem('easyfact_token');
       localStorage.removeItem('easyfact_logged_in');
-      localStorage.removeItem('easyfact_jwt_token');
       localStorage.removeItem('easyfact_active_user_id');
       localStorage.removeItem('easyfact_active_user_email');
+      localStorage.removeItem('easyfact_company_name');
+      localStorage.removeItem('easyfact_tier');
+      // Legacy cleanup
+      localStorage.removeItem('easyfact_jwt_token');
 
-      this.updateHeaderAuthUI();
-      this.renderAllViews();
-      this.closeModal('profile-modal');
-      this.switchTab('landing');
+      // Redirect to login page
+      window.location.href = '/auth.html';
     }
   }
 
@@ -1892,13 +1906,15 @@ class EasyFactApp {
     } else {
       if (payMethod === 'wave') activeAccount = this.companyProfile.waveNum || '';
       else if (payMethod === 'om') activeAccount = this.companyProfile.omNum || '';
+      else if (payMethod === 'moov') activeAccount = this.companyProfile.moovNum || '';
+      else if (payMethod === 'mtn') activeAccount = this.companyProfile.mtnNum || '';
       else if (payMethod === 'card') activeAccount = this.companyProfile.bankRib || '';
     }
 
     if (payName && qrImg) {
       if (payMethod === 'wave') {
         payName.innerText = 'Wave Mobile Money';
-        if (payAccountDisplay) payAccountDisplay.innerText = activeAccount ? `N° Crédité : ${activeAccount}` : `N° Crédité : Non renseigné`;
+        if (payAccountDisplay) payAccountDisplay.innerText = activeAccount ? `N° Crédité (Wave) : ${activeAccount}` : `N° Crédité (Wave) : Non renseigné`;
         if (activeAccount) {
           qrImg.style.display = 'block';
           qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://pay.wave.com/m/${encodeURIComponent(activeAccount)}?amount=${totals.netToPay}`;
@@ -1906,8 +1922,26 @@ class EasyFactApp {
           qrImg.style.display = 'none';
         }
       } else if (payMethod === 'om') {
-        payName.innerText = 'Orange Money / MTN / Moov';
-        if (payAccountDisplay) payAccountDisplay.innerText = activeAccount ? `N° Crédité : ${activeAccount}` : `N° Crédité : Non renseigné`;
+        payName.innerText = 'Orange Money';
+        if (payAccountDisplay) payAccountDisplay.innerText = activeAccount ? `N° Crédité (Orange Money) : ${activeAccount}` : `N° Crédité (Orange Money) : Non renseigné`;
+        if (activeAccount) {
+          qrImg.style.display = 'block';
+          qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=tel:${encodeURIComponent(activeAccount)}`;
+        } else {
+          qrImg.style.display = 'none';
+        }
+      } else if (payMethod === 'moov') {
+        payName.innerText = 'Moov Money (Flooz)';
+        if (payAccountDisplay) payAccountDisplay.innerText = activeAccount ? `N° Crédité (Moov) : ${activeAccount}` : `N° Crédité (Moov) : Non renseigné`;
+        if (activeAccount) {
+          qrImg.style.display = 'block';
+          qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=tel:${encodeURIComponent(activeAccount)}`;
+        } else {
+          qrImg.style.display = 'none';
+        }
+      } else if (payMethod === 'mtn') {
+        payName.innerText = 'MTN Mobile Money (MoMo)';
+        if (payAccountDisplay) payAccountDisplay.innerText = activeAccount ? `N° Crédité (MTN MoMo) : ${activeAccount}` : `N° Crédité (MTN MoMo) : Non renseigné`;
         if (activeAccount) {
           qrImg.style.display = 'block';
           qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=tel:${encodeURIComponent(activeAccount)}`;
@@ -2286,7 +2320,11 @@ class EasyFactApp {
       if (val === 'wave') {
         overrideInput.placeholder = this.companyProfile?.waveNum ? `Par défaut (Wave) : ${this.companyProfile.waveNum}` : "Saisir un N° Wave spécifique pour cette facture...";
       } else if (val === 'om') {
-        overrideInput.placeholder = this.companyProfile?.omNum ? `Par défaut (OM/MTN/Moov) : ${this.companyProfile.omNum}` : "Saisir un N° OM/MTN/Moov spécifique...";
+        overrideInput.placeholder = this.companyProfile?.omNum ? `Par défaut (Orange Money) : ${this.companyProfile.omNum}` : "Saisir un N° Orange Money spécifique...";
+      } else if (val === 'moov') {
+        overrideInput.placeholder = this.companyProfile?.moovNum ? `Par défaut (Moov) : ${this.companyProfile.moovNum}` : "Saisir un N° Moov Money spécifique...";
+      } else if (val === 'mtn') {
+        overrideInput.placeholder = this.companyProfile?.mtnNum ? `Par défaut (MTN MoMo) : ${this.companyProfile.mtnNum}` : "Saisir un N° MTN MoMo spécifique...";
       } else if (val === 'card') {
         overrideInput.placeholder = this.companyProfile?.bankRib ? `Par défaut (RIB) : ${this.companyProfile.bankRib}` : "Saisir un RIB/IBAN spécifique...";
       }
@@ -2301,6 +2339,8 @@ class EasyFactApp {
     const address = document.getElementById('setting-address')?.value?.trim() || '';
     const waveNum = document.getElementById('setting-wave-num')?.value?.trim() || '';
     const omNum = document.getElementById('setting-om-num')?.value?.trim() || '';
+    const moovNum = document.getElementById('setting-moov-num')?.value?.trim() || '';
+    const mtnNum = document.getElementById('setting-mtn-num')?.value?.trim() || '';
     const bankRib = document.getElementById('setting-bank-rib')?.value?.trim() || '';
 
     // 1. Strict Validation of Phone Number (if provided)
@@ -2317,10 +2357,24 @@ class EasyFactApp {
       return;
     }
 
-    // 3. Strict Validation of Orange Money / MTN / Moov Number (if provided)
-    const omCheck = this.validatePhoneNumber(omNum, 'Numéro Orange Money / MTN / Moov');
+    // 3. Strict Validation of Orange Money Number (if provided)
+    const omCheck = this.validatePhoneNumber(omNum, 'Numéro Orange Money');
     if (!omCheck.isValid) {
       this.showToast(omCheck.message, 'error');
+      return;
+    }
+
+    // 4. Strict Validation of Moov Number (if provided)
+    const moovCheck = this.validatePhoneNumber(moovNum, 'Numéro Moov Money');
+    if (!moovCheck.isValid) {
+      this.showToast(moovCheck.message, 'error');
+      return;
+    }
+
+    // 5. Strict Validation of MTN MoMo Number (if provided)
+    const mtnCheck = this.validatePhoneNumber(mtnNum, 'Numéro MTN MoMo');
+    if (!mtnCheck.isValid) {
+      this.showToast(mtnCheck.message, 'error');
       return;
     }
 
@@ -2330,6 +2384,8 @@ class EasyFactApp {
     this.companyProfile.address = address;
     this.companyProfile.waveNum = waveNum;
     this.companyProfile.omNum = omNum;
+    this.companyProfile.moovNum = moovNum;
+    this.companyProfile.mtnNum = mtnNum;
     this.companyProfile.bankRib = bankRib;
 
     const nameEl = document.getElementById('header-user-name');
@@ -2340,7 +2396,7 @@ class EasyFactApp {
     this.saveToStorage();
     this.updateLivePdf();
 
-    this.showToast("Paramètres d'entreprise enregistrés avec succès !", "success");
+    this.showToast("✅ Paramètres d'entreprise enregistrés avec succès ! Le QR code et les numéros sont mis à jour.", "success");
   }
 
   loadSettingsForm() {
@@ -2350,6 +2406,8 @@ class EasyFactApp {
     const addressInput = document.getElementById('setting-address');
     const waveInput = document.getElementById('setting-wave-num');
     const omInput = document.getElementById('setting-om-num');
+    const moovInput = document.getElementById('setting-moov-num');
+    const mtnInput = document.getElementById('setting-mtn-num');
     const bankInput = document.getElementById('setting-bank-rib');
 
     if (nameInput) nameInput.value = (this.companyProfile?.name && this.companyProfile.name !== 'Mon Entreprise') ? this.companyProfile.name : '';
@@ -2358,6 +2416,8 @@ class EasyFactApp {
     if (addressInput) addressInput.value = this.companyProfile?.address || '';
     if (waveInput) waveInput.value = this.companyProfile?.waveNum || '';
     if (omInput) omInput.value = this.companyProfile?.omNum || '';
+    if (moovInput) moovInput.value = this.companyProfile?.moovNum || '';
+    if (mtnInput) mtnInput.value = this.companyProfile?.mtnNum || '';
     if (bankInput) bankInput.value = this.companyProfile?.bankRib || '';
   }
 

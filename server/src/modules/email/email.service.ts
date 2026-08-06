@@ -10,7 +10,7 @@ export class EmailService {
   private readonly fromName: string;
 
   constructor(private readonly config: ConfigService) {
-    const apiKey = this.config.get<string>('RESEND_API_KEY');
+    const apiKey = this.config.get<string>('RESEND_API_KEY') || 're_dev_dummy_key_12345';
     this.fromEmail = this.config.get<string>('RESEND_FROM_EMAIL') || 'onboarding@resend.dev';
     this.fromName = this.config.get<string>('RESEND_FROM_NAME') || 'EasyFact Africa';
     this.resend = new Resend(apiKey);

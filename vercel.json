@@ -13,7 +13,15 @@
       "destination": "/api/index"
     },
     {
-      "source": "/((?!.*\\.(?:js|css|png|jpg|jpeg|gif|svg|ico|json|woff|woff2|ttf|eot)).*)",
+      "source": "/auth",
+      "destination": "/auth.html"
+    },
+    {
+      "source": "/auth.html",
+      "destination": "/auth.html"
+    },
+    {
+      "source": "/((?!.*\\.(?:js|css|png|jpg|jpeg|gif|svg|ico|json|woff|woff2|ttf|eot|html)).*)",
       "destination": "/index.html"
     }
   ],

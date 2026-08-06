@@ -10,11 +10,11 @@ export class SupabaseService implements OnModuleInit {
   constructor(private readonly config: ConfigService) {}
 
   onModuleInit() {
-    const url = this.config.get<string>('SUPABASE_URL');
-    const key = this.config.get<string>('SUPABASE_KEY');
+    const url = this.config.get<string>('SUPABASE_URL') || process.env.SUPABASE_URL || '';
+    const key = this.config.get<string>('SUPABASE_KEY') || process.env.SUPABASE_KEY || '';
 
     if (!url || !key) {
-      throw new Error('SUPABASE_URL et SUPABASE_KEY sont requis dans les variables d\'environnement.');
+      this.logger.warn('⚠️ SUPABASE_URL ou SUPABASE_KEY non défini dans l\'environnement.');
     }
 
     this.client = createClient(url, key, {

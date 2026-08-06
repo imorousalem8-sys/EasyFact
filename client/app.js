@@ -9,10 +9,13 @@ class EasyFactApp {
       ? 'http://localhost:3000/api'
       : '/api';
 
-    // User Session & Multi-Tenant Data Isolation
-    this.isLoggedIn = localStorage.getItem('easyfact_logged_in') === 'true';
-    this.currentUserId = localStorage.getItem('easyfact_active_user_id') || null;
-    this.currentUserEmail = localStorage.getItem('easyfact_active_user_email') || '';
+    // User Session & Multi-Tenant Data Isolation (Direct Open Workspace Access)
+    this.isLoggedIn = true;
+    this.currentUserId = localStorage.getItem('easyfact_active_user_id') || 'usr_workspace_default';
+    this.currentUserEmail = localStorage.getItem('easyfact_active_user_email') || 'mon.entreprise@easyfact.com';
+    localStorage.setItem('easyfact_logged_in', 'true');
+    localStorage.setItem('easyfact_active_user_id', this.currentUserId);
+    localStorage.setItem('easyfact_active_user_email', this.currentUserEmail);
     this.registeredUsers = JSON.parse(localStorage.getItem('easyfact_registered_users') || '[]');
     this.pendingAuthUser = null;
     this.pendingTabId = null;
@@ -95,7 +98,7 @@ class EasyFactApp {
     this.renderAllViews();
     this.updateLivePdf();
     this.updateHeaderAuthUI();
-    this.switchTab('landing');
+    this.switchTab('dashboard');
   }
 
   /* Custom Professional Toast Notifications System */
@@ -858,31 +861,19 @@ class EasyFactApp {
   }
 
   openLoginModal() {
-    this.closeModal('register-modal');
-    const modal = document.getElementById('login-modal');
-    if (modal) modal.classList.add('active');
+    this.switchTab('dashboard');
   }
 
   openRegisterModal() {
-    this.closeModal('login-modal');
-    const modal = document.getElementById('register-modal');
-    if (modal) modal.classList.add('active');
+    this.switchTab('dashboard');
   }
 
-  openAuthModal(mode = 'login', customSubtitle = null) {
-    if (mode === 'register') {
-      this.openRegisterModal();
-    } else {
-      this.openLoginModal();
-    }
+  openAuthModal() {
+    this.switchTab('dashboard');
   }
 
   handleHeaderAuthClick() {
-    if (this.isLoggedIn) {
-      this.openModal('profile-modal');
-    } else {
-      this.openLoginModal();
-    }
+    this.switchTab('settings');
   }
 
   async handleLoginSubmit() {

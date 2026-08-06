@@ -24,11 +24,9 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Serve Frontend Static Files (Root & Client folder)
-  const rootPath = join(process.cwd(), '..');
-  const clientPath = join(process.cwd(), '..', 'client');
-  app.use(express.static(rootPath));
-  app.use(express.static(clientPath));
+  // Serve Frontend Static Files (Public & Root folders)
+  app.use(express.static(join(process.cwd(), 'public')));
+  app.use(express.static(process.cwd()));
 
   // Global DTO validation pipe
   app.useGlobalPipes(

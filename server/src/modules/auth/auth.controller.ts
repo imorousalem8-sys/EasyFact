@@ -1,6 +1,7 @@
 import { Controller, Post, Body, Get, UseGuards, Req, Res } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -26,6 +27,19 @@ export class AuthController {
     return this.authService.login(body);
   }
 
+  // ✅ Profile route protected by JWT — used by frontend to validate token on load
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  async getProfile(@Req() req: any) {
+    return this.authService.getProfile(req.user?.sub || req.user?.id);
+  }
+
+  // POST logout (stateless JWT — just confirms logout on client)
+  @Post('logout')
+  async logout() {
+    return { success: true, message: 'Déconnexion réussie.' };
+  }
+
   // Google OAuth entry point
   @Get('google')
   @UseGuards(AuthGuard('google'))
@@ -40,16 +54,12 @@ export class AuthController {
     try {
       const result = await this.authService.googleLogin(req.user);
       if (result && result.token) {
-        return res.redirect(`/?token=${encodeURIComponent(result.token)}`);
+        return res.redirect(`/auth.html?token=${encodeURIComponent(result.token)}`);
       }
-      return res.redirect('/?error=oauth_failed');
+      return res.redirect('/auth.html?error=oauth_failed');
     } catch (err) {
-      return res.redirect('/?error=oauth_error');
+      return res.redirect('/auth.html?error=oauth_error');
     }
   }
-
-  @Get('profile')
-  async getProfile() {
-    return this.authService.getProfile();
-  }
 }
+

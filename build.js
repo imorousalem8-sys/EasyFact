@@ -13,7 +13,7 @@ if (!fs.existsSync('public')) {
 }
 
 // Copy static frontend files
-const staticFiles = ['index.html', 'styles.css', 'app.js', 'i18n.js', 'easyfact_logo.png', 'easyfact_icon.png', 'easyfact_hero.png'];
+const staticFiles = ['index.html', 'auth.html', 'styles.css', 'app.js', 'i18n.js', 'easyfact_logo.png', 'easyfact_icon.png', 'easyfact_hero.png'];
 staticFiles.forEach(f => {
   if (fs.existsSync(f)) {
     fs.copyFileSync(f, path.join('public', f));
