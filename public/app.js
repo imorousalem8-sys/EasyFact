@@ -119,7 +119,7 @@ class EasyFactApp {
     this.renderAllViews();
     this.updateLivePdf();
     this.updateHeaderAuthUI();
-    this.switchTab('dashboard');
+    this.switchTab('landing');
   }
 
   /* Custom Professional Toast Notifications System */
