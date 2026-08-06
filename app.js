@@ -306,6 +306,28 @@ class EasyFactApp {
     modal.classList.add('active');
   }
 
+  handleHeaderAuthClick() {
+    if (this.isLoggedIn) {
+      this.switchTab('settings');
+      this.showToast(`Espace Entreprise actif : ${this.companyProfile.name || this.currentUserEmail}`, "info");
+    } else {
+      window.location.href = 'auth.html';
+    }
+  }
+
+  logout() {
+    localStorage.removeItem('easyfact_token');
+    localStorage.removeItem('easyfact_active_user_id');
+    localStorage.removeItem('easyfact_active_user_email');
+    localStorage.removeItem('easyfact_company_name');
+    this.isLoggedIn = false;
+    this.jwtToken = null;
+    this.showToast("Déconnexion réussie.", "info");
+    setTimeout(() => {
+      window.location.href = 'auth.html';
+    }, 800);
+  }
+
   /* User Session Memory & LocalStorage Persistence Handler */
   saveToStorage() {
     try {
