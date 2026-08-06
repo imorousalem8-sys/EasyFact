@@ -111,15 +111,15 @@ class EasyFactApp {
   }
 
   init() {
-    this.loadFromStorage();
-    this.bindEvents();
-    this.initSignaturePad();
-    this.applyTheme(this.theme);
-    this.applyLanguage(this.lang);
-    this.renderAllViews();
-    this.updateLivePdf();
-    this.updateHeaderAuthUI();
-    this.switchTab('landing');
+    try { this.loadFromStorage(); } catch(e) { console.warn('loadFromStorage warning:', e); }
+    try { this.bindEvents(); } catch(e) { console.warn('bindEvents warning:', e); }
+    try { this.initSignaturePad(); } catch(e) { console.warn('initSignaturePad warning:', e); }
+    try { this.applyTheme(this.theme); } catch(e) { console.warn('applyTheme warning:', e); }
+    try { this.applyLanguage(this.lang); } catch(e) { console.warn('applyLanguage warning:', e); }
+    try { this.renderAllViews(); } catch(e) { console.warn('renderAllViews warning:', e); }
+    try { this.updateLivePdf(); } catch(e) { console.warn('updateLivePdf warning:', e); }
+    try { this.updateHeaderAuthUI(); } catch(e) { console.warn('updateHeaderAuthUI warning:', e); }
+    try { this.switchTab('landing'); } catch(e) { console.warn('switchTab warning:', e); }
   }
 
   /* Custom Professional Toast Notifications System */
