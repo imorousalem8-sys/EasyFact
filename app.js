@@ -1411,12 +1411,12 @@ class EasyFactApp {
       const tier = (this.userTier || this.userTierFromAuth || 'starter').toUpperCase();
 
       if (nameEl) nameEl.innerText = displayName;
-      if (subEl) subEl.innerHTML = `<i class="fa-solid fa-circle-check text-emerald"></i> Connecté (${tier})`;
+      if (subEl) subEl.innerHTML = `<i class="fa-solid fa-circle-check text-emerald"></i> Espace Actif`;
       if (avatarEl) avatarEl.innerText = displayName.charAt(0).toUpperCase();
     } else {
-      if (nameEl) nameEl.innerText = 'Connexion / Inscription';
-      if (subEl) subEl.innerHTML = `<i class="fa-solid fa-right-to-bracket text-emerald"></i> Espace Membre`;
-      if (avatarEl) avatarEl.innerHTML = `<i class="fa-solid fa-user-lock"></i>`;
+      if (nameEl) nameEl.innerText = 'Mon Entreprise';
+      if (subEl) subEl.innerHTML = `<i class="fa-solid fa-circle-check text-emerald"></i> Espace Actif`;
+      if (avatarEl) avatarEl.innerHTML = `<i class="fa-solid fa-building-user"></i>`;
     }
 
     this.updateSidebarUI();
@@ -2968,21 +2968,7 @@ class EasyFactApp {
   }
 
   logout() {
-    this.currentUserId = null;
-    this.currentUserEmail = null;
-    
-    const headerName = document.getElementById('header-user-name');
-    const headerSub = document.getElementById('header-user-sub');
-    const headerAvatar = document.getElementById('header-avatar');
-
-    if (headerName) headerName.innerText = 'Connexion / Inscription';
-    if (headerSub) headerSub.innerHTML = `<i class="fa-solid fa-right-to-bracket text-emerald"></i> Espace Membre`;
-    if (headerAvatar) headerAvatar.innerHTML = `<i class="fa-solid fa-user-lock"></i>`;
-
-    this.saveToStorage();
-    this.closeModal('profile-modal');
-    this.showToast("Vous avez été déconnecté avec succès.", "info");
-    this.switchTab('landing');
+    this.switchTab('dashboard');
   }
 }
 

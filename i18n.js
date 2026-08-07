@@ -17,8 +17,8 @@ window.i18nData = {
     nav_settings: "Paramètres Entreprise",
 
     // Header & Badges
-    member_portal: "Espace Membre",
-    login_btn: "Connexion / Inscription",
+    member_portal: "Espace Actif",
+    login_btn: "Espace Entreprise Actif",
     plan_starter_label: "Plan Gratuit (Starter)",
     change_plan_btn: "Changer Plan",
     quota_header: "Factures offertes ce mois",
