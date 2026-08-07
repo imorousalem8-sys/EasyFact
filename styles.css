@@ -1105,8 +1105,15 @@ body { background-color: var(--bg-dark); color: var(--text-main); min-height: 10
 .card-3d.active-country {
   border: 2px solid #10b981;
   background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
-  box-shadow: 0 12px 28px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 12px 28px rgba(16, 185, 129, 0.25);
 }
+
+.glow-ci:hover { border-color: #f97316; box-shadow: 0 15px 30px rgba(249, 115, 22, 0.25); }
+.glow-sn:hover { border-color: #10b981; box-shadow: 0 15px 30px rgba(16, 185, 129, 0.25); }
+.glow-benin:hover { border-color: #eab308; box-shadow: 0 15px 30px rgba(234, 179, 8, 0.25); }
+.glow-cm:hover { border-color: #ef4444; box-shadow: 0 15px 30px rgba(239, 68, 68, 0.25); }
+.glow-gh:hover { border-color: #eab308; box-shadow: 0 15px 30px rgba(234, 179, 8, 0.25); }
+.glow-ng:hover { border-color: #10b981; box-shadow: 0 15px 30px rgba(16, 185, 129, 0.25); }
 
 .flag-3d {
   font-size: 2.4rem;

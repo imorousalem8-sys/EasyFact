@@ -2780,6 +2780,12 @@ class EasyFactApp {
     this.currentUserEmail = cleanEmail;
     if (existingUser.companyName) this.companyProfile.name = existingUser.companyName;
 
+    localStorage.setItem('easyfact_logged_in', 'true');
+    localStorage.setItem('easyfact_token', 'token_easyfact_' + Date.now());
+    localStorage.setItem('easyfact_active_user_id', existingUser.userId);
+    localStorage.setItem('easyfact_active_user_email', cleanEmail);
+    localStorage.setItem('easyfact_company_name', this.companyProfile.name || userName);
+
     this.updateUserAuthUI(cleanEmail, userName);
     this.saveToStorage();
 
@@ -2922,6 +2928,12 @@ class EasyFactApp {
     this.currentUserId = user.userId;
     this.currentUserEmail = user.email;
     this.companyProfile.name = user.companyName;
+
+    localStorage.setItem('easyfact_logged_in', 'true');
+    localStorage.setItem('easyfact_token', 'token_easyfact_' + Date.now());
+    localStorage.setItem('easyfact_active_user_id', user.userId);
+    localStorage.setItem('easyfact_active_user_email', user.email);
+    localStorage.setItem('easyfact_company_name', user.companyName);
 
     this.updateUserAuthUI(user.email, user.companyName);
     this.saveToStorage();

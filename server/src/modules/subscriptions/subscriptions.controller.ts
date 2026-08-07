@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { SubscriptionsService } from './subscriptions.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('subscriptions')
 export class SubscriptionsController {
@@ -11,6 +12,7 @@ export class SubscriptionsController {
   }
 
   @Post('subscribe')
+  @UseGuards(JwtAuthGuard)
   async subscribe(
     @Body() body: {
       planId: string;
