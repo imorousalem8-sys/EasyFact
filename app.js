@@ -1913,7 +1913,9 @@ class EasyFactApp {
       if (healthBadge) healthBadge.innerHTML = `<span class="badge-status" style="background:#fee2e2; color:#b91c1c; padding:6px 14px; border-radius:9999px; font-weight:800;"><i class="fa-solid fa-arrow-trend-down"></i> Solde Déficitaire</span>`;
     }
 
-    // Monthly 12-Month Table Breakdown
+    // Monthly 12-Month Table Breakdown & Canvas Trend Line Data
+    const monthlyNetProfits = [];
+
     const tbody = document.getElementById('fi-monthly-tbody');
     if (tbody) {
       let html = '';
@@ -1931,6 +1933,8 @@ class EasyFactApp {
         const mRev = mInvoices.reduce((acc, curr) => acc + (curr.status === 'Payé' ? (curr.net_to_pay || curr.amount || 0) : 0), 0);
         const mExp = mExpenses.reduce((acc, curr) => acc + (curr.amountHt || 0), 0);
         const mProfit = mRev - mExp;
+
+        monthlyNetProfits.push(mProfit);
 
         let trendBadge = `<span style="color:#94a3b8; font-weight:600;"><i class="fa-solid fa-minus"></i> 0 FCFA</span>`;
         if (mProfit > 0) {
@@ -1956,6 +1960,135 @@ class EasyFactApp {
       });
       tbody.innerHTML = html;
     }
+
+    // Render Canvas 3D Trend Curve Animation
+    this.renderFinancialTrendChart(monthlyNetProfits, netProfitYear >= 0);
+  }
+
+  renderFinancialTrendChart(monthlyData, isUpwardTrend = true) {
+    const canvas = document.getElementById('fi-trend-canvas');
+    const tag = document.getElementById('fi-chart-trend-tag');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+
+    const width = rect.width;
+    const height = rect.height;
+
+    const vals = (monthlyData && monthlyData.length === 12) ? monthlyData : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    const maxVal = Math.max(...vals, 100000);
+    const minVal = Math.min(...vals, 0);
+    const range = (maxVal - minVal) || 1;
+
+    const points = vals.map((v, i) => {
+      const x = (i / (vals.length - 1)) * (width - 40) + 20;
+      const y = height - 30 - ((v - minVal) / range) * (height - 60);
+      return { x, y, val: v };
+    });
+
+    const lineColor = isUpwardTrend ? '#10b981' : '#ef4444';
+    const gradientTop = isUpwardTrend ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)';
+
+    if (tag) {
+      if (isUpwardTrend) {
+        tag.style.background = 'rgba(16, 185, 129, 0.15)';
+        tag.style.borderColor = '#10b981';
+        tag.style.color = '#10b981';
+        tag.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> TENDANCE HAUSSIÈRE (POSITIF 🚀)`;
+      } else {
+        tag.style.background = 'rgba(239, 68, 68, 0.15)';
+        tag.style.borderColor = '#ef4444';
+        tag.style.color = '#ef4444';
+        tag.innerHTML = `<i class="fa-solid fa-arrow-trend-down"></i> TENDANCE BAISSIÈRE (DÉFICIT 🔻)`;
+      }
+    }
+
+    let progress = 0;
+    const animate = () => {
+      progress += 0.05;
+      if (progress > 1) progress = 1;
+
+      ctx.clearRect(0, 0, width, height);
+
+      // Gridlines
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      for (let y = 30; y < height - 20; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+
+      const limitIdx = Math.floor(progress * (points.length - 1));
+      const subPoints = points.slice(0, limitIdx + 2);
+
+      if (subPoints.length > 1) {
+        // Area Gradient Fill
+        const gradient = ctx.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, gradientTop);
+        gradient.addColorStop(1, 'rgba(15, 23, 42, 0)');
+
+        ctx.beginPath();
+        ctx.moveTo(subPoints[0].x, height - 20);
+        ctx.lineTo(subPoints[0].x, subPoints[0].y);
+
+        for (let i = 0; i < subPoints.length - 1; i++) {
+          const xc = (subPoints[i].x + subPoints[i + 1].x) / 2;
+          const yc = (subPoints[i].y + subPoints[i + 1].y) / 2;
+          ctx.quadraticCurveTo(subPoints[i].x, subPoints[i].y, xc, yc);
+        }
+
+        const lastP = subPoints[subPoints.length - 1];
+        ctx.lineTo(lastP.x, lastP.y);
+        ctx.lineTo(lastP.x, height - 20);
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Neon Curve Line
+        ctx.beginPath();
+        ctx.moveTo(subPoints[0].x, subPoints[0].y);
+
+        for (let i = 0; i < subPoints.length - 1; i++) {
+          const xc = (subPoints[i].x + subPoints[i + 1].x) / 2;
+          const yc = (subPoints[i].y + subPoints[i + 1].y) / 2;
+          ctx.quadraticCurveTo(subPoints[i].x, subPoints[i].y, xc, yc);
+        }
+
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = 3.5;
+        ctx.shadowColor = lineColor;
+        ctx.shadowBlur = 10;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Glowing Dots
+        subPoints.forEach((p) => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.shadowColor = lineColor;
+          ctx.shadowBlur = 8;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        });
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    animate();
+  }
   }
 
   loadDemoData() {
