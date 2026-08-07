@@ -87,7 +87,7 @@
         </div>
 
         <!-- Enterprise Profile Badge -->
-        <div class="user-profile-button" id="header-auth-btn" onclick="app.handleHeaderAuthClick()" title="Mon Compte / Connexion" style="cursor: pointer;">
+        <div class="user-profile-button" id="header-auth-btn" onclick="app.switchTab('settings')" title="Paramètres de l'Entreprise" style="cursor: pointer;">
           <div class="avatar" id="header-avatar" style="background: linear-gradient(135deg, #10b981, #059669); color: white;"><i class="fa-solid fa-building-user"></i></div>
           <div class="user-info">
             <span class="user-name" id="header-user-name">Mon Entreprise</span>
@@ -170,9 +170,9 @@
       <main class="content-area">
 
         <!-- ============================================================
-             0. LANDING VIEW (PAGE D'ACCUEIL D'ORIGINE AVEC VISUEL EASYFACT_HERO.PNG)
+             0. LANDING VIEW (DÉSACTIVÉE : ACCÈS DIRECT AU TABLEAU DE BORD)
         ============================================================ -->
-        <section id="view-landing" class="tab-view">
+        <section id="view-landing" class="tab-view" style="display: none !important;">
           <!-- Hero Section -->
           <div class="landing-hero-section">
             <div class="landing-hero-badge">
