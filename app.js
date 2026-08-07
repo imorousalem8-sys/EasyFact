@@ -119,8 +119,13 @@ class EasyFactApp {
     try { this.renderAllViews(); } catch(e) { console.warn('renderAllViews warning:', e); }
     try { this.updateLivePdf(); } catch(e) { console.warn('updateLivePdf warning:', e); }
     try { this.updateHeaderAuthUI(); } catch(e) { console.warn('updateHeaderAuthUI warning:', e); }
-    // Auto-direct: If logged in, open workspace dashboard directly! Otherwise show landing page.
-    if (this.isLoggedIn || localStorage.getItem('easyfact_logged_in') === 'true') {
+    // Auto-direct: If logged in or requested tab in URL query, open workspace directly!
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestedTab = urlParams.get('tab');
+
+    if (requestedTab) {
+      try { this.switchTab(requestedTab); } catch(e) { console.warn('switchTab requestedTab warning:', e); }
+    } else if (this.isLoggedIn || localStorage.getItem('easyfact_logged_in') === 'true') {
       try { this.switchTab('dashboard'); } catch(e) { console.warn('switchTab dashboard warning:', e); }
     } else {
       try { this.switchTab('landing'); } catch(e) { console.warn('switchTab landing warning:', e); }

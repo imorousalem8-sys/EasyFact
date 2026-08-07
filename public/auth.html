@@ -1223,20 +1223,8 @@ const Auth = (() => {
   // SUCCESS + REDIRECT
   // ============================================================
   function showSuccess() {
-    document.getElementById('tab-bar').style.display = 'none';
-    document.getElementById('panel-login').classList.remove('active');
-    document.getElementById('panel-register').classList.remove('active');
-    document.getElementById('otp-step').classList.remove('active');
-    document.getElementById('success-screen').classList.add('active');
-    document.getElementById('auth-footer').style.display = 'none';
-
-    // Animate redirect bar then redirect
-    setTimeout(() => {
-      document.getElementById('redirect-bar').style.width = '100%';
-    }, 100);
-    setTimeout(() => {
-      window.location.href = '/';
-    }, 2000);
+    localStorage.setItem('easyfact_logged_in', 'true');
+    window.location.href = 'index.html?tab=dashboard';
   }
 
   // ============================================================
