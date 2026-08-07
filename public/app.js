@@ -777,6 +777,21 @@ class EasyFactApp {
         qrImg.style.display = 'block';
       }
 
+      // Dynamic Legal Fiscal Mention per Country
+      const legalMentions = {
+        GH: "Tax Invoice compliant with Ghana Revenue Authority (GRA) standards & VAT Flat Rate Scheme (VFRS).",
+        NG: "Tax Invoice compliant with Federal Inland Revenue Service (FIRS) & CAC Nigeria regulations.",
+        CI: "Facture Normalisée conforme à la Direction Générale des Impôts (DGI) de Côte d'Ivoire & Code Général des Impôts.",
+        SN: "Facture conforme au Code Général des Impôts du Sénégal (DGID) & Normes SYSCOHADA.",
+        BJ: "Facture Normalisée certifiée e-MECeF DGI Bénin & Identifiant Fiscal Unique (IFU).",
+        CM: "Facture certifiée conforme à la Direction Générale des Impôts (DGI) du Cameroun & Numéro d'Identifiant Unique (NIU)."
+      };
+
+      const footerNoteEl = document.querySelector('.pdf-footer-note p');
+      if (footerNoteEl) {
+        footerNoteEl.innerText = legalMentions[this.country] || "Facture générée via EasyFact Africa — Conforme aux normes comptables et fiscales locales.";
+      }
+
       // Theme Colors
       const thList = document.querySelectorAll('.pdf-table th');
       thList.forEach(th => th.style.backgroundColor = pdfTheme);
@@ -787,42 +802,42 @@ class EasyFactApp {
   }
 
   /* Switch Country & Adaptation Fiscale sur Mesure par Pays */
-  switchCountry(code) {
+  switchCountry(code, autoNavigate = true) {
     if (!code) return;
     this.country = code;
     localStorage.setItem('easyfact_country', code);
 
     const countryProfiles = {
-      CI: { name: "Côte d'Ivoire 🇨🇮", currency: 'XOF', vat: 18, symbol: 'FCFA', methods: [
+      CI: { name: "Côte d'Ivoire 🇨🇮", lang: 'fr', currency: 'XOF', vat: 18, symbol: 'FCFA', methods: [
         { val: 'wave', label: 'Wave Mobile Money 🌊' },
         { val: 'om', label: 'Orange Money 🍊' },
         { val: 'mtn', label: 'MTN Mobile Money 💛' },
         { val: 'moov', label: 'Moov Money (Flooz) 💙' },
         { val: 'card', label: 'Virement Bancaire 💳' }
       ]},
-      SN: { name: "Sénégal 🇸🇳", currency: 'XOF', vat: 18, symbol: 'FCFA', methods: [
+      SN: { name: "Sénégal 🇸🇳", lang: 'fr', currency: 'XOF', vat: 18, symbol: 'FCFA', methods: [
         { val: 'wave', label: 'Wave Sénégal 🌊' },
         { val: 'om', label: 'Orange Money SN 🍊' },
         { val: 'free', label: 'Free Money 🟢' },
         { val: 'card', label: 'Virement Bancaire 💳' }
       ]},
-      BJ: { name: "Bénin 🇧🇯", currency: 'XOF', vat: 18, symbol: 'FCFA', methods: [
+      BJ: { name: "Bénin 🇧🇯", lang: 'fr', currency: 'XOF', vat: 18, symbol: 'FCFA', methods: [
         { val: 'wave', label: 'Wave Bénin 🌊' },
         { val: 'mtn', label: 'MTN MoMo Bénin 💛' },
         { val: 'moov', label: 'Moov Money Bénin 💙' },
         { val: 'card', label: 'Virement Bancaire 💳' }
       ]},
-      CM: { name: "Cameroun 🇨🇲", currency: 'XAF', vat: 19.2, symbol: 'FCFA', methods: [
+      CM: { name: "Cameroun 🇨🇲", lang: 'fr', currency: 'XAF', vat: 19.2, symbol: 'FCFA', methods: [
         { val: 'om', label: 'Orange Money Cameroun 🍊' },
         { val: 'mtn', label: 'MTN MoMo Cameroun 💛' },
         { val: 'card', label: 'Virement Express 💳' }
       ]},
-      GH: { name: "Ghana 🇬🇭", currency: 'GHS', vat: 15, symbol: 'GHS ₵', methods: [
+      GH: { name: "Ghana 🇬🇭", lang: 'en', currency: 'GHS', vat: 15, symbol: 'GHS ₵', methods: [
         { val: 'mtn_gh', label: 'MTN MoMo Ghana (024/054) 💛' },
         { val: 'voda_gh', label: 'Telecel / Vodafone Cash 🔴' },
         { val: 'card', label: 'Ghana Interbank (GIP) 💳' }
       ]},
-      NG: { name: "Nigeria 🇳🇬", currency: 'NGN', vat: 7.5, symbol: 'NGN ₦', methods: [
+      NG: { name: "Nigeria 🇳🇬", lang: 'en', currency: 'NGN', vat: 7.5, symbol: 'NGN ₦', methods: [
         { val: 'opay_ng', label: 'OPay Wallet (Nigeria) 🟢' },
         { val: 'paystack_ng', label: 'Paystack Direct Transfer 💳' },
         { val: 'bank_ng', label: 'NIBSS Bank Transfer 🏦' }
@@ -831,6 +846,15 @@ class EasyFactApp {
 
     const prof = countryProfiles[code] || countryProfiles.CI;
     this.currency = prof.currency;
+
+    // Update Country Select UI
+    const countrySelect = document.getElementById('country-select');
+    if (countrySelect) countrySelect.value = code;
+
+    // Auto-switch language (EN for Ghana & Nigeria, FR for others)
+    if (prof.lang && prof.lang !== this.lang) {
+      this.switchLanguage(prof.lang);
+    }
 
     const currSelect = document.getElementById('currency-select');
     if (currSelect) currSelect.value = prof.currency;
@@ -843,9 +867,34 @@ class EasyFactApp {
       paySelect.innerHTML = prof.methods.map(m => `<option value="${m.val}">${m.label}</option>`).join('');
     }
 
-    this.showToast(`Fiscalité & Devise basculées : ${prof.name} (${prof.symbol} - TVA ${prof.vat}%)`, "success");
+    // Dynamic Document Types
+    const docTypeSelect = document.getElementById('doc-type');
+    if (docTypeSelect) {
+      if (prof.lang === 'en') {
+        docTypeSelect.innerHTML = `
+          <option value="Tax Invoice">Tax Invoice (Official)</option>
+          <option value="Proforma Quote">Commercial Proforma Quote</option>
+          <option value="Credit Note">Credit Note</option>
+        `;
+      } else {
+        docTypeSelect.innerHTML = `
+          <option value="Facture Normalisée">Facture Normalisée Officielle</option>
+          <option value="Devis Commercial">Devis Commercial Proforma</option>
+          <option value="Bordereau d'Avoir">Bordereau d'Avoir</option>
+        `;
+      }
+    }
+
+    this.showToast(`Fiscalité & Langue basculées : ${prof.name} (${prof.symbol} - TVA ${prof.vat}%)`, "success");
     this.saveToStorage();
     this.updateLivePdf();
+
+    // Auto-navigate to Invoice Creator on country selection
+    if (autoNavigate) {
+      setTimeout(() => {
+        this.switchTab('create-invoice');
+      }, 400);
+    }
   }
 
   /* Moteur de Gestion des Cookies RGPD & Consentement */
