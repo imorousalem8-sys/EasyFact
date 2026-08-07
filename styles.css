@@ -388,27 +388,123 @@ body { background-color: var(--bg-dark); color: var(--text-main); min-height: 10
 .client-card-name { font-weight: 700; font-size: 0.95rem; color: #0f172a; margin-bottom: 6px; }
 .client-card-meta { font-size: 0.78rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
 
-/* Pricing Grid */
-.pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 20px; }
+/* Pricing & Subscription Grid System (Lisibilité & Contraste Parfaits) */
+.pricing-cards-grid, .pricing-grid { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+  gap: 24px; 
+  margin-top: 24px; 
+  align-items: stretch;
+}
+
 .pricing-card { 
   background: #ffffff; 
-  border: 1px solid var(--border-color); 
+  border: 1.5px solid var(--border-color); 
   border-radius: var(--radius-lg); 
-  padding: 20px; 
+  padding: 28px 24px; 
   text-align: center; 
   position: relative; 
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #0f172a;
 }
+[data-theme="dark"] .pricing-card {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
 .pricing-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 20px 40px rgba(16, 185, 129, 0.15);
   border-color: var(--primary);
 }
-.pricing-card.featured { border: 2px solid var(--primary); box-shadow: 0 10px 30px rgba(16, 185, 129, 0.15); }
-.card-badge { font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: var(--radius-pill); background: #e2e8f0; color: #475569; display: inline-block; margin-bottom: 10px; }
-.card-badge.gold { background: var(--primary); color: #fff; }
-.plan-price { font-family: var(--font-heading); font-size: 1.8rem; font-weight: 800; color: #0f172a; margin: 12px 0; }
-.plan-features { list-style: none; text-align: left; font-size: 0.8rem; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; }
+
+.pricing-card.popular, .pricing-card.featured { 
+  border: 2.5px solid #10b981; 
+  box-shadow: 0 15px 35px rgba(16, 185, 129, 0.2); 
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, #ffffff 100%);
+}
+[data-theme="dark"] .pricing-card.popular, [data-theme="dark"] .pricing-card.featured {
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, #1e293b 100%);
+}
+
+.pricing-badge-popular {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff !important;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 14px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  display: inline-block;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.pricing-badge, .card-badge { 
+  font-size: 0.7rem; 
+  font-weight: 800; 
+  padding: 3px 10px; 
+  border-radius: var(--radius-pill); 
+  background: rgba(16, 185, 129, 0.12); 
+  color: #059669 !important; 
+  display: inline-block; 
+  margin-bottom: 12px; 
+  text-transform: uppercase;
+}
+
+.pricing-title { 
+  font-family: var(--font-heading); 
+  font-size: 1.4rem; 
+  font-weight: 800; 
+  color: #0f172a; 
+  margin-bottom: 6px; 
+}
+[data-theme="dark"] .pricing-title { color: #ffffff !important; }
+
+.pricing-price, .plan-price { 
+  font-family: var(--font-heading); 
+  font-size: 2.1rem; 
+  font-weight: 900; 
+  color: #059669; 
+  margin: 12px 0 6px; 
+}
+[data-theme="dark"] .pricing-price, [data-theme="dark"] .plan-price { color: #34d399 !important; }
+
+.pricing-price span { font-size: 0.9rem; font-weight: 600; color: #64748b; }
+[data-theme="dark"] .pricing-price span { color: #94a3b8 !important; }
+
+.pricing-desc { 
+  font-size: 0.85rem; 
+  color: #475569; 
+  margin-bottom: 18px; 
+  line-height: 1.5; 
+}
+[data-theme="dark"] .pricing-desc { color: #94a3b8 !important; }
+
+.pricing-features, .plan-features { 
+  list-style: none; 
+  text-align: left; 
+  font-size: 0.88rem; 
+  margin-bottom: 24px; 
+  padding: 0;
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px; 
+}
+
+.pricing-features li, .plan-features li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1e293b;
+  font-weight: 600;
+}
+[data-theme="dark"] .pricing-features li, [data-theme="dark"] .plan-features li { color: #cbd5e1 !important; }
 
 /* ==========================================================================
    ULTRA-RESPONSIVE MEDIA QUERIES (MOBILE, TABLET & DESKTOP OPTIMIZATION)
