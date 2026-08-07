@@ -976,14 +976,11 @@ class EasyFactApp {
     document.getElementById('sidebar-backdrop')?.classList.remove('active');
   }
 
-  /* AUTHENTICATION & SIMPLE FRICTIONLESS LOGIN HANDLERS */
+  /* AUTHENTICATION DISABLED - DIRECT PERMANENT WORKSPACE ACCESS */
   openAuthModal(mode = 'login', customSubtitle = null) {
-    this.authMode = mode;
-    this.updateAuthModalUI();
-    const sub = document.getElementById('auth-modal-subtitle');
-    if (sub && customSubtitle) sub.innerText = customSubtitle;
-    const modal = document.getElementById('auth-modal');
-    if (modal) modal.classList.add('active');
+    // Désactivé sur instruction de Monsieur Salem : Accès direct au workspace sans aucune modale
+    this.switchTab('dashboard');
+    return;
   }
 
   closeModal(modalId) {
