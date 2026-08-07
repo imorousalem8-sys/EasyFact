@@ -739,40 +739,41 @@ class EasyFactApp {
       if (netTotalEl) netTotalEl.innerText = this.formatCurrency(netPayable);
       if (textAmountEl) textAmountEl.innerText = `${this.formatCurrency(netPayable)}`;
 
-      // Payment QR & Details
+      // Dynamic Payment QR Code & Mobile Money Deep Details per Country
       const qrMethodName = document.getElementById('pdf-pay-method-name');
       const qrAccountDisplay = document.getElementById('pdf-pay-account-display');
       const qrImg = document.getElementById('pdf-qr-code');
-
       const numberOverride = document.getElementById('doc-payment-number-override')?.value?.trim();
 
-      let payName = 'Wave Mobile Money';
-      let defaultNum = this.companyProfile?.waveNum || this.companyProfile?.phone || '';
+      const payLabels = {
+        wave: 'Wave Mobile Money 🌊',
+        om: 'Orange Money 🍊',
+        mtn: 'MTN Mobile Money 💛',
+        moov: 'Moov Money (Flooz) 💙',
+        free: 'Free Money 🟢',
+        mtn_gh: 'MTN MoMo Ghana (024/054) 💛',
+        voda_gh: 'Telecel / Vodafone Cash 🔴',
+        opay_ng: 'OPay Wallet (Nigeria) 🟢',
+        paystack_ng: 'Paystack Direct Transfer 💳',
+        bank_ng: 'NIBSS Bank Transfer 🏦',
+        card: 'Virement / Carte Bancaire 💳'
+      };
 
-      if (payMethod === 'om') {
-        payName = 'Orange Money / MTN / Moov';
-        defaultNum = this.companyProfile?.omNum || this.companyProfile?.phone || '';
-      } else if (payMethod === 'card') {
-        payName = 'Virement Bancaire (RIB/IBAN)';
-        defaultNum = this.companyProfile?.bankRib || '';
-      }
+      let payName = payLabels[payMethod] || 'Mobile Money';
+      let defaultNum = this.companyProfile?.waveNum || this.companyProfile?.phone || '';
+      if (payMethod === 'om') defaultNum = this.companyProfile?.omNum || this.companyProfile?.phone || '';
+      if (payMethod === 'card' || payMethod === 'bank_ng') defaultNum = this.companyProfile?.bankRib || '';
 
       const activePayNum = numberOverride ? numberOverride : defaultNum;
-      const displayNum = activePayNum ? activePayNum : 'Non renseigné (à configurer)';
+      const displayNum = activePayNum ? activePayNum : 'Ex: +221 77 000 00 00';
 
-      if (qrMethodName) qrMethodName.innerText = payName;
-      if (qrAccountDisplay) {
-        qrAccountDisplay.innerText = (payMethod === 'card')
-          ? `RIB / IBAN : ${displayNum}`
-          : `N° Crédité (${payName.split(' ')[0]}) : ${displayNum}`;
-      }
+      if (qrMethodName) qrMethodName.innerText = `💳 RÈGLEMENT ${payName.toUpperCase()}`;
+      if (qrAccountDisplay) qrAccountDisplay.innerText = `N° / Compte à Créditer : ${displayNum}`;
+
       if (qrImg) {
-        if (activePayNum) {
-          qrImg.style.display = 'block';
-          qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(payName + ':' + activePayNum + ':' + netPayable)}`;
-        } else {
-          qrImg.style.display = 'none';
-        }
+        const qrPayload = `PAY:${payName} | NUM:${displayNum} | AMOUNT:${this.formatCurrency(netPayable)} | REF:${number}`;
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrPayload)}`;
+        qrImg.style.display = 'block';
       }
 
       // Theme Colors
@@ -782,6 +783,68 @@ class EasyFactApp {
     } catch (e) {
       console.warn("PDF Live Preview update skipped:", e);
     }
+  }
+
+  /* Switch Country & Adaptation Fiscale sur Mesure par Pays */
+  switchCountry(code) {
+    if (!code) return;
+    this.country = code;
+    localStorage.setItem('easyfact_country', code);
+
+    const countryProfiles = {
+      CI: { name: "Côte d'Ivoire 🇨🇮", currency: 'XOF', vat: 18, symbol: 'FCFA', methods: [
+        { val: 'wave', label: 'Wave Mobile Money 🌊' },
+        { val: 'om', label: 'Orange Money 🍊' },
+        { val: 'mtn', label: 'MTN Mobile Money 💛' },
+        { val: 'moov', label: 'Moov Money (Flooz) 💙' },
+        { val: 'card', label: 'Virement Bancaire 💳' }
+      ]},
+      SN: { name: "Sénégal 🇸🇳", currency: 'XOF', vat: 18, symbol: 'FCFA', methods: [
+        { val: 'wave', label: 'Wave Sénégal 🌊' },
+        { val: 'om', label: 'Orange Money SN 🍊' },
+        { val: 'free', label: 'Free Money 🟢' },
+        { val: 'card', label: 'Virement Bancaire 💳' }
+      ]},
+      BJ: { name: "Bénin 🇧🇯", currency: 'XOF', vat: 18, symbol: 'FCFA', methods: [
+        { val: 'wave', label: 'Wave Bénin 🌊' },
+        { val: 'mtn', label: 'MTN MoMo Bénin 💛' },
+        { val: 'moov', label: 'Moov Money Bénin 💙' },
+        { val: 'card', label: 'Virement Bancaire 💳' }
+      ]},
+      CM: { name: "Cameroun 🇨🇲", currency: 'XAF', vat: 19.2, symbol: 'FCFA', methods: [
+        { val: 'om', label: 'Orange Money Cameroun 🍊' },
+        { val: 'mtn', label: 'MTN MoMo Cameroun 💛' },
+        { val: 'card', label: 'Virement Express 💳' }
+      ]},
+      GH: { name: "Ghana 🇬🇭", currency: 'GHS', vat: 15, symbol: 'GHS ₵', methods: [
+        { val: 'mtn_gh', label: 'MTN MoMo Ghana (024/054) 💛' },
+        { val: 'voda_gh', label: 'Telecel / Vodafone Cash 🔴' },
+        { val: 'card', label: 'Ghana Interbank (GIP) 💳' }
+      ]},
+      NG: { name: "Nigeria 🇳🇬", currency: 'NGN', vat: 7.5, symbol: 'NGN ₦', methods: [
+        { val: 'opay_ng', label: 'OPay Wallet (Nigeria) 🟢' },
+        { val: 'paystack_ng', label: 'Paystack Direct Transfer 💳' },
+        { val: 'bank_ng', label: 'NIBSS Bank Transfer 🏦' }
+      ]}
+    };
+
+    const prof = countryProfiles[code] || countryProfiles.CI;
+    this.currency = prof.currency;
+
+    const currSelect = document.getElementById('currency-select');
+    if (currSelect) currSelect.value = prof.currency;
+
+    const vatSelect = document.getElementById('tax-vat');
+    if (vatSelect) vatSelect.value = String(prof.vat);
+
+    const paySelect = document.getElementById('doc-payment-method');
+    if (paySelect && prof.methods) {
+      paySelect.innerHTML = prof.methods.map(m => `<option value="${m.val}">${m.label}</option>`).join('');
+    }
+
+    this.showToast(`Fiscalité & Devise basculées : ${prof.name} (${prof.symbol} - TVA ${prof.vat}%)`, "success");
+    this.saveToStorage();
+    this.updateLivePdf();
   }
 
   // 1-Page A4 PDF Handlers

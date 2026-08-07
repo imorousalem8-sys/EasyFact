@@ -23,5 +23,5 @@ staticFiles.forEach(f => {
 
 // Build NestJS server
 console.log('\n🔨 Building NestJS server...');
-execSync('cd server && npm install --include=dev && npm run build', { stdio: 'inherit' });
+execSync('cd server && npm install --include=dev && npx nest build', { stdio: 'inherit' });
 console.log('✅ NestJS build complete!');
