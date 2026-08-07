@@ -110,7 +110,12 @@
         <nav class="sidebar-nav">
           <div class="nav-section-title">ESPACE DE TRAVAIL</div>
           
-          <a href="#" class="nav-item active" data-tab="dashboard">
+          <a href="#" class="nav-item active" data-tab="landing">
+            <i class="fa-solid fa-house text-emerald"></i>
+            <span>Page d'Accueil</span>
+          </a>
+
+          <a href="#" class="nav-item" data-tab="dashboard">
             <i class="fa-solid fa-chart-pie text-emerald"></i>
             <span>Tableau de Bord</span>
           </a>
@@ -170,9 +175,9 @@
       <main class="content-area">
 
         <!-- ============================================================
-             0. LANDING VIEW (DÉSACTIVÉE : ACCÈS DIRECT AU TABLEAU DE BORD)
+             0. LANDING VIEW (PAGE D'ACCUEIL D'ENTRÉE)
         ============================================================ -->
-        <section id="view-landing" class="tab-view" style="display: none !important;">
+        <section id="view-landing" class="tab-view">
           <!-- Hero Section -->
           <div class="landing-hero-section">
             <div class="landing-hero-badge">
@@ -972,10 +977,54 @@
                 <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Enregistrer les Paramètres</button>
               </div>
             </form>
+        <!-- ============================================================
+             7. PRIVACY POLICY VIEW (POLITIQUE DE CONFIDENTIALITÉ & RGPD)
+        ============================================================ -->
+        <section id="view-privacy" class="tab-view">
+          <div class="view-header text-center" style="max-width: 760px; margin: 0 auto 32px;">
+            <h1 class="view-title">Politique de Confidentialité & Protection des Données 🛡️</h1>
+            <p class="view-subtitle">Conformité RGPD & Normes de Sécurité des Données Financières en Afrique (UEMOA / CEMAC).</p>
+          </div>
+
+          <div class="panel-card" style="max-width: 860px; margin: 0 auto; padding: 36px 32px; line-height: 1.7; color: #cbd5e1; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;">
+            <h3 style="color: #10b981; font-weight: 700; margin-bottom: 12px;"><i class="fa-solid fa-shield-halved"></i> 1. Engagement de Confidentialité</h3>
+            <p style="margin-bottom: 20px;">EasyFact Africa s'engage solennellement à protéger la confidentialité, l'intégrité et la sécurité des données financières de votre entreprise. Vos factures, données clients et numéros de transaction Mobile Money demeurent votre propriété exclusive et ne sont jamais revendus ni partagés à des tiers.</p>
+
+            <h3 style="color: #10b981; font-weight: 700; margin-bottom: 12px;"><i class="fa-solid fa-database"></i> 2. Données Collectées</h3>
+            <p style="margin-bottom: 10px;">Afin d'assurer le fonctionnement de votre espace de facturation, nous traitons uniquement les informations strictement nécessaires :</p>
+            <ul style="margin-left: 20px; margin-bottom: 20px;">
+              <li>Raison sociale, identifiant fiscal (NINEA, IFU, GRA TIN, CAC TIN) et coordonnées de votre entreprise.</li>
+              <li>Données des devis et factures émis (montants, désignation des produits/services, dates d'échéance).</li>
+              <li>Numéros de téléphone marchands pour la génération des QR Codes Mobile Money (Wave, Orange, MTN, OPay).</li>
+            </ul>
+
+            <h3 style="color: #10b981; font-weight: 700; margin-bottom: 12px;"><i class="fa-solid fa-lock"></i> 3. Sécurité des Paiements Mobile Money & Données</h3>
+            <p style="margin-bottom: 20px;">Toutes les connexions sont chiffrées selon la norme <strong>SSL/TLS 256-bit</strong>. Les encaissements Mobile Money s'effectuent en direct via des canaux sécurisés de gré à gré sans intermédiaire vulnérable.</p>
+
+            <h3 style="color: #10b981; font-weight: 700; margin-bottom: 12px;"><i class="fa-solid fa-cookie-bite"></i> 4. Gestion des Cookies Essentiels</h3>
+            <p style="margin-bottom: 20px;">EasyFact utilise exclusivement des cookies techniques et fonctionnels indispensables au maintien de votre session et de vos préférences de devise locale. Vous pouvez gérer votre consentement à tout moment via notre bannière de cookies.</p>
+
+            <div style="margin-top: 28px; text-align: center;">
+              <button class="btn btn-primary" onclick="app.switchTab('dashboard')"><i class="fa-solid fa-arrow-left"></i> Retourner à l'Espace de Travail</button>
+            </div>
           </div>
         </section>
 
       </main>
+    </div>
+  </div>
+
+  <!-- BANNIÈRE DE CONSENTEMENT DE COOKIES (COOKIES ENGINE) -->
+  <div id="cookie-banner" style="display: none; position: fixed; bottom: 20px; right: 20px; left: 20px; max-width: 640px; margin: 0 auto; z-index: 9999; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 18px; padding: 20px 24px; box-shadow: 0 16px 40px rgba(0,0,0,0.5); color: #fff;">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <div style="font-size: 2.2rem; color: #f59e0b; flex-shrink: 0;"><i class="fa-solid fa-cookie-bite"></i></div>
+      <div style="flex: 1;">
+        <h4 style="font-size: 1.05rem; font-weight: 800; color: #ffffff; margin-bottom: 4px;">Respect de votre Vie Privée & Cookies</h4>
+        <p style="font-size: 0.8rem; color: #94a3b8; margin: 0; line-height: 1.4;">EasyFact utilise des cookies essentiels pour sécuriser votre session et sauvegarder vos préférences fiscales. Vos données restent 100% privées. <a href="#" onclick="app.switchTab('privacy')" style="color: #10b981; text-decoration: underline;">Lire la Politique</a>.</p>
+      </div>
+      <div style="display: flex; gap: 8px; flex-shrink: 0;">
+        <button class="btn btn-primary-sm" onclick="app.acceptCookies()" style="background: linear-gradient(135deg, #10b981, #059669); border: none; color: white; padding: 10px 16px; border-radius: 10px; font-size: 0.85rem; font-weight: 700; cursor: pointer;">Accepter Tout</button>
+      </div>
     </div>
   </div>
 

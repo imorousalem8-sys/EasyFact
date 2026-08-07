@@ -121,10 +121,11 @@ class EasyFactApp {
     try { this.renderAllViews(); } catch(e) { console.warn('renderAllViews warning:', e); }
     try { this.updateLivePdf(); } catch(e) { console.warn('updateLivePdf warning:', e); }
     try { this.updateHeaderAuthUI(); } catch(e) { console.warn('updateHeaderAuthUI warning:', e); }
-    // Auto-direct: Toujours ouvrir directement le Tableau de Bord de l'application !
+    // Page d'Accueil par défaut pour les visiteurs
     const urlParams = new URLSearchParams(window.location.search);
-    const requestedTab = urlParams.get('tab') || 'dashboard';
+    const requestedTab = urlParams.get('tab') || 'landing';
     try { this.switchTab(requestedTab); } catch(e) { console.warn('switchTab warning:', e); }
+    try { this.checkCookieConsent(); } catch(e) { console.warn('checkCookieConsent warning:', e); }
   }
 
   /* Custom Professional Toast Notifications System */
@@ -845,6 +846,24 @@ class EasyFactApp {
     this.showToast(`Fiscalité & Devise basculées : ${prof.name} (${prof.symbol} - TVA ${prof.vat}%)`, "success");
     this.saveToStorage();
     this.updateLivePdf();
+  }
+
+  /* Moteur de Gestion des Cookies RGPD & Consentement */
+  checkCookieConsent() {
+    const consent = localStorage.getItem('easyfact_cookie_consent');
+    const banner = document.getElementById('cookie-banner');
+    if (!consent && banner) {
+      setTimeout(() => {
+        banner.style.display = 'block';
+      }, 1000);
+    }
+  }
+
+  acceptCookies() {
+    localStorage.setItem('easyfact_cookie_consent', 'accepted_' + Date.now());
+    const banner = document.getElementById('cookie-banner');
+    if (banner) banner.style.display = 'none';
+    this.showToast("Vos préférences de cookies ont été enregistrées avec succès.", "success");
   }
 
   // 1-Page A4 PDF Handlers
