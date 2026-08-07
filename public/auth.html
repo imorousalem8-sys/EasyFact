@@ -839,11 +839,10 @@ const Auth = (() => {
   }
 
   // ---- Generic API call ----
-  async function api(method, endpoint, body) {
-    const opts = {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-    };
+  async function api(method, endpoint, body, token) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const opts = { method, headers };
     if (body) opts.body = JSON.stringify(body);
     const res = await fetch(`${API}${endpoint}`, opts);
     const json = await res.json();
