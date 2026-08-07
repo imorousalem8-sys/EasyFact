@@ -789,7 +789,7 @@ class EasyFactApp {
 
       const footerNoteEl = document.querySelector('.pdf-footer-note p');
       if (footerNoteEl) {
-        footerNoteEl.innerText = legalMentions[this.country] || "Facture générée via EasyFact Africa — Conforme aux normes comptables et fiscales locales.";
+        footerNoteEl.innerText = legalMentions[this.country] || "Document Officiel Certifié Conforme aux Normes Comptables & Fiscales en Vigueur.";
       }
 
       // Theme Colors
