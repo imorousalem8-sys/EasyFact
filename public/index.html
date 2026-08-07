@@ -648,36 +648,39 @@
                   </div>
                 </div>
 
-                <div class="form-row split-3" style="margin-top: 10px;">
+                <div class="form-row split-2" style="margin-top: 14px;">
                   <div class="form-group">
-                    <label><i class="fa-solid fa-qrcode text-emerald"></i> Canal de Règlement</label>
-                    <div style="display: flex; gap: 6px;">
-                      <select id="doc-payment-method" class="form-control" onchange="app.handlePaymentMethodChange(this.value)">
-                        <option value="wave">Wave Mobile Money 🌊</option>
-                        <option value="om">Orange Money 🍊</option>
-                        <option value="mtn">MTN Mobile Money (MoMo) 💛</option>
-                        <option value="moov">Moov Money (Flooz) 💙</option>
-                        <option value="card">Virement / Carte Bancaire 💳</option>
-                      </select>
-                      <button type="button" class="btn btn-outline-sm" onclick="app.openQrModal()" title="Générer QR Code d'encaissement" style="white-space: nowrap; padding: 6px 10px;">
-                        <i class="fa-solid fa-qrcode text-emerald"></i> QR Code
-                      </button>
-                    </div>
+                    <label><i class="fa-solid fa-qrcode text-emerald"></i> Canal de Règlement (Paiement Mobile Money / Banque)</label>
+                    <select id="doc-payment-method" class="form-control" onchange="app.handlePaymentMethodChange(this.value)" style="width: 100%; font-weight: 700; color: #059669; background: #f0fdf4; border: 1.5px solid #10b981; padding: 12px 14px; border-radius: 10px;">
+                      <option value="wave">Wave Mobile Money 🌊</option>
+                      <option value="om">Orange Money 🍊</option>
+                      <option value="mtn">MTN Mobile Money (MoMo) 💛</option>
+                      <option value="moov">Moov Money (Flooz) 💙</option>
+                      <option value="card">Virement / Carte Bancaire 💳</option>
+                    </select>
                   </div>
 
                   <div class="form-group">
-                    <label>N°/RIB Spécifique (Optionnel)</label>
-                    <input type="text" id="doc-payment-number-override" class="form-control" placeholder="Vide = N° du profil...">
+                    <label>N° / RIB d'Encaissement Spécifique</label>
+                    <input type="text" id="doc-payment-number-override" class="form-control" placeholder="Ex: +221 77 123 45 67 (Vide = N° du profil)">
                   </div>
+                </div>
 
+                <div class="form-row split-2" style="margin-top: 10px;">
                   <div class="form-group">
-                    <label>Thème PDF</label>
+                    <label>Thème Couleur PDF</label>
                     <select id="doc-pdf-theme" class="form-control">
                       <option value="#059669">Émeraude Africain (Vert)</option>
                       <option value="#0f2942">Bleu Marine Corporate</option>
                       <option value="#0f172a">Noir Exécutif</option>
                       <option value="#d97706">Or Prestige</option>
                     </select>
+                  </div>
+
+                  <div class="form-group" style="display: flex; align-items: flex-end;">
+                    <button type="button" class="btn btn-outline" onclick="app.openQrModal()" style="width: 100%; font-weight: 700; height: 42px;">
+                      <i class="fa-solid fa-qrcode text-emerald"></i> Générer / Prévisualiser QR Code
+                    </button>
                   </div>
                 </div>
 
@@ -692,17 +695,39 @@
                     </div>
                   </div>
                 </div>
+
+                <!-- BOUTONS D'ACTION HAUTE VISIBILITÉ D'ENREGISTREMENT ET D'IMPRESSION -->
+                <div class="editor-main-actions" style="margin-top: 24px; padding-top: 18px; border-top: 1px solid #e2e8f0; display: flex; flex-wrap: wrap; gap: 12px;">
+                  <button type="button" class="btn btn-primary" onclick="app.saveCurrentInvoice()" style="flex: 2; min-width: 200px; padding: 14px 20px; font-weight: 800; font-size: 1rem; background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 8px 20px rgba(16,185,129,0.3);">
+                    <i class="fa-solid fa-floppy-disk"></i> Enregistrer la Facture
+                  </button>
+                  <button type="button" class="btn btn-outline" onclick="app.downloadSinglePagePdf()" style="flex: 1; min-width: 150px; font-weight: 700;">
+                    <i class="fa-solid fa-file-arrow-down text-emerald"></i> Télécharger PDF
+                  </button>
+                  <button type="button" class="btn btn-outline" onclick="app.printSinglePage()" style="flex: 1; min-width: 130px; font-weight: 700;">
+                    <i class="fa-solid fa-print"></i> Imprimer A4
+                  </button>
+                  <button type="button" class="btn btn-whatsapp" onclick="app.shareInvoiceWhatsApp()" style="flex: 1; min-width: 140px; background: #25d366; color: white; border: none; font-weight: 700;">
+                    <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                  </button>
+                </div>
               </form>
             </div>
 
             <!-- Live PDF Preview Panel (1 Page A4) -->
             <div class="panel-card pdf-preview-panel" id="editor-pdf-panel">
-              <div class="preview-toolbar">
-                <span><i class="fa-solid fa-file-pdf text-red"></i> Aperçu A4 Impression Guaranteed</span>
-                <div class="preview-actions">
-                  <button class="btn btn-icon" title="Télécharger PDF" onclick="app.downloadSinglePagePdf()"><i class="fa-solid fa-file-arrow-down"></i></button>
-                  <button class="btn btn-icon" title="Imprimer A4" onclick="app.printSinglePage()"><i class="fa-solid fa-print"></i></button>
-                  <button class="btn btn-icon btn-whatsapp" title="Partager sur WhatsApp" onclick="app.shareInvoiceWhatsApp()"><i class="fa-brands fa-whatsapp"></i></button>
+              <div class="preview-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; background: #0f172a; color: white; padding: 12px 16px; border-radius: 12px 12px 0 0;">
+                <span style="font-weight: 700; font-size: 0.9rem;"><i class="fa-solid fa-file-pdf text-red"></i> Aperçu A4 Officiel</span>
+                <div class="preview-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button class="btn btn-primary-sm" onclick="app.downloadSinglePagePdf()" style="font-size: 0.8rem; font-weight: 700; background: #10b981; border: none; padding: 6px 12px; border-radius: 6px; color: white; cursor: pointer;">
+                    <i class="fa-solid fa-file-arrow-down"></i> Télécharger PDF
+                  </button>
+                  <button class="btn btn-secondary-sm" onclick="app.printSinglePage()" style="font-size: 0.8rem; font-weight: 700; background: #334155; border: none; padding: 6px 12px; border-radius: 6px; color: white; cursor: pointer;">
+                    <i class="fa-solid fa-print"></i> Imprimer
+                  </button>
+                  <button class="btn btn-whatsapp-sm" onclick="app.shareInvoiceWhatsApp()" style="font-size: 0.8rem; font-weight: 700; background: #25d366; border: none; padding: 6px 12px; border-radius: 6px; color: white; cursor: pointer;">
+                    <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                  </button>
                 </div>
               </div>
 
