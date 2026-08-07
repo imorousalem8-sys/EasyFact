@@ -315,11 +315,38 @@ class EasyFactApp {
     }
   }
 
+  updateHeaderAuthUI() {
+    const userNameEl = document.getElementById('header-user-name');
+    const userSubEl = document.getElementById('header-user-sub');
+    const avatarEl = document.getElementById('header-avatar');
+    const welcomeTitle = document.getElementById('welcome-title');
+
+    if (this.isLoggedIn || localStorage.getItem('easyfact_logged_in') === 'true') {
+      const email = localStorage.getItem('easyfact_active_user_email') || this.currentUserEmail || 'Membre EasyFact';
+      const company = localStorage.getItem('easyfact_company_name') || this.companyProfile.name || 'Mon Entreprise';
+
+      if (userNameEl) userNameEl.innerText = company;
+      if (userSubEl) userSubEl.innerHTML = `<i class="fa-solid fa-circle-check text-emerald"></i> ${email}`;
+      if (avatarEl) {
+        const initial = company.charAt(0).toUpperCase() || 'E';
+        avatarEl.innerHTML = `<span style="font-weight:800; font-size:1.1rem;">${initial}</span>`;
+      }
+      if (welcomeTitle) {
+        welcomeTitle.innerText = `Bienvenue, ${company} 👋`;
+      }
+    } else {
+      if (userNameEl) userNameEl.innerText = "Connexion / Inscription";
+      if (userSubEl) userSubEl.innerHTML = `<i class="fa-solid fa-right-to-bracket text-emerald"></i> Espace Membre`;
+      if (avatarEl) avatarEl.innerHTML = `<i class="fa-solid fa-user-lock"></i>`;
+    }
+  }
+
   logout() {
     localStorage.removeItem('easyfact_token');
     localStorage.removeItem('easyfact_active_user_id');
     localStorage.removeItem('easyfact_active_user_email');
     localStorage.removeItem('easyfact_company_name');
+    localStorage.removeItem('easyfact_logged_in');
     this.isLoggedIn = false;
     this.jwtToken = null;
     this.showToast("Déconnexion réussie.", "info");
