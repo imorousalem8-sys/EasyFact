@@ -18,7 +18,7 @@ window.i18nData = {
 
     // Header & Badges
     member_portal: "Espace Membre",
-    login_btn: "Connexion / Inscription",
+    login_btn: "Espace Entreprise Actif",
     plan_starter_label: "Plan Gratuit (Starter)",
     change_plan_btn: "Changer Plan",
     quota_header: "Factures offertes ce mois",
@@ -176,7 +176,7 @@ window.i18nData = {
 
     // Header & Badges
     member_portal: "Member Portal",
-    login_btn: "Sign In / Register",
+    login_btn: "Enterprise Space Active",
     plan_starter_label: "Free Starter Plan",
     change_plan_btn: "Change Plan",
     quota_header: "Free invoices this month",

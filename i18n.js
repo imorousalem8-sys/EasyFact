@@ -176,7 +176,7 @@ window.i18nData = {
 
     // Header & Badges
     member_portal: "Member Portal",
-    login_btn: "Sign In / Register",
+    login_btn: "Enterprise Space Active",
     plan_starter_label: "Free Starter Plan",
     change_plan_btn: "Change Plan",
     quota_header: "Free invoices this month",

@@ -1110,7 +1110,7 @@ class EasyFactApp {
       if (subEl) subEl.innerHTML = `<i class="fa-solid fa-circle text-emerald"></i> Connecté (${this.userTier.toUpperCase()})`;
       if (avatarEl) avatarEl.innerText = (this.companyProfile.name || 'E').charAt(0).toUpperCase();
     } else {
-      if (nameEl) nameEl.innerText = 'Connexion / Inscription';
+      if (nameEl) nameEl.innerText = 'Mon Entreprise';
       if (subEl) subEl.innerHTML = `<i class="fa-solid fa-right-to-bracket text-emerald"></i> Espace Membre`;
       if (avatarEl) avatarEl.innerHTML = `<i class="fa-solid fa-user-lock"></i>`;
     }
@@ -2619,7 +2619,7 @@ class EasyFactApp {
     const headerSub = document.getElementById('header-user-sub');
     const headerAvatar = document.getElementById('header-avatar');
 
-    if (headerName) headerName.innerText = 'Connexion / Inscription';
+    if (headerName) headerName.innerText = 'Mon Entreprise';
     if (headerSub) headerSub.innerHTML = `<i class="fa-solid fa-right-to-bracket text-emerald"></i> Espace Membre`;
     if (headerAvatar) headerAvatar.innerHTML = `<i class="fa-solid fa-user-lock"></i>`;
 
