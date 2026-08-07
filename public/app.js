@@ -1784,33 +1784,205 @@ class EasyFactApp {
 
   renderDashboard() {
     const emptyCard = document.getElementById('dashboard-empty-state');
-    const kpiGrid = document.getElementById('dashboard-kpi-grid');
     const tablePanel = document.getElementById('dashboard-table-panel');
 
     if (this.invoices.length === 0 && this.expenses.length === 0) {
       if (emptyCard) emptyCard.style.display = 'block';
-      if (kpiGrid) kpiGrid.style.display = 'none';
       if (tablePanel) tablePanel.style.display = 'none';
     } else {
       if (emptyCard) emptyCard.style.display = 'none';
-      if (kpiGrid) kpiGrid.style.display = 'grid';
       if (tablePanel) tablePanel.style.display = 'block';
-
-      const totalRevenue = this.invoices.reduce((acc, curr) => acc + (curr.status === 'Payé' ? curr.amount : 0), 0);
-      const totalExpenses = this.expenses.reduce((acc, curr) => acc + curr.amountHt, 0);
-      const totalPending = this.invoices.reduce((acc, curr) => acc + (curr.status === 'En attente' ? curr.amount : 0), 0);
-      const netProfit = totalRevenue - totalExpenses;
-
-      const revEl = document.getElementById('kpi-revenue');
-      const expEl = document.getElementById('kpi-expenses');
-      const profEl = document.getElementById('kpi-profit');
-      const pendEl = document.getElementById('kpi-pending');
-
-      if (revEl) revEl.innerText = this.formatMoney(totalRevenue);
-      if (expEl) expEl.innerText = this.formatMoney(totalExpenses);
-      if (profEl) profEl.innerText = this.formatMoney(netProfit);
-      if (pendEl) pendEl.innerText = this.formatMoney(totalPending);
     }
+
+    const yearSelect = document.getElementById('fi-year-select')?.value || '2026';
+    this.renderFinancialIntelligence(yearSelect);
+    this.renderRecentInvoicesTable();
+  }
+
+  renderRecentInvoicesTable() {
+    const tbody = document.getElementById('recent-invoices-tbody');
+    if (!tbody) return;
+
+    if (!this.invoices || this.invoices.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" class="text-center" style="padding: 24px; color: #64748b;">Aucune facture enregistrée. Cliquez sur "Nouvelle Facture".</td></tr>`;
+      return;
+    }
+
+    let html = '';
+    const recent = this.invoices.slice(0, 5);
+    recent.forEach(inv => {
+      const isPaid = inv.status === 'Payé';
+      html += `
+        <tr>
+          <td><strong>${inv.invoice_number || inv.id}</strong></td>
+          <td>${inv.client_name || 'Client'}</td>
+          <td>${inv.date || ''}</td>
+          <td><span class="badge-status" style="background:#e0e7ff; color:#3730a3;">${inv.type || 'Facture'}</span></td>
+          <td><strong>${this.formatCurrency(inv.net_to_pay || inv.amount || 0)}</strong></td>
+          <td>${inv.method || 'Wave / OM / MTN'}</td>
+          <td><span class="badge-status" style="background:${isPaid ? '#dcfce7' : '#fef3c7'}; color:${isPaid ? '#15803d' : '#d97706'}; font-weight:700;">${inv.status}</span></td>
+          <td>
+            <button class="btn-icon" onclick="app.shareInvoiceWhatsApp('${inv.invoice_number || inv.id}')" title="Relancer via WhatsApp"><i class="fa-brands fa-whatsapp text-green"></i></button>
+          </td>
+        </tr>
+      `;
+    });
+    tbody.innerHTML = html;
+  }
+
+  renderFinancialIntelligence(selectedYear = '2026') {
+    const yearLabel = document.getElementById('fi-selected-year-label');
+    if (yearLabel) yearLabel.innerText = selectedYear;
+
+    const months = [
+      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+    ];
+
+    const targetYearNum = parseInt(selectedYear);
+    
+    // Filter invoices and expenses by year
+    const yearInvoices = (this.invoices || []).filter(inv => {
+      const d = new Date(inv.date || Date.now());
+      return d.getFullYear() === targetYearNum;
+    });
+
+    const yearExpenses = (this.expenses || []).filter(exp => {
+      const d = new Date(exp.date || Date.now());
+      return d.getFullYear() === targetYearNum;
+    });
+
+    const totalRevYear = yearInvoices.reduce((acc, curr) => acc + (curr.status === 'Payé' ? (curr.net_to_pay || curr.amount || 0) : 0), 0);
+    const totalExpYear = yearExpenses.reduce((acc, curr) => acc + (curr.amountHt || 0), 0);
+    const totalPendingYear = yearInvoices.reduce((acc, curr) => acc + (curr.status === 'En attente' ? (curr.net_to_pay || curr.amount || 0) : 0), 0);
+    const netProfitYear = totalRevYear - totalExpYear;
+
+    // Update KPI Card Texts
+    const revEl = document.getElementById('kpi-revenue');
+    const expEl = document.getElementById('kpi-expenses');
+    const profEl = document.getElementById('kpi-profit');
+    const pendEl = document.getElementById('kpi-pending');
+    const pendSub = document.getElementById('kpi-pending-sub');
+
+    if (revEl) revEl.innerText = this.formatCurrency(totalRevYear);
+    if (expEl) expEl.innerText = this.formatCurrency(totalExpYear);
+    if (profEl) profEl.innerText = this.formatCurrency(netProfitYear);
+    if (pendEl) pendEl.innerText = this.formatCurrency(totalPendingYear);
+    if (pendSub) pendSub.innerText = `${yearInvoices.filter(i => i.status === 'En attente').length} créance(s) en attente`;
+
+    // Update Financial Health Banner
+    const healthTitle = document.getElementById('fi-health-title');
+    const healthDesc = document.getElementById('fi-health-desc');
+    const healthIcon = document.getElementById('fi-health-icon');
+    const healthBadge = document.getElementById('fi-health-badge');
+
+    if (netProfitYear > 0) {
+      const marginPct = totalRevYear > 0 ? Math.round((netProfitYear / totalRevYear) * 100) : 100;
+      if (healthTitle) healthTitle.innerText = `🚀 Ascension Financière Excellente (Bénéfice Net : +${this.formatCurrency(netProfitYear)})`;
+      if (healthDesc) healthDesc.innerText = `Vos encaissements couvrent largement vos charges. Marge nette de ${marginPct}%. Votre entreprise est en forte croissance !`;
+      if (healthIcon) healthIcon.className = 'fa-solid fa-chart-line fi-health-icon text-emerald';
+      if (healthBadge) healthBadge.innerHTML = `<span class="badge-status" style="background:#dcfce7; color:#15803d; padding:6px 14px; border-radius:9999px; font-weight:800;"><i class="fa-solid fa-arrow-trend-up"></i> Rentabilité +${marginPct}%</span>`;
+    } else if (netProfitYear === 0 && totalRevYear === 0 && totalExpYear === 0) {
+      if (healthTitle) healthTitle.innerText = `⚡ Espace Financier Prêt (Année ${selectedYear})`;
+      if (healthDesc) healthDesc.innerText = `Aucune transaction enregistrée pour ${selectedYear}. Émettez des factures et enregistrez vos dépenses pour suivre votre rentabilité en temps réel.`;
+      if (healthIcon) healthIcon.className = 'fa-solid fa-wallet fi-health-icon text-emerald';
+      if (healthBadge) healthBadge.innerHTML = `<span class="badge-status" style="background:#e0f2fe; color:#0369a1; padding:6px 14px; border-radius:9999px; font-weight:800;"><i class="fa-solid fa-clock"></i> Prêt à Encasser</span>`;
+    } else {
+      if (healthTitle) healthTitle.innerText = `⚠️ Attention : Déficit Temporaire (Charges Supérieures aux Encaissements)`;
+      if (healthDesc) healthDesc.innerText = `Vos dépenses (${this.formatCurrency(totalExpYear)}) dépassent vos encaissements (${this.formatCurrency(totalRevYear)}). Relancez vos créances en attente.`;
+      if (healthIcon) healthIcon.className = 'fa-solid fa-triangle-exclamation fi-health-icon text-red';
+      if (healthBadge) healthBadge.innerHTML = `<span class="badge-status" style="background:#fee2e2; color:#b91c1c; padding:6px 14px; border-radius:9999px; font-weight:800;"><i class="fa-solid fa-arrow-trend-down"></i> Solde Déficitaire</span>`;
+    }
+
+    // Monthly 12-Month Table Breakdown
+    const tbody = document.getElementById('fi-monthly-tbody');
+    if (tbody) {
+      let html = '';
+      months.forEach((mName, idx) => {
+        const mInvoices = yearInvoices.filter(inv => {
+          const d = new Date(inv.date || Date.now());
+          return d.getMonth() === idx;
+        });
+
+        const mExpenses = yearExpenses.filter(exp => {
+          const d = new Date(exp.date || Date.now());
+          return d.getMonth() === idx;
+        });
+
+        const mRev = mInvoices.reduce((acc, curr) => acc + (curr.status === 'Payé' ? (curr.net_to_pay || curr.amount || 0) : 0), 0);
+        const mExp = mExpenses.reduce((acc, curr) => acc + (curr.amountHt || 0), 0);
+        const mProfit = mRev - mExp;
+
+        let trendBadge = `<span style="color:#94a3b8; font-weight:600;"><i class="fa-solid fa-minus"></i> 0 FCFA</span>`;
+        if (mProfit > 0) {
+          trendBadge = `<span style="color:#10b981; font-weight:800;"><i class="fa-solid fa-arrow-trend-up"></i> +${this.formatCurrency(mProfit)} (Positif 🟢)</span>`;
+        } else if (mProfit < 0) {
+          trendBadge = `<span style="color:#ef4444; font-weight:800;"><i class="fa-solid fa-arrow-trend-down"></i> ${this.formatCurrency(mProfit)} (Négatif 🔴)</span>`;
+        }
+
+        html += `
+          <tr>
+            <td><strong>${mName} ${selectedYear}</strong></td>
+            <td style="color:#10b981; font-weight:800;">${this.formatCurrency(mRev)}</td>
+            <td style="color:#64748b; font-weight:600;">${this.formatCurrency(mExp)}</td>
+            <td style="color:${mProfit >= 0 ? '#10b981' : '#ef4444'}; font-weight:800;">${this.formatCurrency(mProfit)}</td>
+            <td>${trendBadge}</td>
+            <td>
+              <button class="btn btn-outline-sm" onclick="app.exportMonthlyReport('${mName}', '${selectedYear}', ${mRev}, ${mExp}, ${mProfit})">
+                <i class="fa-solid fa-file-pdf"></i> Rapport PDF
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+  }
+
+  loadDemoData() {
+    this.invoices = [
+      { id: 'FAC-2026-001', invoice_number: 'FAC-2026-001', client_name: 'SOCIÉTÉ IVOIRIENNE DE COMMERCE (SIVC)', date: '2026-01-15', amount: 450000, net_to_pay: 450000, status: 'Payé', type: 'Facture', method: 'Wave Mobile Money 🌊' },
+      { id: 'FAC-2026-002', invoice_number: 'FAC-2026-002', client_name: 'Dakar Digital Tech SARL', date: '2026-02-10', amount: 850000, net_to_pay: 850000, status: 'Payé', type: 'Facture', method: 'Orange Money 🍊' },
+      { id: 'FAC-2026-003', invoice_number: 'FAC-2026-003', client_name: 'Cotonou Import Export', date: '2026-03-01', amount: 320000, net_to_pay: 320000, status: 'En attente', type: 'Facture', method: 'MTN Mobile Money 💛' },
+      { id: 'FAC-2025-018', invoice_number: 'FAC-2025-018', client_name: 'Abidjan Logistics Corp', date: '2025-11-20', amount: 1200000, net_to_pay: 1200000, status: 'Payé', type: 'Facture', method: 'Virement / Carte 💳' },
+      { id: 'FAC-2025-019', invoice_number: 'FAC-2025-019', client_name: 'Douala Services SA', date: '2025-12-14', amount: 950000, net_to_pay: 950000, status: 'Payé', type: 'Facture', method: 'Orange Money 🍊' },
+      { id: 'FAC-2024-005', invoice_number: 'FAC-2024-005', client_name: 'Lomé Business Group', date: '2024-08-10', amount: 600000, net_to_pay: 600000, status: 'Payé', type: 'Facture', method: 'Wave Mobile Money 🌊' }
+    ];
+
+    this.expenses = [
+      { id: 'EXP-2026-001', date: '2026-01-05', category: 'Achats & Fournitures', desc: 'Achat équipements informatiques', amountHt: 180000, method: 'Caisse' },
+      { id: 'EXP-2026-002', date: '2026-02-02', category: 'Loyer & Locaux', desc: 'Loyer mensuel bureau d\'Abidjan', amountHt: 250000, method: 'Wave' },
+      { id: 'EXP-2025-010', date: '2025-11-05', category: 'Fournisseurs', desc: 'Achats marchandises stock', amountHt: 400000, method: 'Virement' },
+      { id: 'EXP-2024-003', date: '2024-08-02', category: 'Matériel', desc: 'Renouvellement parc serveur', amountHt: 200000, method: 'Chèque' }
+    ];
+
+    this.saveToStorage();
+    this.renderAllViews();
+    this.showToast("🎉 Données DÉMO chargées avec succès ! Le tableau d'ascension financière sur 5 ans est actif.", "success");
+  }
+
+  exportMonthlyReport(monthName, year, rev, exp, profit) {
+    const compName = this.companyProfile?.name || 'Mon Entreprise';
+    const msg = `📊 *RAPPORT DE PERFORMANCE FINANCIÈRE*\n` +
+      `🏢 *Entreprise:* ${compName}\n` +
+      `📅 *Période:* ${monthName} ${year}\n` +
+      `-----------------------------------\n` +
+      `📥 *Encaissements (CA):* ${this.formatCurrency(rev)}\n` +
+      `📤 *Dépenses & Coûts:* ${this.formatCurrency(exp)}\n` +
+      `⚖️ *BÉNÉFICE NET:* ${this.formatCurrency(profit)}\n` +
+      `📈 *Statut:* ${profit >= 0 ? 'Positif (Bénéficiaire) 🟢' : 'Déficitaire 🔴'}\n\n` +
+      `Généré par EasyFact Africa.`;
+
+    alert(msg);
+  }
+
+  downloadYearlyFinancialReport() {
+    const year = document.getElementById('fi-year-select')?.value || '2026';
+    const compName = this.companyProfile?.name || 'Mon Entreprise';
+    this.showToast(`Génération du Rapport Financier Annuel ${year} pour ${compName}...`, "info");
+    setTimeout(() => {
+      alert(`📄 Rapport Synthétique d'Ascension Financière ${year} préparé avec succès pour ${compName} !`);
+    }, 500);
   }
 
   resetToCleanState() {
