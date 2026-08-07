@@ -517,6 +517,25 @@ class EasyFactApp {
       if (authTier && this.userTier === 'starter') {
         this.userTier = authTier;
       }
+
+      // Auto pre-fill demo data on initial launch so 3D Financial Ascension is immediately active and visible
+      if ((!this.invoices || this.invoices.length === 0) && (!this.expenses || this.expenses.length === 0)) {
+        this.invoices = [
+          { id: 'FAC-2026-001', invoice_number: 'FAC-2026-001', client_name: 'SOCIÉTÉ IVOIRIENNE DE COMMERCE (SIVC)', date: '2026-01-15', amount: 450000, net_to_pay: 450000, status: 'Payé', type: 'Facture', method: 'Wave Mobile Money 🌊' },
+          { id: 'FAC-2026-002', invoice_number: 'FAC-2026-002', client_name: 'Dakar Digital Tech SARL', date: '2026-02-10', amount: 850000, net_to_pay: 850000, status: 'Payé', type: 'Facture', method: 'Orange Money 🍊' },
+          { id: 'FAC-2026-003', invoice_number: 'FAC-2026-003', client_name: 'Cotonou Import Export', date: '2026-03-01', amount: 320000, net_to_pay: 320000, status: 'En attente', type: 'Facture', method: 'MTN Mobile Money 💛' },
+          { id: 'FAC-2025-018', invoice_number: 'FAC-2025-018', client_name: 'Abidjan Logistics Corp', date: '2025-11-20', amount: 1200000, net_to_pay: 1200000, status: 'Payé', type: 'Facture', method: 'Virement / Carte 💳' },
+          { id: 'FAC-2025-019', invoice_number: 'FAC-2025-019', client_name: 'Douala Services SA', date: '2025-12-14', amount: 950000, net_to_pay: 950000, status: 'Payé', type: 'Facture', method: 'Orange Money 🍊' },
+          { id: 'FAC-2024-005', invoice_number: 'FAC-2024-005', client_name: 'Lomé Business Group', date: '2024-08-10', amount: 600000, net_to_pay: 600000, status: 'Payé', type: 'Facture', method: 'Wave Mobile Money 🌊' }
+        ];
+
+        this.expenses = [
+          { id: 'EXP-2026-001', date: '2026-01-05', category: 'Achats & Fournitures', desc: 'Achat équipements informatiques', amountHt: 180000, method: 'Caisse' },
+          { id: 'EXP-2026-002', date: '2026-02-02', category: 'Loyer & Locaux', desc: 'Loyer mensuel bureau d\'Abidjan', amountHt: 250000, method: 'Wave' },
+          { id: 'EXP-2025-010', date: '2025-11-05', category: 'Fournisseurs', desc: 'Achats marchandises stock', amountHt: 400000, method: 'Virement' },
+          { id: 'EXP-2024-003', date: '2024-08-02', category: 'Matériel', desc: 'Renouvellement parc serveur', amountHt: 200000, method: 'Chèque' }
+        ];
+      }
     } catch (e) {
       console.error("Erreur de chargement de mémoire local:", e);
     }

@@ -137,6 +137,12 @@
             <span class="badge-count" id="nav-clients-count">0</span>
           </a>
 
+          <a href="#" class="nav-item highlight-nav" data-tab="financial-ascension" style="background: rgba(16, 185, 129, 0.12); border: 1px solid var(--primary); margin: 6px 0;">
+            <i class="fa-solid fa-chart-line text-emerald"></i>
+            <span>Ascension & Santé 3D</span>
+            <span class="pulse-badge" style="background: #10b981;">NOUVEAU</span>
+          </a>
+
           <a href="#" class="nav-item" data-tab="expenses">
             <i class="fa-solid fa-receipt"></i>
             <span>Suivi des Dépenses</span>
@@ -599,6 +605,42 @@
                   <!-- Dynamic rows -->
                 </tbody>
               </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================
+             1B. DEDICATED FINANCIAL ASCENSION & HEALTH VIEW (ASCENSION 3D)
+        ============================================================ -->
+        <section id="view-financial-ascension" class="tab-view">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Tableau d'Ascension Financière 3D & Bénéfice Net 📈</h1>
+              <p class="view-subtitle">Suivi du bénéfice net, de la marge de rentabilité et des rapports mensuels sur 5 ans max.</p>
+            </div>
+            <button class="btn btn-primary" onclick="app.loadDemoData()">
+              <i class="fa-solid fa-vial"></i> Charger Données DÉMO
+            </button>
+          </div>
+
+          <!-- 3D Financial Intelligence Card Mirror -->
+          <div class="fi-dashboard-wrapper panel-card glow-emerald">
+            <div class="fi-header">
+              <div class="fi-header-info">
+                <div class="fi-live-badge"><span class="pulse-dot-green"></span> SANTÉ FINANCIÈRE EN TEMPS RÉEL</div>
+                <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-top: 4px;">Analyse de la Rentabilité & Croissance 🚀</h2>
+              </div>
+
+              <div class="fi-year-picker">
+                <label for="fi-year-select-tab" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);"><i class="fa-solid fa-calendar-days text-emerald"></i> Période Historique :</label>
+                <select id="fi-year-select-tab" class="form-control fi-dropdown" onchange="app.renderFinancialIntelligence(this.value)" style="font-weight: 800; border-color: var(--primary);">
+                  <option value="2026" selected>Année 2026 (En cours)</option>
+                  <option value="2025">Année 2025</option>
+                  <option value="2024">Année 2024</option>
+                  <option value="2023">Année 2023</option>
+                  <option value="2022">Année 2022</option>
+                </select>
+              </div>
             </div>
           </div>
         </section>
