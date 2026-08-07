@@ -432,11 +432,31 @@ class EasyFactApp {
     if (backdrop) backdrop.classList.toggle('active');
   }
 
-  closeSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const backdrop = document.getElementById('sidebar-backdrop');
-    if (sidebar) sidebar.classList.remove('active');
-    if (backdrop) backdrop.classList.remove('active');
+  openAuthModal(mode = 'register') {
+    const modal = document.getElementById('auth-modal');
+    if (!modal) return;
+    modal.classList.add('active');
+  }
+
+  handleModalAuthSubmit() {
+    const company = document.getElementById('modal-auth-company')?.value || 'Mon Entreprise';
+    const email = document.getElementById('modal-auth-email')?.value || 'contact@monentreprise.com';
+    const pass = document.getElementById('modal-auth-password')?.value || '123456';
+
+    localStorage.setItem('easyfact_token', 'jwt_' + Date.now());
+    localStorage.setItem('easyfact_active_user_id', 'usr_' + Date.now());
+    localStorage.setItem('easyfact_active_user_email', email);
+    localStorage.setItem('easyfact_company_name', company);
+    localStorage.setItem('easyfact_logged_in', 'true');
+
+    this.isLoggedIn = true;
+    this.updateHeaderAuthUI();
+    
+    const modal = document.getElementById('auth-modal');
+    if (modal) modal.classList.remove('active');
+
+    this.switchTab('dashboard');
+    this.showToast(`🎉 Bienvenue ${company} ! Compte créé avec succès.`, "success");
   }
 
   logout() {
@@ -2962,8 +2982,41 @@ class EasyFactApp {
   }
 }
 
+// Global Google OAuth 2.0 Callback Handler
+window.handleGoogleCallback = function(response) {
+  if (response && response.credential) {
+    try {
+      const payload = JSON.parse(atob(response.credential.split('.')[1]));
+      const googleEmail = payload.email || 'utilisateur.google@gmail.com';
+      const googleName = payload.name || payload.given_name || 'Entreprise Google';
+
+      localStorage.setItem('easyfact_token', response.credential);
+      localStorage.setItem('easyfact_active_user_id', 'usr_google_' + (payload.sub || Date.now()));
+      localStorage.setItem('easyfact_active_user_email', googleEmail);
+      localStorage.setItem('easyfact_company_name', googleName);
+      localStorage.setItem('easyfact_tier', 'starter');
+      localStorage.setItem('easyfact_logged_in', 'true');
+
+      const modal = document.getElementById('auth-modal');
+      if (modal) modal.classList.remove('active');
+
+      if (window.app) {
+        window.app.isLoggedIn = true;
+        window.app.updateHeaderAuthUI();
+        window.app.switchTab('dashboard');
+        window.app.showToast(`🎉 Connexion Google réussie ! Bienvenue ${googleName}`, "success");
+      } else {
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error('Google OAuth callback error:', err);
+    }
+  }
+};
+
 // Initialize Application
 let app;
 document.addEventListener('DOMContentLoaded', () => {
   app = new EasyFactApp();
+  window.app = app;
 });

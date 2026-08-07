@@ -891,6 +891,65 @@
     </div>
   </div>
 
+  <!-- ============================================================
+       IN-PAGE AUTHENTICATION MODAL WITH GOOGLE OAUTH 2.0
+  ============================================================ -->
+  <div class="modal-overlay" id="auth-modal">
+    <div class="modal-card" style="max-width: 440px; padding: 32px 28px; text-align: center; border-radius: 24px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.12); position: relative;">
+      <button onclick="document.getElementById('auth-modal').classList.remove('active')" style="position: absolute; top: 16px; right: 16px; border: none; background: rgba(255,255,255,0.1); color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center;">&times;</button>
+      
+      <div style="margin-bottom: 16px;">
+        <img src="easyfact_icon.png" alt="EasyFact Icon" style="height: 48px; width: auto; filter: drop-shadow(0 0 12px rgba(16,185,129,0.5));">
+      </div>
+
+      <h3 style="font-size: 1.3rem; font-weight: 800; color: #ffffff; margin-bottom: 4px;" id="auth-modal-title">Créer un Compte / Connexion</h3>
+      <p style="font-size: 0.84rem; color: #94a3b8; margin-bottom: 20px;" id="auth-modal-subtitle">Rejoignez EasyFact Africa en 1 Clic via Google ou Email.</p>
+
+      <!-- Google Official OAuth 2.0 Sign-In Button Container -->
+      <div id="g_id_onload"
+           data-client_id="674903265274-oknqihg9j3hdcfss8qtf5iohh0462i7n.apps.googleusercontent.com"
+           data-callback="handleGoogleCallback"
+           data-auto_select="false">
+      </div>
+      <div class="g_id_signin" style="display:flex; justify-content:center; margin-bottom:18px;"
+           data-type="standard"
+           data-shape="rectangular"
+           data-theme="outline"
+           data-text="continue_with"
+           data-size="large"
+           data-logo_alignment="left"
+           data-width="360">
+      </div>
+
+      <div style="display:flex; align-items:center; margin: 16px 0; color: #64748b; font-size: 0.78rem;">
+        <span style="flex:1; height:1px; background:rgba(255,255,255,0.1);"></span>
+        <span style="padding:0 10px;">ou avec email</span>
+        <span style="flex:1; height:1px; background:rgba(255,255,255,0.1);"></span>
+      </div>
+
+      <form id="modal-auth-form" onsubmit="event.preventDefault(); app.handleModalAuthSubmit();">
+        <div class="form-group" id="modal-group-company" style="text-align: left; margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 6px;">Nom Officiel de l'Entreprise *</label>
+          <input type="text" id="modal-auth-company" class="form-control" placeholder="Ex: Salim Distribution SARL" style="background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 12px 14px; border-radius: 10px; width: 100%;">
+        </div>
+
+        <div class="form-group" style="text-align: left; margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 6px;">Adresse Email Pro *</label>
+          <input type="email" id="modal-auth-email" class="form-control" placeholder="contact@monentreprise.com" required style="background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 12px 14px; border-radius: 10px; width: 100%;">
+        </div>
+
+        <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+          <label style="font-size: 0.8rem; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 6px;">Mot de passe *</label>
+          <input type="password" id="modal-auth-password" class="form-control" placeholder="Saisir votre mot de passe" required style="background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 12px 14px; border-radius: 10px; width: 100%;">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 10px; font-weight: 700; font-size: 0.95rem; color: #fff; cursor: pointer; box-shadow: 0 8px 20px rgba(16,185,129,0.3);">
+          <i class="fa-solid fa-user-plus"></i> <span id="modal-auth-btn-text">Créer mon Compte</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
   <!-- Main Application JavaScript Engine -->
   <script src="app.js?v=20260806_v99"></script>
 </body>
