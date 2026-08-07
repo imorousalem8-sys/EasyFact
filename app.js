@@ -346,6 +346,99 @@ class EasyFactApp {
     }
   }
 
+  switchTab(tabId) {
+    if (!tabId) tabId = 'dashboard';
+    
+    // Hide all tab views and show the target view
+    const views = document.querySelectorAll('.tab-view');
+    views.forEach(v => v.classList.remove('active'));
+
+    const targetView = document.getElementById(`view-${tabId}`);
+    if (targetView) {
+      targetView.classList.add('active');
+    } else {
+      const dashboardView = document.getElementById('view-dashboard');
+      if (dashboardView) dashboardView.classList.add('active');
+    }
+
+    // Highlight active sidebar item
+    const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
+    navItems.forEach(item => {
+      const tabAttr = item.getAttribute('data-tab');
+      if (tabAttr === tabId) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+
+    // Scroll to top
+    const mainContent = document.querySelector('.content-area');
+    if (mainContent) mainContent.scrollTop = 0;
+
+    // Close mobile sidebar
+    this.closeSidebar();
+
+    // Re-render PDF if invoice creator tab
+    if (tabId === 'create-invoice') {
+      this.updateLivePdf();
+    }
+  }
+
+  bindEvents() {
+    // 1. Sidebar tab switching
+    const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
+    navItems.forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const tabId = item.getAttribute('data-tab');
+        if (tabId) this.switchTab(tabId);
+      });
+    });
+
+    // 2. Toggle Mobile Sidebar button
+    const toggleBtn = document.getElementById('toggle-sidebar');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => this.toggleSidebar());
+    }
+
+    // 3. Add item button in invoice form
+    const addItemBtn = document.getElementById('add-item-btn');
+    if (addItemBtn) {
+      addItemBtn.addEventListener('click', () => this.addInvoiceItem());
+    }
+
+    // 4. Save invoice button
+    const saveInvoiceBtn = document.getElementById('btn-save-invoice');
+    if (saveInvoiceBtn) {
+      saveInvoiceBtn.addEventListener('click', () => this.saveInvoice());
+    }
+
+    // 5. Live form inputs listeners for live PDF preview
+    const formInputs = ['doc-type', 'doc-number', 'doc-client-input', 'doc-due-date', 'tax-vat', 'tax-withholding', 'doc-advance', 'doc-pdf-theme', 'doc-payment-method', 'doc-payment-number-override'];
+    formInputs.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', () => this.updateLivePdf());
+        el.addEventListener('change', () => this.updateLivePdf());
+      }
+    });
+  }
+
+  toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar) sidebar.classList.toggle('active');
+    if (backdrop) backdrop.classList.toggle('active');
+  }
+
+  closeSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar) sidebar.classList.remove('active');
+    if (backdrop) backdrop.classList.remove('active');
+  }
+
   logout() {
     localStorage.removeItem('easyfact_token');
     localStorage.removeItem('easyfact_active_user_id');
