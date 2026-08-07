@@ -936,10 +936,93 @@ class EasyFactApp {
       };
 
       html2pdf().set(opt).from(element).save();
-      alert(`📄 Téléchargement du PDF ${docNum} (1 Page A4) démarré !`);
+      this.showToast(`📄 Téléchargement du PDF ${docNum} (1 Page A4) démarré !`, "success");
     } else {
       window.print();
     }
+  }
+
+  // Partage WhatsApp sous forme d'Image PNG / Fichier Certifié
+  async shareInvoiceWhatsApp() {
+    const element = document.getElementById('pdf-document');
+    const docNum = document.getElementById('doc-number')?.value || 'FAC-2026-001';
+    const clientName = document.getElementById('doc-client-input')?.value || 'Client';
+    const netTotal = document.getElementById('pdf-net-total')?.innerText || '';
+    const companyName = this.companyProfile?.name || 'Notre Entreprise';
+
+    const messageText = `📄 *FACTURE N° ${docNum}*\n` +
+      `🏢 *Émetteur:* ${companyName}\n` +
+      `👤 *Client:* ${clientName}\n` +
+      `💰 *Montant Net à Payer:* ${netTotal}\n\n` +
+      `Bonjour, veuillez trouver ci-joint votre facture sous forme d'image certifiée.\n\n` +
+      `Merci pour votre confiance !`;
+
+    this.showToast("Génération de l'image de la facture pour WhatsApp...", "info");
+
+    try {
+      // Get html2canvas from html2pdf bundle if available
+      const h2c = window.html2canvas || (window.html2pdf ? (await html2pdf().set({}).from(element).toContainer().toCanvas().get('canvas')).constructor : null);
+      
+      // Render element to Canvas
+      let canvas = null;
+      if (window.html2canvas) {
+        canvas = await window.html2canvas(element, { scale: 2, useCORS: true });
+      } else if (typeof html2pdf !== 'undefined') {
+        const worker = html2pdf().from(element).toImg().toCanvas();
+        canvas = await worker.get('canvas');
+      }
+
+      if (canvas) {
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            this.fallbackWhatsAppShare(messageText);
+            return;
+          }
+
+          const imageFile = new File([blob], `${docNum}.png`, { type: 'image/png' });
+
+          // Native File Sharing (Android / iOS / Native Browsers)
+          if (navigator.canShare && navigator.canShare({ files: [imageFile] })) {
+            try {
+              await navigator.share({
+                title: `Facture ${docNum}`,
+                text: messageText,
+                files: [imageFile]
+              });
+              this.showToast("Facture envoyée sous forme d'image avec succès !", "success");
+              return;
+            } catch (shareErr) {
+              console.log("Share API cancelled or fallback:", shareErr);
+            }
+          }
+
+          // Desktop Web WhatsApp Fallback: Download Image PNG & open WhatsApp with formatted text
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${docNum}.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(messageText)}`;
+          window.open(waUrl, '_blank');
+          this.showToast("📷 Image PNG de la facture enregistrée ! Joignez-la sur WhatsApp.", "success");
+        }, 'image/png', 0.95);
+      } else {
+        this.fallbackWhatsAppShare(messageText);
+      }
+    } catch (e) {
+      console.warn("Image rendering fallback:", e);
+      this.fallbackWhatsAppShare(messageText);
+    }
+  }
+
+  fallbackWhatsAppShare(messageText) {
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(messageText)}`;
+    window.open(waUrl, '_blank');
+    this.showToast("Ouverture de WhatsApp pour le partage de la facture.", "info");
   }
 
   // Profile Modal
