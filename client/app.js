@@ -755,7 +755,7 @@ class EasyFactApp {
     if (typeof window.google !== 'undefined' && window.google.accounts) {
       try {
         window.google.accounts.id.initialize({
-          client_id: "9218491823-easyfactafrica.apps.googleusercontent.com",
+          client_id: "674903265274-oknqihg9j3hdcfss8qtf5iohh0462i7n.apps.googleusercontent.com",
           callback: (response) => this.handleGoogleCredentialResponse(response),
           auto_select: false
         });
