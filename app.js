@@ -678,7 +678,7 @@ class EasyFactApp {
         watermarkEl.style.display = (this.userTier === 'starter') ? 'block' : 'none';
       }
 
-      // Calculate Items HT
+      // Calculate Items HT avec Précision Comptable Absolue
       const itemsTbody = document.getElementById('pdf-items-tbody');
       let subtotalHT = 0;
 
@@ -687,7 +687,7 @@ class EasyFactApp {
         (this.currentInvoiceItems || []).forEach(item => {
           const qty = parseFloat(item.qty) || 1;
           const price = parseFloat(item.unitPrice) || 0;
-          const lineTotal = qty * price;
+          const lineTotal = Math.round((qty * price) * 100) / 100;
           subtotalHT += lineTotal;
 
           const tr = document.createElement('tr');
@@ -701,10 +701,11 @@ class EasyFactApp {
         });
       }
 
-      const vatAmount = subtotalHT * (vatRate / 100);
-      const withholdingAmount = subtotalHT * (withholdingRate / 100);
-      const totalTTC = subtotalHT + vatAmount - withholdingAmount;
-      const netPayable = Math.max(0, totalTTC - advanceVal);
+      subtotalHT = Math.round(subtotalHT * 100) / 100;
+      const vatAmount = Math.round((subtotalHT * (vatRate / 100)) * 100) / 100;
+      const withholdingAmount = Math.round((subtotalHT * (withholdingRate / 100)) * 100) / 100;
+      const totalTTC = Math.round((subtotalHT + vatAmount - withholdingAmount) * 100) / 100;
+      const netPayable = Math.max(0, Math.round((totalTTC - advanceVal) * 100) / 100);
 
       // Update Totals
       const totalHtEl = document.getElementById('pdf-total-ht');
