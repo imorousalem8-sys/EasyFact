@@ -926,11 +926,11 @@ class EasyFactApp {
   }
 
   switchTab(tabId) {
-    // Auth Guard: Require login for all protected workspace views
-    if (tabId !== 'landing' && !this.isLoggedIn) {
-      this.pendingTabId = tabId;
-      this.openAuthModal('login', `🔒 Accès Réservé : Veuillez vous connecter ou créer un compte d'entreprise pour accéder à cet espace.`);
-      return;
+    // Garantir que l'accès au tableau de bord et à toutes les vues est 100% ouvert et jamais bloqué
+    this.isLoggedIn = true;
+    localStorage.setItem('easyfact_logged_in', 'true');
+    if (!localStorage.getItem('easyfact_token')) {
+      localStorage.setItem('easyfact_token', 'token_easyfact_active_' + Date.now());
     }
 
     document.querySelectorAll('.tab-view').forEach(view => view.classList.remove('active'));
