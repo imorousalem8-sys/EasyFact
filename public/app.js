@@ -381,45 +381,7 @@ class EasyFactApp {
     }
   }
 
-  bindEvents() {
-    // 1. Sidebar tab switching
-    const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
-    navItems.forEach(item => {
-      item.addEventListener('click', (e) => {
-        e.preventDefault();
-        const tabId = item.getAttribute('data-tab');
-        if (tabId) this.switchTab(tabId);
-      });
-    });
 
-    // 2. Toggle Mobile Sidebar button
-    const toggleBtn = document.getElementById('toggle-sidebar');
-    if (toggleBtn) {
-      toggleBtn.addEventListener('click', () => this.toggleSidebar());
-    }
-
-    // 3. Add item button in invoice form
-    const addItemBtn = document.getElementById('add-item-btn');
-    if (addItemBtn) {
-      addItemBtn.addEventListener('click', () => this.addInvoiceItem());
-    }
-
-    // 4. Save invoice button
-    const saveInvoiceBtn = document.getElementById('btn-save-invoice');
-    if (saveInvoiceBtn) {
-      saveInvoiceBtn.addEventListener('click', () => this.saveInvoice());
-    }
-
-    // 5. Live form inputs listeners for live PDF preview
-    const formInputs = ['doc-type', 'doc-number', 'doc-client-input', 'doc-due-date', 'tax-vat', 'tax-withholding', 'doc-advance', 'doc-pdf-theme', 'doc-payment-method', 'doc-payment-number-override'];
-    formInputs.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.addEventListener('input', () => this.updateLivePdf());
-        el.addEventListener('change', () => this.updateLivePdf());
-      }
-    });
-  }
 
   toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
@@ -3091,7 +3053,7 @@ class EasyFactApp {
         badge.innerHTML = `
           <span class="tier-dot"></span>
           <span class="tier-name">Plan Gratuit (Starter)</span>
-          <button class="upgrade-mini-btn" id="btn-upgrade-header">Changer Plan</button>
+          <button class="upgrade-mini-btn" id="btn-upgrade-header" onclick="app.subscribePlan('pro', 4900)">Changer Plan</button>
         `;
         if (quotaBox) quotaBox.style.display = 'block';
       } else if (tierKey === 'pro') {
@@ -3099,7 +3061,7 @@ class EasyFactApp {
         badge.innerHTML = `
           <span class="tier-dot" style="background:#10b981;box-shadow:0 0 10px #10b981;"></span>
           <span class="tier-name" style="color:#10b981;font-weight:700;">Plan PRO PME</span>
-          <button class="upgrade-mini-btn" id="btn-upgrade-header" style="background:#10b981;color:#fff;">Changer Plan</button>
+          <button class="upgrade-mini-btn" id="btn-upgrade-header" style="background:#10b981;color:#fff;" onclick="app.subscribePlan('pro', 4900)">Changer Plan</button>
         `;
         if (quotaBox) quotaBox.style.display = 'none';
       } else if (tierKey === 'entreprise') {
@@ -3107,7 +3069,7 @@ class EasyFactApp {
         badge.innerHTML = `
           <span class="tier-dot" style="background:#8b5cf6;box-shadow:0 0 10px #8b5cf6;"></span>
           <span class="tier-name" style="color:#8b5cf6;font-weight:700;">Entreprise SA</span>
-          <button class="upgrade-mini-btn" id="btn-upgrade-header" style="background:#8b5cf6;color:#fff;">Changer Plan</button>
+          <button class="upgrade-mini-btn" id="btn-upgrade-header" style="background:#8b5cf6;color:#fff;" onclick="app.subscribePlan('entreprise', 24900)">Changer Plan</button>
         `;
         if (quotaBox) quotaBox.style.display = 'none';
       }
@@ -3117,15 +3079,13 @@ class EasyFactApp {
     this.updateLivePdf();
   }
 
-  openPaymentModal(planName, priceStr) {
-    const title = document.getElementById('modal-plan-title');
-    const price = document.getElementById('modal-plan-price');
-    if (title) title.innerHTML = `<i class="fa-solid fa-crown text-gold"></i> Activer le Plan ${planName}`;
-    if (price) price.innerText = priceStr;
-    document.getElementById('payment-modal')?.classList.add('active');
+  openPaymentModal(planName = 'pro', priceStr = '4900') {
+    const price = parseInt(String(priceStr).replace(/[^0-9]/g, ''), 10) || 4900;
+    this.subscribePlan(planName.toLowerCase(), price);
   }
 
   closeModal(modalId) {
+    if (!modalId || modalId === 'payment-modal') modalId = 'plan-upgrade-modal';
     document.getElementById(modalId)?.classList.remove('active');
   }
 
