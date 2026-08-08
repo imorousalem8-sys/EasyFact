@@ -477,18 +477,18 @@
             </div>
           </div>
 
-          <!-- 3D FINANCIAL INTELLIGENCE & HEALTH DASHBOARD (SUIVI D'ASCENSION & BÉNÉFICE NET SUR 5 ANS) -->
+          <!-- FINANCIAL PERFORMANCE & HEALTH DASHBOARD -->
           <div class="fi-dashboard-wrapper panel-card glow-emerald" style="margin-top: 24px;">
             <div class="fi-header">
               <div class="fi-header-info">
-                <div class="fi-live-badge"><span class="pulse-dot-green"></span> SANTÉ FINANCIÈRE & ASCENSION EN TEMPS RÉEL</div>
-                <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-top: 4px;">Indicateur de Rentabilité & Suivi du Bénéfice Net 📈</h2>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">Suivez votre croissance réelle, vos encaissements et maîtrisez vos coûts fournisseurs en direct.</p>
+                <div class="fi-live-badge"><span class="pulse-dot-green"></span> SYNTHÈSE FINANCIÈRE EN TEMPS RÉEL</div>
+                <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-top: 4px;">Tableau de Bord Financier & Analyse de Performance 📈</h2>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Suivez votre chiffre d'affaires, vos encaissements et maîtrisez votre rentabilité nette.</p>
               </div>
 
               <div class="fi-year-picker">
-                <label for="fi-year-select" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);"><i class="fa-solid fa-calendar-days text-emerald"></i> Période Historique (Max 5 Ans) :</label>
-                <select id="fi-year-select" class="form-control fi-dropdown" onchange="app.renderFinancialIntelligence(this.value)" style="font-weight: 800; border-color: var(--primary);">
+                <label for="fi-year-select" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);"><i class="fa-solid fa-calendar-days text-emerald"></i> Période Historique :</label>
+                <select id="fi-year-select" class="form-control fi-dropdown" onchange="app.renderFinancialIntelligence(this.value)" style="font-weight: 800; border-color: var(--primary); cursor: pointer;">
                   <option value="2026" selected>Année 2026 (En cours)</option>
                   <option value="2025">Année 2025</option>
                   <option value="2024">Année 2024</option>
@@ -503,8 +503,8 @@
               <div class="fi-health-status" style="display: flex; align-items: center; gap: 14px;">
                 <i class="fa-solid fa-chart-line fi-health-icon text-emerald" id="fi-health-icon" style="font-size: 2rem;"></i>
                 <div>
-                  <h3 id="fi-health-title" style="font-size: 1.05rem; font-weight: 800; color: var(--text-main);">Ascension Financière Excellente 🚀</h3>
-                  <p id="fi-health-desc" style="font-size: 0.82rem; color: var(--text-muted);">Vos encaissements couvrent largement vos dépenses. Solde net positif et rentabilité solide.</p>
+                  <h3 id="fi-health-title" style="font-size: 1.05rem; font-weight: 800; color: var(--text-main);">Performance Financière Solidement Haussière 🚀</h3>
+                  <p id="fi-health-desc" style="font-size: 0.82rem; color: var(--text-muted);">Vos encaissements couvrent largement vos charges d'exploitation. Marge nette très positive.</p>
                 </div>
               </div>
               <div class="fi-health-badge" id="fi-health-badge">
@@ -512,19 +512,19 @@
               </div>
             </div>
 
-            <!-- ÉCRAN 3D PROFOND DE TENDANCE FINANCIÈRE AVEC COURBE ANIMÉE (TRADING TERMINAL ENGINE) -->
+            <!-- ÉCRAN INTERACTIF DE COURBE DE CROISSANCE MENSUELLE (FINANCIAL TERMINAL) -->
             <div class="fi-chart-terminal" style="background: linear-gradient(145deg, #0b1329, #0f172a); border: 1px solid #1e293b; border-radius: 16px; padding: 20px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.4); margin: 20px 0; position: relative; overflow: hidden;">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                   <span class="pulse-dot-green" style="width: 10px; height: 10px; background: #10b981; border-radius: 50%; display: inline-block;"></span>
-                  <span style="font-size: 0.82rem; font-weight: 800; color: #f8fafc; letter-spacing: 0.5px;">ÉCRAN DE COURBE & ASCENSION FINANCIÈRE (TRADING TERMINAL 3D)</span>
+                  <span style="font-size: 0.82rem; font-weight: 800; color: #f8fafc; letter-spacing: 0.5px;">ÉCRAN DE TENDANCE & COURBE DE RENTABILITÉ MENSUELLE</span>
                 </div>
                 <div id="fi-chart-trend-tag" style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #10b981; padding: 4px 14px; border-radius: 9999px; font-size: 0.78rem; font-weight: 800; display: flex; align-items: center; gap: 6px;">
                   <i class="fa-solid fa-arrow-trend-up"></i> TENDANCE HAUSSIÈRE
                 </div>
               </div>
 
-              <!-- Canvas 2D/3D Graphique Animé -->
+              <!-- Canvas 2D Graphique Animé -->
               <div style="position: relative; width: 100%; height: 220px;">
                 <canvas id="fi-trend-canvas" width="900" height="220" style="width: 100%; height: 100%; display: block;"></canvas>
               </div>
@@ -535,41 +535,41 @@
               </div>
             </div>
 
-            <!-- KPI Cards Grid Trading 3D Style -->
+            <!-- KPI Cards Grid Fully Clickable -->
             <div class="kpi-grid" id="dashboard-kpi-grid" style="display: grid; margin-top: 16px;">
-              <div class="kpi-card glow-emerald">
+              <div class="kpi-card glow-emerald" onclick="app.switchTab('invoices')" style="cursor: pointer;" title="Cliquer pour gérer vos factures">
                 <div class="kpi-icon"><i class="fa-solid fa-wallet"></i></div>
                 <div class="kpi-details">
                   <span class="kpi-label">Encaissements Réels (Chiffre d'Affaires)</span>
                   <span class="kpi-value" id="kpi-revenue">0 FCFA</span>
-                  <span class="kpi-change positive" id="kpi-revenue-sub"><i class="fa-solid fa-arrow-trend-up"></i> Factures réglées</span>
+                  <span class="kpi-change positive" id="kpi-revenue-sub"><i class="fa-solid fa-arrow-trend-up"></i> Voir mes factures →</span>
                 </div>
               </div>
 
-              <div class="kpi-card glow-amber">
+              <div class="kpi-card glow-amber" onclick="app.switchTab('expenses')" style="cursor: pointer;" title="Cliquer pour gérer vos dépenses">
                 <div class="kpi-icon"><i class="fa-solid fa-receipt"></i></div>
                 <div class="kpi-details">
                   <span class="kpi-label">Dépenses & Achats Fournisseurs</span>
                   <span class="kpi-value" id="kpi-expenses">0 FCFA</span>
-                  <span class="kpi-subtext" id="kpi-expenses-sub">Charges d'exploitation</span>
+                  <span class="kpi-subtext" id="kpi-expenses-sub">Gérer les charges →</span>
                 </div>
               </div>
 
-              <div class="kpi-card glow-blue">
+              <div class="kpi-card glow-blue" onclick="app.switchTab('financial-ascension')" style="cursor: pointer;" title="Cliquer pour voir le détail de rentabilité">
                 <div class="kpi-icon"><i class="fa-solid fa-scale-balanced"></i></div>
                 <div class="kpi-details">
                   <span class="kpi-label">Bénéfice Net Réel</span>
                   <span class="kpi-value" id="kpi-profit">0 FCFA</span>
-                  <span class="kpi-subtext" id="kpi-profit-sub" style="color:#059669; font-weight:700;">CA moins Dépenses</span>
+                  <span class="kpi-subtext" id="kpi-profit-sub" style="color:#059669; font-weight:700;">CA moins Dépenses →</span>
                 </div>
               </div>
 
-              <div class="kpi-card glow-purple">
+              <div class="kpi-card glow-purple" onclick="app.filterInvoicesByStatus('En attente')" style="cursor: pointer;" title="Cliquer pour relancer les factures en attente">
                 <div class="kpi-icon"><i class="fa-solid fa-clock"></i></div>
                 <div class="kpi-details">
                   <span class="kpi-label">En Attente d'Encaissement</span>
                   <span class="kpi-value" id="kpi-pending">0 FCFA</span>
-                  <span class="kpi-subtext" id="kpi-pending-sub">0 factures</span>
+                  <span class="kpi-subtext" id="kpi-pending-sub">Relancer les impayés →</span>
                 </div>
               </div>
             </div>

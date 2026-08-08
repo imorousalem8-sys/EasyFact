@@ -638,6 +638,62 @@ class EasyFactApp {
     document.getElementById('filter-status')?.addEventListener('change', () => this.filterInvoicesTable());
   }
 
+  switchTab(tabId) {
+    if (!tabId) return;
+
+    // 1. Hide all .tab-view sections
+    document.querySelectorAll('.tab-view').forEach(view => {
+      view.classList.remove('active');
+      view.style.display = 'none';
+    });
+
+    // 2. Remove active state from all .nav-item links
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.classList.remove('active');
+    });
+
+    // 3. Show target view section
+    const targetView = document.getElementById('view-' + tabId);
+    if (targetView) {
+      targetView.classList.add('active');
+      targetView.style.display = 'block';
+    } else {
+      // Fallback if tabId is dashboard
+      const dash = document.getElementById('view-dashboard');
+      if (dash) {
+        dash.classList.add('active');
+        dash.style.display = 'block';
+      }
+    }
+
+    // 4. Highlight matching nav item
+    const matchingNav = document.querySelector(`.nav-item[data-tab="${tabId}"]`);
+    if (matchingNav) {
+      matchingNav.classList.add('active');
+    }
+
+    // 5. Close sidebar on mobile if open
+    this.closeSidebar();
+
+    // 6. Scroll smoothly to top of page
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // 7. Refresh charts if switching to dashboard or financial-ascension
+    if (tabId === 'dashboard' || tabId === 'financial-ascension') {
+      const selectedYear = document.getElementById('fi-year-select')?.value || '2026';
+      this.renderFinancialIntelligence(selectedYear);
+    }
+  }
+
+  filterInvoicesByStatus(status) {
+    this.switchTab('invoices');
+    const select = document.getElementById('filter-status');
+    if (select) {
+      select.value = status;
+      this.filterInvoicesTable();
+    }
+  }
+
   /* Live PDF Preview Renderer & Formatter */
   formatCurrency(amount) {
     const rateObj = (this.currencyRates && this.currencyRates[this.currency]) ? this.currencyRates[this.currency] : { symbol: 'FCFA', rate: 1 };
@@ -2088,7 +2144,6 @@ class EasyFactApp {
     };
 
     animate();
-  }
   }
 
   loadDemoData() {
