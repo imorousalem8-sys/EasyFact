@@ -777,10 +777,12 @@ class EasyFactApp {
 
   confirmPlanActivation() {
     this.userTier = this.selectedPlan || 'pro';
+    localStorage.setItem('easyfact_tier', this.userTier);
     this.saveToStorage();
     this.closePlanModal();
     this.renderAllViews();
-    alert(`🎉 Félicitations Monsieur Salem ! La formule ${this.userTier.toUpperCase()} a été activée instantanément ! Vous bénéficiez désormais de l'accès illimité.`);
+    this.showToast(`🎉 Félicitations Monsieur Salem ! La formule ${this.userTier.toUpperCase()} est active ! Accès illimité débloqué.`, "success");
+    alert(`🎉 Félicitations Monsieur Salem ! La formule ${this.userTier.toUpperCase()} a été activée avec succès !\n\nVous bénéficiez désormais de la création illimitée de factures & devis sans filigrane ! 🚀`);
   }
 
   /* Live PDF Preview Renderer & Formatter */
