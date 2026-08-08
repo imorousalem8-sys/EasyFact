@@ -860,13 +860,13 @@ html, body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(11, 19, 41, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  z-index: 10000;
-  display: none !important;
+  background: rgba(11, 19, 41, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 99999;
+  display: none;
   opacity: 0;
-  pointer-events: none !important;
+  pointer-events: none;
   transition: opacity 0.25s ease-in-out;
   align-items: center;
   justify-content: center;
@@ -875,7 +875,7 @@ html, body {
 
 .modal-overlay.active {
   display: flex !important;
-  opacity: 1;
+  opacity: 1 !important;
   pointer-events: auto !important;
 }
 

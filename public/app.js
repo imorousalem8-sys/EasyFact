@@ -699,13 +699,53 @@ class EasyFactApp {
     const modal = document.getElementById('plan-upgrade-modal');
     const title = document.getElementById('plan-modal-title');
     const priceEl = document.getElementById('plan-modal-price');
+    const refEl = document.getElementById('plan-modal-ref');
+    const refInline = document.getElementById('pay-ref-inline');
+
+    // Generate unique reference code
+    const uniqueRef = 'REF-EASYFACT-' + new Date().getFullYear() + '-' + Math.floor(10000 + Math.random() * 90000);
+    this.currentPaymentRef = uniqueRef;
 
     if (title) title.innerText = (planId === 'entreprise') ? "Passer à la Formule ENTREPRISE 👑" : "Passer à la Formule PRO 🚀";
     if (priceEl) priceEl.innerText = `${this.formatCurrency(price || 4900)} / mois`;
+    if (refEl) refEl.innerText = uniqueRef;
+    if (refInline) refInline.innerText = uniqueRef;
 
     if (modal) {
       modal.classList.add('active');
     }
+  }
+
+  selectPayChannel(channel, detail) {
+    const titleEl = document.getElementById('pay-channel-title');
+    const detailEl = document.getElementById('pay-channel-detail');
+
+    const channelNames = {
+      wave: '🌊 Wave Mobile Money',
+      orange: '🍊 Orange Money',
+      mtn: '💛 MTN MoMo',
+      carte: '💳 Virement Bancaire / Carte'
+    };
+
+    if (titleEl) titleEl.innerText = `📲 Instructions de Règlement ${channelNames[channel] || channel} :`;
+    if (detailEl) detailEl.innerText = (channel === 'carte') ? `Coordonnées RIB : CI890 01001 09812456701 92` : `Numéro Marchand / Code : ${detail}`;
+  }
+
+  submitPlanPaymentForm() {
+    const phone = document.getElementById('pay-user-phone')?.value;
+    const txnId = document.getElementById('pay-txn-id')?.value;
+
+    if (!phone || !txnId) {
+      alert("Veuillez saisir votre numéro de téléphone et la référence du reçu Mobile Money.");
+      return;
+    }
+
+    this.userTier = this.selectedPlan || 'pro';
+    this.saveToStorage();
+    this.closePlanModal();
+    this.renderAllViews();
+
+    alert(`✅ REÇU DE RÈGLEMENT SOUMIS AVEC SUCCÈS !\n\n• Référence Abonnement : ${this.currentPaymentRef || 'REF-2026'}\n• ID Transaction : ${txnId}\n• Téléphone : ${phone}\n\nFélicitations Monsieur Salem ! Votre formule ${this.userTier.toUpperCase()} est active et opérationnelle ! 🚀`);
   }
 
   closePlanModal() {
