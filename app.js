@@ -640,11 +640,63 @@ class EasyFactApp {
     // 6. Scroll smoothly to top of page
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // 7. Refresh charts if switching to dashboard or financial-ascension
+    // 7. Refresh charts if switching to dashboard or financial-ascension, load settings if switching to settings
     if (tabId === 'dashboard' || tabId === 'financial-ascension') {
       const selectedYear = document.getElementById('fi-year-select')?.value || '2026';
       this.renderFinancialIntelligence(selectedYear);
+    } else if (tabId === 'settings') {
+      this.loadSettingsForm();
     }
+  }
+
+  loadSettingsForm() {
+    const nameEl = document.getElementById('setting-company-name');
+    const nineaEl = document.getElementById('setting-ninea');
+    const phoneEl = document.getElementById('setting-phone');
+    const addrEl = document.getElementById('setting-address');
+    const waveEl = document.getElementById('setting-wave-num');
+    const omEl = document.getElementById('setting-om-num');
+    const mtnEl = document.getElementById('setting-mtn-num');
+    const moovEl = document.getElementById('setting-moov-num');
+    const bankEl = document.getElementById('setting-bank-rib');
+
+    if (nameEl) nameEl.value = this.companyProfile.name || '';
+    if (nineaEl) nineaEl.value = this.companyProfile.ninea || '';
+    if (phoneEl) phoneEl.value = this.companyProfile.phone || '';
+    if (addrEl) addrEl.value = this.companyProfile.address || '';
+    if (waveEl) waveEl.value = this.companyProfile.waveNum || '';
+    if (omEl) omEl.value = this.companyProfile.omNum || '';
+    if (mtnEl) mtnEl.value = this.companyProfile.mtnNum || '';
+    if (moovEl) moovEl.value = this.companyProfile.moovNum || '';
+    if (bankEl) bankEl.value = this.companyProfile.bankRib || '';
+  }
+
+  saveSettingsForm() {
+    const name = document.getElementById('setting-company-name')?.value?.trim() || 'Mon Entreprise';
+    const ninea = document.getElementById('setting-ninea')?.value?.trim() || '';
+    const phone = document.getElementById('setting-phone')?.value?.trim() || '';
+    const address = document.getElementById('setting-address')?.value?.trim() || '';
+    const waveNum = document.getElementById('setting-wave-num')?.value?.trim() || '';
+    const omNum = document.getElementById('setting-om-num')?.value?.trim() || '';
+    const mtnNum = document.getElementById('setting-mtn-num')?.value?.trim() || '';
+    const moovNum = document.getElementById('setting-moov-num')?.value?.trim() || '';
+    const bankRib = document.getElementById('setting-bank-rib')?.value?.trim() || '';
+
+    this.companyProfile = {
+      name,
+      ninea,
+      phone,
+      address,
+      waveNum,
+      omNum,
+      mtnNum,
+      moovNum,
+      bankRib
+    };
+
+    this.saveToStorage();
+    this.updateLivePdf();
+    alert('✅ Vos coordonnées d\'entreprise et numéros d\'encaissement Mobile Money ont été enregistrés avec succès !');
   }
 
   filterInvoicesByStatus(status) {
