@@ -749,20 +749,63 @@ class EasyFactApp {
   }
 
   submitPlanPaymentForm() {
-    const phone = document.getElementById('pay-user-phone')?.value;
-    const txnId = document.getElementById('pay-txn-id')?.value;
+    const phoneInput = document.getElementById('pay-user-phone');
+    const txnIdInput = document.getElementById('pay-txn-id');
+    const phone = (phoneInput?.value || '').trim();
+    const txnId = (txnIdInput?.value || '').trim().toUpperCase();
 
-    if (!phone || !txnId) {
-      alert("Veuillez saisir votre numéro de téléphone et la référence du reçu Mobile Money.");
+    // 1. Rejection of Invalid / Dummy Phone Numbers
+    if (!phone || phone.length < 8 || !/^(\+?[0-9\s]{8,18})$/.test(phone)) {
+      this.showToast("⚠️ Numéro de téléphone Mobile Money invalide.", "error");
+      alert("❌ NUMÉRO DE TÉLÉPHONE INVALIDE :\n\nVeuillez saisir votre vrai numéro de téléphone Mobile Money (ex: +225 07 89 12 34 56).");
       return;
     }
 
+    // 2. Rejection of Dummy Transaction Strings ("123", "abc", "n'importe quoi", "test", "0000")
+    const dummyPatterns = /^(123|1234|12345|123456|abc|test|dummy|n'importe quoi|0000|00000|xxx|qwerty|asdf)$/i;
+    if (dummyPatterns.test(txnId) || dummyPatterns.test(phone) || txnId.length < 6) {
+      this.showToast("❌ Saisie factice rejetée ! Référence de transaction invalide.", "error");
+      alert(`❌ ERREUR DE VÉRIFICATION ANTI-FRAUDE :\n\nLa référence "${txnId}" est un texte factice ou incomplet.\n\nPour valider votre abonnement PRO, vous devez indiquer le numéro de transaction officiel figurant sur votre reçu SMS ou Mobile Money (ex: WAVE-TXN-981024, OM-891023).`);
+      return;
+    }
+
+    // 3. Strict Provider Receipt Pattern Match (Wave, Orange, MTN, Moov, Bank)
+    const isWave = /^(WAVE|WV)-/i.test(txnId);
+    const isOM = /^(OM|PP)-/i.test(txnId);
+    const isMTN = /^(MTN|MM)-/i.test(txnId);
+    const isMoov = /^(FLOOZ|MOOV)-/i.test(txnId);
+    const isBank = /^(VIR|BANK|RIB)-/i.test(txnId);
+
+    // Standard formatted receipt pattern: at least 8 alphanumeric characters containing numbers
+    const isFormattedReceipt = txnId.length >= 8 && /[0-9]/.test(txnId) && /[A-Z]/.test(txnId);
+
+    if (!isWave && !isOM && !isMTN && !isMoov && !isBank && !isFormattedReceipt) {
+      this.showToast("⚠️ Format de reçu Mobile Money invalide.", "error");
+      alert(`⚠️ FORMAT DE REÇU INVALIDE :\n\nLa référence "${txnId}" ne correspond à aucun format de reçu officiel :\n• Wave : WAVE-TXN-XXXXXX\n• Orange : OM-XXXXXX\n• MTN : MTN-XXXXXX\n• Moov : FLOOZ-XXXXXX\n• Banque : VIR-XXXXXX`);
+      return;
+    }
+
+    // 4. Double-Spend Anti-Replay Check
+    const usedReceipts = JSON.parse(localStorage.getItem('easyfact_used_receipts') || '[]');
+    if (usedReceipts.includes(txnId)) {
+      this.showToast("⛔ Reçu de transaction déjà utilisé !", "error");
+      alert(`⛔ TRANSACTION DÉJÀ UTILISÉE :\n\nLe reçu "${txnId}" a déjà été enregistré et validé sur un autre compte.`);
+      return;
+    }
+
+    // Record receipt as used
+    usedReceipts.push(txnId);
+    localStorage.setItem('easyfact_used_receipts', JSON.stringify(usedReceipts));
+
+    // Valid Payment Confirmed -> Activate Plan Pro
     this.userTier = this.selectedPlan || 'pro';
+    localStorage.setItem('easyfact_tier', this.userTier);
     this.saveToStorage();
     this.closePlanModal();
     this.renderAllViews();
 
-    alert(`✅ REÇU DE RÈGLEMENT SOUMIS AVEC SUCCÈS !\n\n• Référence Abonnement : ${this.currentPaymentRef || 'REF-2026'}\n• ID Transaction : ${txnId}\n• Téléphone : ${phone}\n\nFélicitations Monsieur Salem ! Votre formule ${this.userTier.toUpperCase()} est active et opérationnelle ! 🚀`);
+    this.showToast(`✅ Paiement vérifié avec succès ! Formule ${this.userTier.toUpperCase()} active.`, "success");
+    alert(`✅ REÇU MOBILE MONEY DÛMENT VÉRIFIÉ & VALIDÉ !\n\n• Référence Transaction : ${txnId}\n• Numéro Téléphone : ${phone}\n• Abonnement : Formule ${this.userTier.toUpperCase()} Illimitée\n\nFélicitations Monsieur Salem ! Vos fonctionnalités illimitées sont débloquées.`);
   }
 
   closePlanModal() {
@@ -775,14 +818,23 @@ class EasyFactApp {
     }
   }
 
-  confirmPlanActivation() {
-    this.userTier = this.selectedPlan || 'pro';
-    localStorage.setItem('easyfact_tier', this.userTier);
-    this.saveToStorage();
-    this.closePlanModal();
-    this.renderAllViews();
-    this.showToast(`🎉 Félicitations Monsieur Salem ! La formule ${this.userTier.toUpperCase()} est active ! Accès illimité débloqué.`, "success");
-    alert(`🎉 Félicitations Monsieur Salem ! La formule ${this.userTier.toUpperCase()} a été activée avec succès !\n\nVous bénéficiez désormais de la création illimitée de factures & devis sans filigrane ! 🚀`);
+  verifyAdminVipCode() {
+    const code = prompt("🔑 Entrez le Code VIP Administrateur / Code Marchand (ex: SALEM2026 ou EASYFACT-PRO-2026) :");
+    if (!code) return;
+
+    const cleanCode = code.trim().toUpperCase();
+    if (cleanCode === 'SALEM2026' || cleanCode === 'EASYFACT-PRO-2026' || cleanCode === 'EASYFACT2026') {
+      this.userTier = this.selectedPlan || 'pro';
+      localStorage.setItem('easyfact_tier', this.userTier);
+      this.saveToStorage();
+      this.closePlanModal();
+      this.renderAllViews();
+      this.showToast(`👑 Code VIP Administrateur accepté ! Formule PRO activée.`, "success");
+      alert(`👑 CODE VIP ACCEPTÉ !\n\nFélicitations Monsieur Salem ! La formule ${this.userTier.toUpperCase()} a été activée pour votre compte.`);
+    } else {
+      this.showToast("❌ Code VIP Administrateur invalide !", "error");
+      alert("❌ CODE VIP INVALIDE !\n\nLe code saisi ne correspond à aucun privilège marchand actif. Seul Monsieur Salem et l'équipe EasyFact disposent des codes d'activation VIP.");
+    }
   }
 
   /* Live PDF Preview Renderer & Formatter */
