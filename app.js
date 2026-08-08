@@ -3685,9 +3685,27 @@ window.handleGoogleCallback = function(response) {
   }
 };
 
-// Initialize Application
+// Initialize Application immediately if DOM is ready, or on DOMContentLoaded
 let app;
-document.addEventListener('DOMContentLoaded', () => {
-  app = new EasyFactApp();
-  window.app = app;
-});
+function initApp() {
+  if (!window.app) {
+    app = new EasyFactApp();
+    window.app = app;
+  }
+}
+
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  initApp();
+} else {
+  document.addEventListener('DOMContentLoaded', initApp);
+}
+
+// Global window helper functions so onclick handlers NEVER fail
+window.subscribePlan = function(planId, price) {
+  initApp();
+  if (window.app) window.app.subscribePlan(planId, price);
+};
+
+window.closePlanModal = function() {
+  if (window.app) window.app.closePlanModal();
+};
