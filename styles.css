@@ -851,9 +851,44 @@ html, body {
 }
 
 /* À Propos & Mission Section */
-.landing-about-section, .landing-features-section {
-  margin-bottom: 50px;
-  text-align: center;
+/* ============================================================
+   MODALS & PLAN UPGRADE OVERLAYS SYSTEM
+============================================================ */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(11, 19, 41, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 10000;
+  display: none !important;
+  opacity: 0;
+  pointer-events: none !important;
+  transition: opacity 0.25s ease-in-out;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-overlay.active {
+  display: flex !important;
+  opacity: 1;
+  pointer-events: auto !important;
+}
+
+.modal-card {
+  background: #0f172a;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
 }
 
 .section-badge-center {

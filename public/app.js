@@ -694,6 +694,33 @@ class EasyFactApp {
     }
   }
 
+  subscribePlan(planId, price) {
+    this.selectedPlan = planId || 'pro';
+    const modal = document.getElementById('plan-upgrade-modal');
+    const title = document.getElementById('plan-modal-title');
+    const priceEl = document.getElementById('plan-modal-price');
+
+    if (title) title.innerText = (planId === 'entreprise') ? "Passer à la Formule ENTREPRISE 👑" : "Passer à la Formule PRO 🚀";
+    if (priceEl) priceEl.innerText = `${this.formatCurrency(price || 4900)} / mois`;
+
+    if (modal) {
+      modal.classList.add('active');
+    }
+  }
+
+  closePlanModal() {
+    const modal = document.getElementById('plan-upgrade-modal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  confirmPlanActivation() {
+    this.userTier = this.selectedPlan || 'pro';
+    this.saveToStorage();
+    this.closePlanModal();
+    this.renderAllViews();
+    alert(`🎉 Félicitations Monsieur Salem ! La formule ${this.userTier.toUpperCase()} a été activée instantanément ! Vous bénéficiez désormais de l'accès illimité.`);
+  }
+
   /* Live PDF Preview Renderer & Formatter */
   formatCurrency(amount) {
     const rateObj = (this.currencyRates && this.currencyRates[this.currency]) ? this.currencyRates[this.currency] : { symbol: 'FCFA', rate: 1 };
