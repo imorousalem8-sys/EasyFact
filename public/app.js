@@ -726,6 +726,9 @@ class EasyFactApp {
     if (refInline) refInline.innerText = uniqueRef;
 
     if (modal) {
+      modal.style.setProperty('display', 'flex', 'important');
+      modal.style.setProperty('opacity', '1', 'important');
+      modal.style.setProperty('pointer-events', 'auto', 'important');
       modal.classList.add('active');
     }
   }
@@ -764,7 +767,12 @@ class EasyFactApp {
 
   closePlanModal() {
     const modal = document.getElementById('plan-upgrade-modal');
-    if (modal) modal.classList.remove('active');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.setProperty('display', 'none', 'important');
+      modal.style.setProperty('opacity', '0', 'important');
+      modal.style.setProperty('pointer-events', 'none', 'important');
+    }
   }
 
   confirmPlanActivation() {
