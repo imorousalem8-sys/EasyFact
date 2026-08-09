@@ -3020,9 +3020,14 @@ class EasyFactApp {
 
     // Direct Exact DOM Updates from Math Helper
     const totHtEl = document.getElementById('pdf-total-ht');
+    const vatLabelEl = document.getElementById('pdf-vat-label');
     const taxVatEl = document.getElementById('pdf-tax-vat');
+
     if (totHtEl) totHtEl.innerText = this.formatMoney(totals.totalHt);
     if (taxVatEl) taxVatEl.innerText = this.formatMoney(totals.vatAmount);
+    if (vatLabelEl) {
+      vatLabelEl.innerText = (totals.vatRate > 0) ? `TVA (${totals.vatRate}%) :` : `TVA (0% Exonéré) :`;
+    }
 
     const withRow = document.getElementById('pdf-row-withholding');
     const taxWithEl = document.getElementById('pdf-tax-withholding');

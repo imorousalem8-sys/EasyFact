@@ -42,21 +42,30 @@ export class AuthController {
 
   // Google OAuth entry point
   @Get('google')
-  @UseGuards(AuthGuard('google'))
-  async googleAuth() {
-    // Handled by passport, redirects to Google
+  async googleAuth(@Req() req: any, @Res() res: any) {
+    try {
+      const passport = require('passport');
+      passport.authenticate('google', { scope: ['email', 'profile'] })(req, res);
+    } catch (err) {
+      return res.redirect('/auth.html?error=google_auth_unavailable');
+    }
   }
 
   // Google OAuth callback
   @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
   async googleAuthRedirect(@Req() req: any, @Res() res: any) {
     try {
-      const result = await this.authService.googleLogin(req.user);
-      if (result && result.token) {
-        return res.redirect(`/auth.html?token=${encodeURIComponent(result.token)}`);
-      }
-      return res.redirect('/auth.html?error=oauth_failed');
+      const passport = require('passport');
+      passport.authenticate('google', async (err: any, user: any) => {
+        if (err || !user) {
+          return res.redirect('/auth.html?error=google_callback_failed');
+        }
+        const result = await this.authService.googleLogin(user);
+        if (result && result.token) {
+          return res.redirect(`/auth.html?token=${encodeURIComponent(result.token)}`);
+        }
+        return res.redirect('/auth.html?error=oauth_failed');
+      })(req, res);
     } catch (err) {
       return res.redirect('/auth.html?error=oauth_error');
     }

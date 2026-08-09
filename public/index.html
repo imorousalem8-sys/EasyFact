@@ -747,25 +747,10 @@
                     <thead>
                       <tr>
                         <th style="width: 45%;">Description</th>
-                        <th style="width: 15%;">Qté</th>
-                        <th style="width: 25%;">Prix Unit. HT</th>
-                        <th style="width: 10%;">Total HT</th>
-                        <th style="width: 5%;"></th>
-                      </tr>
-                    </thead>
-                    <tbody id="items-tbody">
-                      <!-- Dynamic items -->
-                    </tbody>
-                  </table>
-                </div>
-
-                <hr class="divider">
-
-                <!-- Tax & Payment Controls -->
-                <div class="form-row split-3">
+                        <th style="width:                   <div class="form-row split-3">
                   <div class="form-group">
                     <label>TVA Locale (%)</label>
-                    <select id="tax-vat" class="form-control">
+                    <select id="tax-vat" class="form-control" onchange="app.updateLivePdf()">
                       <option value="18">18% (Côte d'Ivoire, Bénin, Sénégal, Togo)</option>
                       <option value="19.2">19.2% (TVA Cameroun 🇨🇲)</option>
                       <option value="15">15% (VAT Ghana 🇬🇭)</option>
@@ -776,7 +761,7 @@
 
                   <div class="form-group">
                     <label>Retenue BRS / AIB (%)</label>
-                    <select id="tax-withholding" class="form-control">
+                    <select id="tax-withholding" class="form-control" onchange="app.updateLivePdf()">
                       <option value="0">0% (Aucune)</option>
                       <option value="2">2% (Prestation de service)</option>
                       <option value="5">5% (Loyer & Honoraires)</option>
@@ -785,7 +770,7 @@
 
                   <div class="form-group">
                     <label>Acompte Versé</label>
-                    <input type="number" id="doc-advance" class="form-control" placeholder="0" value="0" min="0">
+                    <input type="number" id="doc-advance" class="form-control" placeholder="0" value="0" min="0" oninput="app.updateLivePdf()">
                   </div>
                 </div>
 
@@ -803,11 +788,20 @@
 
                   <div class="form-group">
                     <label>N° / RIB d'Encaissement Spécifique</label>
-                    <input type="text" id="doc-payment-number-override" class="form-control" placeholder="Ex: +221 77 123 45 67 (Vide = N° du profil)">
+                    <input type="text" id="doc-payment-number-override" class="form-control" placeholder="Ex: +221 77 123 45 67 (Vide = N° du profil)" oninput="app.updateLivePdf()">
                   </div>
                 </div>
 
                 <div class="form-row split-2" style="margin-top: 10px;">
+                  <div class="form-group">
+                    <label>Thème Couleur PDF</label>
+                    <select id="doc-pdf-theme" class="form-control" onchange="app.updateLivePdf()">
+                      <option value="#059669">Émeraude Africain (Vert)</option>
+                      <option value="#0f2942">Bleu Marine Corporate</option>
+                      <option value="#0f172a">Noir Exécutif</option>
+                      <option value="#d97706">Or Prestige</option>
+                    </select>
+                  </div>rm-row split-2" style="margin-top: 10px;">
                   <div class="form-group">
                     <label>Thème Couleur PDF</label>
                     <select id="doc-pdf-theme" class="form-control">
@@ -929,7 +923,7 @@
                       <td class="text-right" id="pdf-total-ht">0 FCFA</td>
                     </tr>
                     <tr>
-                      <td>TVA (18%) :</td>
+                      <td id="pdf-vat-label">TVA (18%) :</td>
                       <td class="text-right" id="pdf-tax-vat">0 FCFA</td>
                     </tr>
                     <tr id="pdf-row-withholding" style="display: none;">
