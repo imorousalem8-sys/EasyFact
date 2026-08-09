@@ -96,23 +96,24 @@
       position: relative;
       z-index: 10;
       width: 100%;
-      max-width: 480px;
-      padding: 20px;
+      max-width: 420px;
+      padding: 4px;
+      margin: auto;
     }
 
     /* Logo */
     .auth-logo {
       text-align: center;
-      margin-bottom: 28px;
+      margin-bottom: 10px;
     }
     .auth-logo img {
-      height: 40px;
-      filter: drop-shadow(0 0 16px rgba(16,185,129,0.5));
+      height: 32px;
+      filter: drop-shadow(0 0 12px rgba(16,185,129,0.5));
     }
     .auth-logo-tagline {
-      font-size: 0.8rem;
+      font-size: 0.7rem;
       color: var(--text-muted);
-      margin-top: 8px;
+      margin-top: 3px;
       letter-spacing: 0.05em;
       text-transform: uppercase;
     }
@@ -122,7 +123,7 @@
       backdrop-filter: blur(32px);
       -webkit-backdrop-filter: blur(32px);
       border: 1px solid var(--glass-border);
-      border-radius: 24px;
+      border-radius: 18px;
       box-shadow: var(--shadow-card);
       overflow: hidden;
     }
@@ -135,12 +136,12 @@
     }
     .tab-btn {
       flex: 1;
-      padding: 16px;
+      padding: 12px;
       background: none;
       border: none;
       color: var(--text-muted);
       font-family: 'Inter', sans-serif;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.25s;
@@ -164,26 +165,26 @@
     }
 
     /* ---- Form panels ---- */
-    .tab-panel { display: none; padding: 32px; }
+    .tab-panel { display: none; padding: 20px 22px; }
     .tab-panel.active { display: block; }
 
     .panel-title {
       font-family: 'Outfit', sans-serif;
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       font-weight: 700;
       color: var(--text);
-      margin-bottom: 6px;
+      margin-bottom: 2px;
     }
     .panel-subtitle {
-      font-size: 0.85rem;
+      font-size: 0.78rem;
       color: var(--text-muted);
-      margin-bottom: 28px;
-      line-height: 1.5;
+      margin-bottom: 12px;
+      line-height: 1.4;
     }
 
     /* ---- Form fields ---- */
     .form-group {
-      margin-bottom: 18px;
+      margin-bottom: 10px;
     }
     .form-label {
       display: block;
@@ -209,13 +210,13 @@
     }
     .form-input {
       width: 100%;
-      padding: 13px 14px 13px 40px;
+      padding: 10px 12px 10px 36px;
       background: var(--input-bg);
       border: 1px solid var(--input-border);
-      border-radius: var(--radius-sm);
+      border-radius: 10px;
       color: var(--text);
       font-family: 'Inter', sans-serif;
-      font-size: 0.92rem;
+      font-size: 0.86rem;
       transition: all 0.2s;
       outline: none;
     }
@@ -250,8 +251,8 @@
 
     /* Field hint */
     .field-hint {
-      font-size: 0.75rem;
-      margin-top: 5px;
+      font-size: 0.72rem;
+      margin-top: 3px;
       display: none;
     }
     .field-hint.error { color: var(--danger); display: block; }
@@ -261,7 +262,7 @@
     .pwd-strength-bar {
       display: flex;
       gap: 4px;
-      margin-top: 8px;
+      margin-top: 6px;
     }
     .pwd-bar-seg {
       height: 3px;
@@ -271,21 +272,21 @@
       transition: background 0.3s;
     }
     .pwd-strength-label {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       color: var(--text-muted);
-      margin-top: 4px;
+      margin-top: 3px;
     }
 
     /* ---- Primary button ---- */
     .btn-primary {
       width: 100%;
-      padding: 14px;
+      padding: 11px;
       background: linear-gradient(135deg, var(--primary), #059669);
       border: none;
-      border-radius: var(--radius-sm);
+      border-radius: 10px;
       color: #fff;
       font-family: 'Inter', sans-serif;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.25s;
@@ -572,9 +573,9 @@
       </div>
 
       <!-- BOUTON GOOGLE OFFICIEL 1-CLIC (EN HAUT) -->
-      <div style="margin: 18px 0 14px 0;">
-        <button type="button" class="btn-google" id="btn-google-login" onclick="Auth.loginWithGoogle()" style="width: 100%; padding: 14px; border-radius: 14px; font-weight: 700; background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; box-shadow: 0 4px 15px rgba(0,0,0,0.08); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 0.95rem;">
-          <svg width="22" height="22" viewBox="0 0 24 24">
+      <div style="margin: 10px 0 8px 0;">
+        <button type="button" class="btn-google" id="btn-google-login" onclick="Auth.loginWithGoogle()" style="width: 100%; padding: 10px 14px; border-radius: 10px; font-weight: 700; background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.06); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.88rem;">
+          <svg width="20" height="20" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
             <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.31 24 12 24z"/>
             <path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z"/>
@@ -584,7 +585,7 @@
         </button>
       </div>
 
-      <div class="divider" style="margin: 18px 0;"><span>ou se connecter par email</span></div>
+      <div class="divider" style="margin: 10px 0;"><span>ou se connecter par email</span></div>
 
       <form id="login-form" onsubmit="Auth.submitLogin(event)">
 
@@ -619,7 +620,7 @@
           </div>
         </div>
 
-        <a class="forgot-link" onclick="Auth.showForgot()">Mot de passe oublié ?</a>
+        <a class="forgot-link" onclick="Auth.showForgot()" style="margin-bottom: 8px;">Mot de passe oublié ?</a>
 
         <button type="submit" class="btn-primary" id="login-btn">
           <span class="spinner" id="login-spinner"></span>
@@ -641,9 +642,9 @@
       </div>
 
       <!-- BOUTON GOOGLE OFFICIEL 1-CLIC (EN HAUT) -->
-      <div style="margin: 18px 0 14px 0;">
-        <button type="button" class="btn-google" id="btn-google-register" onclick="Auth.loginWithGoogle()" style="width: 100%; padding: 14px; border-radius: 14px; font-weight: 700; background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; box-shadow: 0 4px 15px rgba(0,0,0,0.08); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 0.95rem;">
-          <svg width="22" height="22" viewBox="0 0 24 24">
+      <div style="margin: 10px 0 8px 0;">
+        <button type="button" class="btn-google" id="btn-google-register" onclick="Auth.loginWithGoogle()" style="width: 100%; padding: 10px 14px; border-radius: 10px; font-weight: 700; background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.06); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.88rem;">
+          <svg width="20" height="20" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
             <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.31 24 12 24z"/>
             <path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z"/>
@@ -653,7 +654,7 @@
         </button>
       </div>
 
-      <div class="divider" style="margin: 18px 0;"><span>ou s'inscrire par email</span></div>
+      <div class="divider" style="margin: 10px 0;"><span>ou s'inscrire par email</span></div>
 
       <form id="register-form" onsubmit="Auth.submitRegister(event)">
 
