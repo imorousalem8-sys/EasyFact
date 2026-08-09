@@ -96,7 +96,7 @@
       position: relative;
       z-index: 10;
       width: 100%;
-      max-width: 420px;
+      max-width: 480px;
       padding: 4px;
       margin: auto;
     }
@@ -104,16 +104,16 @@
     /* Logo */
     .auth-logo {
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
     .auth-logo img {
-      height: 32px;
+      height: 30px;
       filter: drop-shadow(0 0 12px rgba(16,185,129,0.5));
     }
     .auth-logo-tagline {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       color: var(--text-muted);
-      margin-top: 3px;
+      margin-top: 2px;
       letter-spacing: 0.05em;
       text-transform: uppercase;
     }
@@ -126,6 +126,21 @@
       border-radius: 18px;
       box-shadow: var(--shadow-card);
       overflow: hidden;
+      max-height: 94vh;
+      overflow-y: auto;
+    }
+
+    /* ---- Grid 2 columns for compact forms ---- */
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 480px) {
+      .form-grid-2 {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
     }
 
     /* ---- Tabs ---- */
@@ -658,80 +673,84 @@
 
       <form id="register-form" onsubmit="Auth.submitRegister(event)">
 
-        <!-- Company name -->
-        <div class="form-group">
-          <label class="form-label" for="reg-company">Nom de votre entreprise</label>
-          <div class="input-wrapper">
-            <input
-              type="text" id="reg-company" name="companyName"
-              class="form-input" placeholder="Ex: Diallo & Frères SARL"
-              autocomplete="organization" required
-              oninput="Auth.validateCompany()"
-            >
-            <i class="fa-solid fa-building input-icon"></i>
+        <div class="form-grid-2">
+          <!-- Company name -->
+          <div class="form-group">
+            <label class="form-label" for="reg-company">Nom entreprise *</label>
+            <div class="input-wrapper">
+              <input
+                type="text" id="reg-company" name="companyName"
+                class="form-input" placeholder="Diallo SARL"
+                autocomplete="organization" required
+                oninput="Auth.validateCompany()"
+              >
+              <i class="fa-solid fa-building input-icon"></i>
+            </div>
+            <div class="field-hint" id="reg-company-hint"></div>
           </div>
-          <div class="field-hint" id="reg-company-hint"></div>
+
+          <!-- Email -->
+          <div class="form-group">
+            <label class="form-label" for="reg-email">Adresse email *</label>
+            <div class="input-wrapper">
+              <input
+                type="email" id="reg-email" name="email"
+                class="form-input" placeholder="contact@entreprise.com"
+                autocomplete="email" required
+                oninput="Auth.validateEmailField('reg-email', 'reg-email-hint')"
+              >
+              <i class="fa-solid fa-envelope input-icon"></i>
+            </div>
+            <div class="field-hint" id="reg-email-hint"></div>
+          </div>
         </div>
 
-        <!-- Email -->
-        <div class="form-group">
-          <label class="form-label" for="reg-email">Adresse email *</label>
-          <div class="input-wrapper">
-            <input
-              type="email" id="reg-email" name="email"
-              class="form-input" placeholder="contact@monentreprise.com"
-              autocomplete="email" required
-              oninput="Auth.validateEmailField('reg-email', 'reg-email-hint')"
-            >
-            <i class="fa-solid fa-envelope input-icon"></i>
+        <div class="form-grid-2">
+          <!-- Password -->
+          <div class="form-group">
+            <label class="form-label" for="reg-password">Mot de passe *</label>
+            <div class="input-wrapper">
+              <input
+                type="password" id="reg-password" name="password"
+                class="form-input has-toggle" placeholder="Min. 8 caractères"
+                autocomplete="new-password" required
+                oninput="Auth.checkPasswordStrength()"
+              >
+              <i class="fa-solid fa-lock input-icon"></i>
+              <button type="button" class="toggle-password" onclick="Auth.togglePwd('reg-password', this)">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+            <!-- Strength bar -->
+            <div class="pwd-strength-bar" id="pwd-bar">
+              <div class="pwd-bar-seg" id="bar-1"></div>
+              <div class="pwd-bar-seg" id="bar-2"></div>
+              <div class="pwd-bar-seg" id="bar-3"></div>
+              <div class="pwd-bar-seg" id="bar-4"></div>
+            </div>
+            <div class="pwd-strength-label" id="pwd-label"></div>
           </div>
-          <div class="field-hint" id="reg-email-hint"></div>
+
+          <!-- Confirm password -->
+          <div class="form-group">
+            <label class="form-label" for="reg-confirm">Confirmer *</label>
+            <div class="input-wrapper">
+              <input
+                type="password" id="reg-confirm" name="confirmPassword"
+                class="form-input has-toggle" placeholder="Répétez le passe"
+                autocomplete="new-password" required
+                oninput="Auth.validateConfirm()"
+              >
+              <i class="fa-solid fa-shield-halved input-icon"></i>
+              <button type="button" class="toggle-password" onclick="Auth.togglePwd('reg-confirm', this)">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+            <div class="field-hint" id="reg-confirm-hint"></div>
+          </div>
         </div>
 
-        <!-- Password -->
-        <div class="form-group">
-          <label class="form-label" for="reg-password">Mot de passe</label>
-          <div class="input-wrapper">
-            <input
-              type="password" id="reg-password" name="password"
-              class="form-input has-toggle" placeholder="Minimum 8 caractères"
-              autocomplete="new-password" required
-              oninput="Auth.checkPasswordStrength()"
-            >
-            <i class="fa-solid fa-lock input-icon"></i>
-            <button type="button" class="toggle-password" onclick="Auth.togglePwd('reg-password', this)">
-              <i class="fa-solid fa-eye"></i>
-            </button>
-          </div>
-          <!-- Strength bar -->
-          <div class="pwd-strength-bar" id="pwd-bar">
-            <div class="pwd-bar-seg" id="bar-1"></div>
-            <div class="pwd-bar-seg" id="bar-2"></div>
-            <div class="pwd-bar-seg" id="bar-3"></div>
-            <div class="pwd-bar-seg" id="bar-4"></div>
-          </div>
-          <div class="pwd-strength-label" id="pwd-label"></div>
-        </div>
-
-        <!-- Confirm password -->
-        <div class="form-group">
-          <label class="form-label" for="reg-confirm">Confirmer le mot de passe</label>
-          <div class="input-wrapper">
-            <input
-              type="password" id="reg-confirm" name="confirmPassword"
-              class="form-input has-toggle" placeholder="Répétez votre mot de passe"
-              autocomplete="new-password" required
-              oninput="Auth.validateConfirm()"
-            >
-            <i class="fa-solid fa-shield-halved input-icon"></i>
-            <button type="button" class="toggle-password" onclick="Auth.togglePwd('reg-confirm', this)">
-              <i class="fa-solid fa-eye"></i>
-            </button>
-          </div>
-          <div class="field-hint" id="reg-confirm-hint"></div>
-        </div>
-
-        <button type="submit" class="btn-primary" id="register-btn">
+        <button type="submit" class="btn-primary" id="register-btn" style="margin-top: 4px;">
           <span class="spinner" id="register-spinner"></span>
           <span class="btn-text">Créer mon compte</span>
         </button>
