@@ -939,10 +939,11 @@ const Auth = (() => {
     else { btn.disabled = false; btn.classList.remove('loading'); }
   }
 
-  // ---- Email Validator ----
+  // ---- Email Validator (RFC 5322 strict avec extension obligatoire) ----
   function isValidEmail(email) {
     if (!email) return false;
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+    const clean = String(email).trim().toLowerCase();
+    return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,10}$/.test(clean);
   }
 
   // ---- Field validators ----
@@ -954,7 +955,11 @@ const Auth = (() => {
 
     if (!isValidEmail(val)) {
       input.className = 'form-input error';
-      hint.textContent = '❌ Adresse email invalide (ex: nom@domaine.com)';
+      if (!val.includes('.')) {
+        hint.textContent = '❌ Extension de domaine obligatoire (ex: nom@gmail.com, pas nom@gmail)';
+      } else {
+        hint.textContent = '❌ Format email invalide (ex: nom@domaine.com)';
+      }
       hint.className = 'field-hint error';
       return false;
     }
@@ -1153,20 +1158,58 @@ const Auth = (() => {
     try {
       const res = await api('POST', '/auth/send-code', { email, password, companyName: company });
 
+      if (res.isDuplicate || (res.message && (res.message.includes('déjà') || res.message.includes('exist')))) {
+        showDuplicateAccountAlert('register-alert', email);
+        return;
+      }
+
       state.pendingEmail = email;
       state.pendingPassword = password;
       state.pendingCompany = company;
 
       showOtpStep(email);
     } catch (err) {
-      // If offline/demo mode fallback: create user session and show OTP
-      state.pendingEmail = email;
-      state.pendingPassword = password;
-      state.pendingCompany = company;
-      showOtpStep(email);
+      if (err.message && (err.message.includes('déjà') || err.message.includes('exist') || err.message.includes('DUPLICATE'))) {
+        showDuplicateAccountAlert('register-alert', email);
+      } else {
+        state.pendingEmail = email;
+        state.pendingPassword = password;
+        state.pendingCompany = company;
+        showOtpStep(email);
+      }
     } finally {
       setLoading('register-btn', 'register-spinner', false);
     }
+  }
+
+  function switchToLoginWithEmail(email) {
+    switchTab('login');
+    const loginEmailInput = document.getElementById('login-email');
+    if (loginEmailInput) {
+      loginEmailInput.value = email;
+      loginEmailInput.focus();
+    }
+    const loginPwdInput = document.getElementById('login-password');
+    if (loginPwdInput) loginPwdInput.focus();
+  }
+
+  function showDuplicateAccountAlert(alertId, email) {
+    const el = document.getElementById(alertId);
+    if (!el) return;
+    el.className = 'alert alert-error show';
+    el.innerHTML = `
+      <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 14px 16px; color: #fbbf24; font-size: 0.88rem; line-height: 1.5; width: 100%;">
+        <div style="font-weight: 700; display: flex; align-items: center; gap: 8px; font-size: 0.92rem;">
+          <i class="fa-solid fa-circle-exclamation"></i> Cette adresse e-mail possède déjà un compte.
+        </div>
+        <p style="margin: 6px 0 10px 0; color: rgba(255,255,255,0.85); font-size: 0.82rem;">
+          Un compte EasyFact existe déjà pour <strong>${email}</strong>. Connectez-vous plutôt à votre compte.
+        </p>
+        <button type="button" onclick="switchToLoginWithEmail('${email}')" class="btn" style="background: #f59e0b; color: #000; font-weight: 700; border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem;">
+          <i class="fa-solid fa-right-to-bracket"></i> Se connecter à mon compte →
+        </button>
+      </div>
+    `;
   }
 
   // ============================================================

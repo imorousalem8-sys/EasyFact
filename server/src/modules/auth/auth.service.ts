@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, UnauthorizedException, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException, ConflictException, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { SupabaseService } from '../../supabase/supabase.service';
@@ -340,7 +340,7 @@ export class AuthService {
       .eq('email', emailKey)
       .single();
 
-    if (existingUser) throw new BadRequestException('Un compte existe déjà avec cet email.');
+    if (existingUser) throw new ConflictException('DUPLICATE_USER: Cette adresse e-mail possède déjà un compte.');
 
     const rawPassword = data.password || 'EasyFactPass2026!';
     if (rawPassword.length < 6) throw new BadRequestException('Le mot de passe doit contenir au moins 6 caractères.');
