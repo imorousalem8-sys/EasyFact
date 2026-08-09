@@ -874,27 +874,24 @@ class EasyFactApp {
   }
 
   submitPlanPaymentForm() {
-    const phoneInput = document.getElementById('pay-user-phone');
     const txnIdInput = document.getElementById('pay-txn-id');
-    const phone = (phoneInput?.value || '').trim();
     const txnId = (txnIdInput?.value || '').trim().toUpperCase();
 
-    // 1. Rejection of Invalid / Dummy Phone Numbers
-    if (!phone || phone.length < 8 || !/^(\+?[0-9\s]{8,18})$/.test(phone)) {
-      this.showToast("⚠️ Numéro de téléphone Mobile Money invalide.", "error");
-      alert("❌ NUMÉRO DE TÉLÉPHONE INVALIDE :\n\nVeuillez saisir votre vrai numéro de téléphone Mobile Money (ex: +225 07 89 12 34 56).");
+    // 1. Rejection of Empty or Dummy Transaction Strings ("123", "abc", "n'importe quoi", "test", "0000")
+    if (!txnId || txnId.length < 6) {
+      this.showToast("⚠️ Veuillez saisir la référence de votre reçu Mobile Money.", "error");
+      alert("❌ SAISIE INCOMPLÈTE :\n\nVeuillez indiquer le numéro de transaction figurant sur votre reçu SMS ou Mobile Money (ex: WAVE-TXN-981024, OM-891023).");
       return;
     }
 
-    // 2. Rejection of Dummy Transaction Strings ("123", "abc", "n'importe quoi", "test", "0000")
     const dummyPatterns = /^(123|1234|12345|123456|abc|test|dummy|n'importe quoi|0000|00000|xxx|qwerty|asdf)$/i;
-    if (dummyPatterns.test(txnId) || dummyPatterns.test(phone) || txnId.length < 6) {
+    if (dummyPatterns.test(txnId)) {
       this.showToast("❌ Saisie factice rejetée ! Référence de transaction invalide.", "error");
-      alert(`❌ ERREUR DE VÉRIFICATION ANTI-FRAUDE :\n\nLa référence "${txnId}" est un texte factice ou incomplet.\n\nPour valider votre abonnement PRO, vous devez indiquer le numéro de transaction officiel figurant sur votre reçu SMS ou Mobile Money (ex: WAVE-TXN-981024, OM-891023).`);
+      alert(`❌ ERREUR DE VÉRIFICATION ANTI-FRAUDE :\n\nLa référence "${txnId}" est un texte factice.\n\nPour valider votre abonnement PRO, vous devez indiquer le vrai numéro de transaction officiel (ex: WAVE-TXN-981024, OM-891023).`);
       return;
     }
 
-    // 3. Strict Provider Receipt Pattern Match (Wave, Orange, MTN, Moov, Bank)
+    // 2. Strict Provider Receipt Pattern Match (Wave, Orange, MTN, Moov, Bank)
     const isWave = /^(WAVE|WV)-/i.test(txnId);
     const isOM = /^(OM|PP)-/i.test(txnId);
     const isMTN = /^(MTN|MM)-/i.test(txnId);
@@ -910,7 +907,7 @@ class EasyFactApp {
       return;
     }
 
-    // 4. Double-Spend Anti-Replay Check
+    // 3. Double-Spend Anti-Replay Check
     const usedReceipts = JSON.parse(localStorage.getItem('easyfact_used_receipts') || '[]');
     if (usedReceipts.includes(txnId)) {
       this.showToast("⛔ Reçu de transaction déjà utilisé !", "error");
@@ -930,7 +927,7 @@ class EasyFactApp {
     this.renderAllViews();
 
     this.showToast(`✅ Paiement vérifié avec succès ! Formule ${this.userTier.toUpperCase()} active.`, "success");
-    alert(`✅ REÇU MOBILE MONEY DÛMENT VÉRIFIÉ & VALIDÉ !\n\n• Référence Transaction : ${txnId}\n• Numéro Téléphone : ${phone}\n• Abonnement : Formule ${this.userTier.toUpperCase()} Illimitée\n\nFélicitations Monsieur Salem ! Vos fonctionnalités illimitées sont débloquées.`);
+    alert(`✅ REÇU MOBILE MONEY DÛMENT VÉRIFIÉ & VALIDÉ !\n\n• Référence Transaction : ${txnId}\n• Abonnement : Formule ${this.userTier.toUpperCase()} Illimitée\n\nFélicitations Monsieur Salem ! Vos fonctionnalités illimitées sont débloquées.`);
   }
 
   closePlanModal() {

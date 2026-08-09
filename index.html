@@ -1358,16 +1358,11 @@
         <!-- Dynamically populated via app.selectPayChannel('wave') -->
       </div>
 
-      <!-- Submission Form -->
+      <!-- Submission Form (1 Single Field for Ultra-Fast Checkout) -->
       <form id="plan-payment-form" onsubmit="event.preventDefault(); app.submitPlanPaymentForm();">
-        <div class="form-group" style="text-align: left; margin-bottom: 12px;">
-          <label style="font-size: 0.8rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 6px;">📱 Votre Numéro de Téléphone (Mobile Money) *</label>
-          <input type="tel" id="pay-user-phone" class="form-control" placeholder="Ex: +225 07 89 12 34 56" required style="background: rgba(15,23,42,0.9); border: 1px solid rgba(16,185,129,0.3); color: #fff; padding: 12px 14px; border-radius: 10px; width: 100%; font-weight: 600;">
-        </div>
-
-        <div class="form-group" style="text-align: left; margin-bottom: 18px;">
-          <label style="font-size: 0.8rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 6px;">🧾 Référence / Numéro du Reçu SMS de Transfert *</label>
-          <input type="text" id="pay-txn-id" class="form-control" placeholder="Ex: WAVE-TXN-981204 ou OM-89102" required style="background: rgba(15,23,42,0.9); border: 1px solid rgba(16,185,129,0.3); color: #fff; padding: 12px 14px; border-radius: 10px; width: 100%; font-weight: 600;">
+        <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+          <label style="font-size: 0.85rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 8px;">🧾 Référence / Numéro du Reçu SMS de Transfert *</label>
+          <input type="text" id="pay-txn-id" class="form-control" placeholder="Ex: WAVE-TXN-981204 ou OM-89102" required style="background: rgba(15,23,42,0.9); border: 1px solid rgba(16,185,129,0.3); color: #fff; padding: 14px 16px; border-radius: 12px; width: 100%; font-weight: 600; font-size: 0.95rem;">
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px;">
