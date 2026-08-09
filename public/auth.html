@@ -885,18 +885,18 @@ const Auth = (() => {
         json = await res.json();
       } else {
         const text = await res.text();
-        json = { message: 'Le serveur EasyFact est en cours d\'initialisation. Réessayez dans 3 secondes.' };
+        json = { message: 'Connexion échouée : Vérifiez bien votre adresse email ou votre mot de passe et réessayez.' };
       }
 
       if (!res.ok) {
-        const rawMsg = json.message || json.error || 'Erreur de traitement. Veuillez réessayer.';
+        const rawMsg = json.message || json.error || 'Connexion échouée : Vérifiez bien votre adresse email ou votre mot de passe et réessayez.';
         const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : String(rawMsg);
         throw new Error(msg);
       }
       return json;
     } catch (err) {
-      if (err.name === 'SyntaxError' || (err.message && err.message.includes('JSON'))) {
-        throw new Error('Connexion au serveur en cours. Veuillez réesayer dans 3 secondes.');
+      if (err.name === 'SyntaxError' || (err.message && (err.message.includes('JSON') || err.message.includes('Unexpected token')))) {
+        throw new Error('Connexion échouée : Vérifiez bien votre adresse email ou votre mot de passe et réessayez.');
       }
       throw err;
     }
@@ -918,7 +918,13 @@ const Auth = (() => {
     const el = document.getElementById(id);
     const msgEl = document.getElementById(id + '-msg');
     el.className = `alert alert-${type} show`;
-    if (msgEl) msgEl.textContent = msg;
+
+    let displayMsg = msg;
+    if (displayMsg && (displayMsg.includes('JSON') || displayMsg.includes('Unexpected token') || displayMsg.includes('SyntaxError') || displayMsg.includes('is not valid'))) {
+      displayMsg = '❌ Connexion échouée : Vérifiez bien votre adresse email ou votre mot de passe et réessayez.';
+    }
+
+    if (msgEl) msgEl.textContent = displayMsg;
   }
   function clearAlert(id) {
     document.getElementById(id)?.classList.remove('show');
@@ -1077,13 +1083,11 @@ const Auth = (() => {
 
         showSuccess();
       } else {
-        const errorMsg = res.message || 'Adresse email ou mot de passe incorrect. Vérifiez vos identifiants.';
-        showAlert('login-alert', '❌ ' + errorMsg);
+        showAlert('login-alert', '❌ Connexion échouée : Vérifiez bien votre adresse email ou votre mot de passe et réessayez.');
         document.getElementById('login-password').focus();
       }
     } catch (err) {
-      const errorMsg = err.message || 'Adresse email ou mot de passe incorrect.';
-      showAlert('login-alert', '❌ ' + errorMsg);
+      showAlert('login-alert', '❌ Connexion échouée : Vérifiez bien votre adresse email ou votre mot de passe et réessayez.');
       document.getElementById('login-password').focus();
     } finally {
       setLoading('login-btn', 'login-spinner', false);
