@@ -1298,10 +1298,30 @@ const Auth = (() => {
   }
 
   // ============================================================
-  // INIT — Validation de session résiliente
+  // INIT — Validation de session résiliente sans auto-redirection intempestive
   // ============================================================
   function init() {
     handleUrlToken();
+
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    const forceAuth = params.get('force') === 'true' || mode !== null;
+    const isLogout = params.get('logout') === 'true';
+
+    if (isLogout) {
+      localStorage.removeItem('easyfact_token');
+      localStorage.setItem('easyfact_logged_in', 'false');
+      history.replaceState({}, '', window.location.pathname);
+      showAlert('login-alert', '👋 Vous avez été déconnecté avec succès.', 'success');
+      return;
+    }
+
+    if (mode === 'register' || mode === 'login') {
+      switchTab(mode);
+    }
+
+    // Ne PAS rediriger si l'utilisateur a demandé explicitement la page auth (mode ou force)
+    if (forceAuth) return;
 
     const token = localStorage.getItem('easyfact_token');
     const isLoggedIn = localStorage.getItem('easyfact_logged_in') === 'true';
@@ -1314,13 +1334,10 @@ const Auth = (() => {
           window.location.href = 'index.html?tab=dashboard';
         } else if (res.status === 401) {
           localStorage.removeItem('easyfact_token');
-          localStorage.removeItem('easyfact_logged_in');
-        } else {
-          window.location.href = 'index.html?tab=dashboard';
+          localStorage.setItem('easyfact_logged_in', 'false');
         }
       }).catch(() => {
-        // Ne jamais supprimer la session locale en cas de réseau hors-ligne !
-        window.location.href = 'index.html?tab=dashboard';
+        // En cas d'erreur ou hors-ligne, laisser l'utilisateur sur la page de connexion
       });
     }
   }

@@ -86,6 +86,11 @@
           <button class="upgrade-mini-btn" id="btn-upgrade-header">Changer Plan</button>
         </div>
 
+        <!-- Connexion & Inscription Button -->
+        <a href="auth.html?force=true" class="btn" style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 700; font-size: 0.8rem; border-radius: 10px; padding: 7px 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-user-lock"></i> Connexion / Inscription
+        </a>
+
         <!-- Enterprise Profile Badge (Statique & Débloqué) -->
         <div class="user-profile-button" onclick="app.switchTab('settings')" title="Paramètres de l'Entreprise" style="cursor: pointer;">
           <div class="avatar" style="background: linear-gradient(135deg, #10b981, #059669); color: white;"><i class="fa-solid fa-building-user"></i></div>
@@ -361,13 +366,20 @@
               </div>
             </div>
 
-            <!-- BLOC 3: BANNIÈRE D'ACTION IMMÉDIATE -->
-            <div class="landing-cta-banner">
-              <h2>Prêt à accélérer les encaissements de votre entreprise ? 💼</h2>
-              <p>Rejoignez des milliers d'entrepreneurs qui font confiance à EasyFact Africa.</p>
-              <button class="btn btn-landing-primary" onclick="app.switchTab('create-invoice')" style="font-size: 1.1rem; padding: 16px 36px; background: #ffffff; color: #059669; border-radius: 14px; font-weight: 800; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.15); cursor: pointer;">
-                <i class="fa-solid fa-bolt"></i> Créer une Facture Gratuitement
-              </button>
+            <!-- BLOC 3: BANNIÈRE D'ACTION IMMÉDIATE (INSCRIPTION & CONNEXION) -->
+            <div class="landing-cta-banner" style="background: linear-gradient(135deg, #059669, #10b981); border-radius: 24px; padding: 40px 24px; text-align: center; color: #fff; margin-top: 30px; box-shadow: 0 15px 40px rgba(16, 185, 129, 0.3);">
+              <h2 style="font-size: 1.8rem; font-weight: 900; margin-bottom: 12px; color: #fff;">Prêt à accélérer les encaissements de votre entreprise ? 💼</h2>
+              <p style="font-size: 1rem; opacity: 0.9; margin-bottom: 24px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                Commencez gratuitement dès maintenant avec <strong>5 factures offertes</strong>. Essayez EasyFact et abonnez-vous quand vous êtes convaincu !
+              </p>
+              <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+                <a href="auth.html?mode=register&force=true" class="btn" style="font-size: 1.05rem; padding: 16px 32px; background: #ffffff; color: #059669; border-radius: 14px; font-weight: 800; text-decoration: none; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: inline-flex; align-items: center; gap: 8px;">
+                  <i class="fa-solid fa-user-plus"></i> Créer mon Compte Gratuitement (5 Factures Offertes)
+                </a>
+                <a href="auth.html?mode=login&force=true" class="btn" style="font-size: 1.05rem; padding: 16px 28px; background: rgba(255,255,255,0.15); color: #ffffff; border: 2px solid rgba(255,255,255,0.4); border-radius: 14px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                  <i class="fa-solid fa-right-to-bracket"></i> Déjà un Compte ? Se Connecter
+                </a>
+              </div>
             </div>
 
           </div>
