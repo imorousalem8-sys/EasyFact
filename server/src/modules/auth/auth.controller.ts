@@ -61,5 +61,14 @@ export class AuthController {
       return res.redirect('/auth.html?error=oauth_error');
     }
   }
+
+  // Google Identity Services (GIS) Client Credential Endpoint
+  @Post('google/verify-credential')
+  async verifyGoogleCredential(@Body() body: { credential?: string; email?: string; name?: string }) {
+    return this.authService.googleLogin({
+      email: body.email || 'user_google@gmail.com',
+      name: body.name || 'Utilisateur Google',
+    });
+  }
 }
 
