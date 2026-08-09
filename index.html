@@ -1325,56 +1325,57 @@
       <button onclick="app.closePlanModal()" style="position: absolute; top: 18px; right: 18px; border: none; background: rgba(255,255,255,0.1); color: #fff; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">&times;</button>
 
       <div style="text-align: center; margin-bottom: 20px;">
-        <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 6px 16px; border-radius: 9999px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">FORMULAIRE D'ABONNEMENT OFFICIEL</span>
+        <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 6px 16px; border-radius: 9999px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">💳 PAIEMENT SÉCURISÉ EASYFACT</span>
         <h2 style="font-size: 1.4rem; font-weight: 800; color: #ffffff; margin-top: 8px;" id="plan-modal-title">Passer à la Formule PRO 🚀</h2>
-        <p style="font-size: 0.85rem; color: #94a3b8;" id="plan-modal-subtitle">Factures illimitées, WhatsApp 1-clic et suppression du filigrane.</p>
+        <p style="font-size: 0.85rem; color: #94a3b8;" id="plan-modal-subtitle">Accès illimité aux factures, devis, partage WhatsApp & suppression du filigrane.</p>
       </div>
 
-      <!-- Reference Badge & Price Display -->
-      <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(99, 102, 241, 0.12)); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 16px; padding: 18px; margin-bottom: 20px; text-align: center;">
+      <!-- Price & Payment Summary Card -->
+      <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(15, 41, 66, 0.6)); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 16px; padding: 18px; margin-bottom: 20px; text-align: center;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-          <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 700;">RÉFÉRENCE UNIQUE DE PAIEMENT :</span>
-          <span style="font-size: 0.82rem; font-weight: 800; color: #10b981; font-family: monospace;" id="plan-modal-ref">REF-EASYFACT-2026-X89</span>
+          <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 700;">MOTIF / RÉFÉRENCE DE TRANSFERT :</span>
+          <span style="font-size: 0.82rem; font-weight: 800; color: #10b981; font-family: monospace;" id="plan-modal-ref">REF-SALEM-2026-X89</span>
         </div>
-        <div style="font-size: 1.9rem; font-weight: 900; color: #10b981;" id="plan-modal-price">4 900 FCFA / mois</div>
+        <div style="font-size: 2rem; font-weight: 900; color: #10b981;" id="plan-modal-price">4 900 FCFA / mois</div>
       </div>
 
-      <!-- Payment Channel Selector -->
-      <div style="margin-bottom: 20px;">
-        <label style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 10px;">1. Sélectionner votre Canal de Règlement Mobile Money :</label>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-          <button type="button" class="btn btn-outline pay-channel-btn active" onclick="app.selectPayChannel('wave', '+225 07 00 00 00 00')" style="border-color: #10b981; color: #10b981; background: rgba(16, 185, 129, 0.15); font-weight: 700; cursor: pointer;">🌊 Wave Mobile</button>
-          <button type="button" class="btn btn-outline pay-channel-btn" onclick="app.selectPayChannel('orange', '*144*4*1#')" style="border-color: #f97316; color: #f97316; background: rgba(249, 115, 22, 0.1); font-weight: 700; cursor: pointer;">🍊 Orange Money</button>
-          <button type="button" class="btn btn-outline pay-channel-btn" onclick="app.selectPayChannel('mtn', '*133#')" style="border-color: #eab308; color: #eab308; background: rgba(234, 179, 8, 0.1); font-weight: 700; cursor: pointer;">💛 MTN MoMo</button>
-          <button type="button" class="btn btn-outline pay-channel-btn" onclick="app.selectPayChannel('carte', 'Virement / CB')" style="border-color: #3b82f6; color: #3b82f6; background: rgba(59, 130, 246, 0.1); font-weight: 700; cursor: pointer;">💳 Virement / Carte</button>
+      <!-- Payment Method Selector -->
+      <div style="margin-bottom: 16px;">
+        <label style="font-size: 0.85rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 10px;">1. Choisissez votre moyen de paiement :</label>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px;">
+          <button type="button" id="pay-btn-wave" class="btn btn-outline pay-channel-btn active" onclick="app.selectPayChannel('wave')" style="border-color: #10b981; color: #10b981; background: rgba(16, 185, 129, 0.15); font-weight: 700; cursor: pointer; padding: 10px 4px; font-size: 0.8rem;">🌊 Wave</button>
+          <button type="button" id="pay-btn-orange" class="btn btn-outline pay-channel-btn" onclick="app.selectPayChannel('orange')" style="border-color: rgba(255,255,255,0.15); color: #f97316; background: rgba(255,255,255,0.05); font-weight: 700; cursor: pointer; padding: 10px 4px; font-size: 0.8rem;">🍊 Orange</button>
+          <button type="button" id="pay-btn-mtn" class="btn btn-outline pay-channel-btn" onclick="app.selectPayChannel('mtn')" style="border-color: rgba(255,255,255,0.15); color: #eab308; background: rgba(255,255,255,0.05); font-weight: 700; cursor: pointer; padding: 10px 4px; font-size: 0.8rem;">💛 MTN MoMo</button>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <button type="button" id="pay-btn-moov" class="btn btn-outline pay-channel-btn" onclick="app.selectPayChannel('moov')" style="border-color: rgba(255,255,255,0.15); color: #3b82f6; background: rgba(255,255,255,0.05); font-weight: 700; cursor: pointer; padding: 10px 4px; font-size: 0.8rem;">💙 Moov Money</button>
+          <button type="button" id="pay-btn-carte" class="btn btn-outline pay-channel-btn" onclick="app.selectPayChannel('carte')" style="border-color: rgba(255,255,255,0.15); color: #818cf8; background: rgba(255,255,255,0.05); font-weight: 700; cursor: pointer; padding: 10px 4px; font-size: 0.8rem;">💳 Carte / Virement</button>
         </div>
       </div>
 
-      <!-- Instructions & Merchant Number -->
-      <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px; margin-bottom: 20px; font-size: 0.82rem; color: #cbd5e1;">
-        <div style="font-weight: 800; color: #ffffff; margin-bottom: 4px;" id="pay-channel-title">📲 Instructions de Règlement Wave Mobile Money :</div>
-        <div style="color: #10b981; font-weight: 800; font-size: 0.95rem;" id="pay-channel-detail">Numéro Marchand : +225 07 00 00 00 00</div>
-        <div style="font-size: 0.76rem; color: #94a3b8; margin-top: 4px;">Indiquez la référence <strong id="pay-ref-inline" style="color: #fff;">REF-EASYFACT-2026-X89</strong> dans le motif du transfert.</div>
+      <!-- Dynamic Interactive Instructions & Target Account Box -->
+      <div id="pay-channel-info-box">
+        <!-- Dynamically populated via app.selectPayChannel('wave') -->
       </div>
 
-      <!-- Payment Submission Form -->
+      <!-- Submission Form -->
       <form id="plan-payment-form" onsubmit="event.preventDefault(); app.submitPlanPaymentForm();">
-        <div class="form-group" style="text-align: left; margin-bottom: 14px;">
-          <label style="font-size: 0.8rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 6px;">Votre Numéro de Téléphone (Mobile Money) *</label>
+        <div class="form-group" style="text-align: left; margin-bottom: 12px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 6px;">📱 Votre Numéro de Téléphone (Mobile Money) *</label>
           <input type="tel" id="pay-user-phone" class="form-control" placeholder="Ex: +225 07 89 12 34 56" required style="background: rgba(15,23,42,0.9); border: 1px solid rgba(16,185,129,0.3); color: #fff; padding: 12px 14px; border-radius: 10px; width: 100%; font-weight: 600;">
         </div>
 
-        <div class="form-group" style="text-align: left; margin-bottom: 20px;">
-          <label style="font-size: 0.8rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 6px;">ID / Référence du Reçu de Transaction *</label>
+        <div class="form-group" style="text-align: left; margin-bottom: 18px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 6px;">🧾 Référence / Numéro du Reçu SMS de Transfert *</label>
           <input type="text" id="pay-txn-id" class="form-control" placeholder="Ex: WAVE-TXN-981204 ou OM-89102" required style="background: rgba(15,23,42,0.9); border: 1px solid rgba(16,185,129,0.3); color: #fff; padding: 12px 14px; border-radius: 10px; width: 100%; font-weight: 600;">
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px;">
           <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 0.95rem; font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 12px; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4); cursor: pointer;">
-            <i class="fa-solid fa-shield-check"></i> Soumettre mon Reçu & Vérifier le Paiement
+            <i class="fa-solid fa-shield-check"></i> Confirmer mon Paiement (4 900 FCFA)
           </button>
           
-          <button type="button" class="btn btn-outline" onclick="app.verifyAdminVipCode()" style="width: 100%; border-color: rgba(16,185,129,0.3); color: #10b981; font-size: 0.8rem; cursor: pointer; border-radius: 12px; padding: 10px; background: rgba(16, 185, 129, 0.08);">
+          <button type="button" class="btn btn-outline" onclick="app.verifyAdminVipCode()" style="width: 100%; border-color: rgba(16,185,129,0.3); color: #10b981; font-size: 0.78rem; cursor: pointer; border-radius: 12px; padding: 9px; background: rgba(16, 185, 129, 0.08);">
             🔑 Validation par Code VIP Marchand / Administrateur
           </button>
         </div>

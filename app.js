@@ -714,16 +714,19 @@ class EasyFactApp {
     const title = document.getElementById('plan-modal-title');
     const priceEl = document.getElementById('plan-modal-price');
     const refEl = document.getElementById('plan-modal-ref');
-    const refInline = document.getElementById('pay-ref-inline');
 
-    // Generate unique reference code
-    const uniqueRef = 'REF-EASYFACT-' + new Date().getFullYear() + '-' + Math.floor(10000 + Math.random() * 90000);
+    // Generate unique reference code for Monsieur Salem
+    const uniqueRef = 'REF-SALEM-' + new Date().getFullYear() + '-' + Math.floor(10000 + Math.random() * 90000);
     this.currentPaymentRef = uniqueRef;
 
+    const formattedPrice = this.formatCurrency(price || (planId === 'entreprise' ? 24900 : 4900));
+
     if (title) title.innerText = (planId === 'entreprise') ? "Passer à la Formule ENTREPRISE 👑" : "Passer à la Formule PRO 🚀";
-    if (priceEl) priceEl.innerText = `${this.formatCurrency(price || 4900)} / mois`;
+    if (priceEl) priceEl.innerText = `${formattedPrice} / mois`;
     if (refEl) refEl.innerText = uniqueRef;
-    if (refInline) refInline.innerText = uniqueRef;
+
+    // Default to Wave payment channel on open
+    this.selectPayChannel('wave');
 
     if (modal) {
       modal.style.setProperty('display', 'flex', 'important');
@@ -733,19 +736,141 @@ class EasyFactApp {
     }
   }
 
-  selectPayChannel(channel, detail) {
-    const titleEl = document.getElementById('pay-channel-title');
-    const detailEl = document.getElementById('pay-channel-detail');
+  selectPayChannel(channel) {
+    this.selectedChannel = channel;
+    
+    // Highlight active channel button
+    ['wave', 'orange', 'mtn', 'moov', 'carte'].forEach(ch => {
+      const btn = document.getElementById(`pay-btn-${ch}`);
+      if (btn) {
+        if (ch === channel) {
+          btn.classList.add('active');
+          btn.style.background = (ch === 'wave') ? 'rgba(16, 185, 129, 0.2)' :
+                                 (ch === 'orange') ? 'rgba(249, 115, 22, 0.2)' :
+                                 (ch === 'mtn') ? 'rgba(234, 179, 8, 0.2)' :
+                                 (ch === 'moov') ? 'rgba(59, 130, 246, 0.2)' : 'rgba(129, 140, 248, 0.2)';
+          btn.style.borderColor = (ch === 'wave') ? '#10b981' :
+                                  (ch === 'orange') ? '#f97316' :
+                                  (ch === 'mtn') ? '#eab308' :
+                                  (ch === 'moov') ? '#3b82f6' : '#818cf8';
+        } else {
+          btn.classList.remove('active');
+          btn.style.background = 'rgba(255, 255, 255, 0.05)';
+          btn.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+        }
+      }
+    });
 
-    const channelNames = {
-      wave: '🌊 Wave Mobile Money',
-      orange: '🍊 Orange Money',
-      mtn: '💛 MTN MoMo',
-      carte: '💳 Virement Bancaire / Carte'
-    };
+    const price = (this.selectedPlan === 'entreprise') ? 24900 : 4900;
+    const priceStr = this.formatCurrency(price);
+    const ref = this.currentPaymentRef || 'REF-SALEM-2026';
+    const infoBox = document.getElementById('pay-channel-info-box');
+    if (!infoBox) return;
 
-    if (titleEl) titleEl.innerText = `📲 Instructions de Règlement ${channelNames[channel] || channel} :`;
-    if (detailEl) detailEl.innerText = (channel === 'carte') ? `Coordonnées RIB : CI890 01001 09812456701 92` : `Numéro Marchand / Code : ${detail}`;
+    let contentHtml = '';
+
+    if (channel === 'wave') {
+      const num = this.companyProfile?.waveNum || '+225 07 00 00 00 00';
+      contentHtml = `
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 14px; padding: 16px; margin-bottom: 16px;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+            <span style="font-size:1.6rem;">🌊</span>
+            <div>
+              <strong style="color:#10b981; font-size:0.95rem; display:block;">Payer directement par Wave Mobile Money</strong>
+              <span style="font-size:0.78rem; color:#94a3b8;">Transfert instantané sans frais bancaires</span>
+            </div>
+          </div>
+          <div style="background: rgba(15, 23, 42, 0.85); padding: 12px; border-radius: 10px; font-size: 0.84rem; display:flex; flex-direction:column; gap:6px;">
+            <div>💰 <strong>Montant à envoyer :</strong> <span style="color:#10b981; font-weight:800; font-size:0.95rem;">${priceStr}</span></div>
+            <div>📱 <strong>Numéro Wave Destinataire :</strong> <span style="color:#fff; font-weight:800;">${num}</span></div>
+            <div>🏷️ <strong>Motif / Référence du transfert :</strong> <code style="background:rgba(16,185,129,0.2); color:#10b981; padding:2px 8px; border-radius:4px; font-weight:800;">${ref}</code></div>
+          </div>
+          <a href="https://pay.wave.com/m/easyfact_africa" target="_blank" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; margin-top:12px; padding:11px; background:#10b981; color:#fff; font-weight:800; border-radius:10px; text-decoration:none; font-size:0.85rem; box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Ouvrir l'Application Wave pour Payer
+          </a>
+        </div>
+      `;
+    } else if (channel === 'orange') {
+      const num = this.companyProfile?.omNum || '+225 07 00 00 00 01';
+      contentHtml = `
+        <div style="background: rgba(249, 115, 22, 0.1); border: 1px solid rgba(249, 115, 22, 0.35); border-radius: 14px; padding: 16px; margin-bottom: 16px;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+            <span style="font-size:1.6rem;">🍊</span>
+            <div>
+              <strong style="color:#f97316; font-size:0.95rem; display:block;">Payer par Orange Money</strong>
+              <span style="font-size:0.78rem; color:#94a3b8;">Composer le code USSD ou effectuer un transfert</span>
+            </div>
+          </div>
+          <div style="background: rgba(15, 23, 42, 0.85); padding: 12px; border-radius: 10px; font-size: 0.84rem; display:flex; flex-direction:column; gap:6px;">
+            <div>💰 <strong>Montant à envoyer :</strong> <span style="color:#f97316; font-weight:800; font-size:0.95rem;">${priceStr}</span></div>
+            <div>📱 <strong>Numéro Orange Money :</strong> <span style="color:#fff; font-weight:800;">${num}</span></div>
+            <div>🏷️ <strong>Motif / Référence :</strong> <code style="background:rgba(249,115,22,0.2); color:#f97316; padding:2px 8px; border-radius:4px; font-weight:800;">${ref}</code></div>
+          </div>
+          <a href="tel:*144*4*1%23" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; margin-top:12px; padding:11px; background:#f97316; color:#fff; font-weight:800; border-radius:10px; text-decoration:none; font-size:0.85rem;">
+            <i class="fa-solid fa-phone"></i> Composer le Code Orange Money (*144#)
+          </a>
+        </div>
+      `;
+    } else if (channel === 'mtn') {
+      const num = this.companyProfile?.mtnNum || '+225 05 00 00 00 02';
+      contentHtml = `
+        <div style="background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.35); border-radius: 14px; padding: 16px; margin-bottom: 16px;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+            <span style="font-size:1.6rem;">💛</span>
+            <div>
+              <strong style="color:#eab308; font-size:0.95rem; display:block;">Payer par MTN Mobile Money (MoMo)</strong>
+              <span style="font-size:0.78rem; color:#94a3b8;">Composer le code USSD ou effectuer un transfert</span>
+            </div>
+          </div>
+          <div style="background: rgba(15, 23, 42, 0.85); padding: 12px; border-radius: 10px; font-size: 0.84rem; display:flex; flex-direction:column; gap:6px;">
+            <div>💰 <strong>Montant à envoyer :</strong> <span style="color:#eab308; font-weight:800; font-size:0.95rem;">${priceStr}</span></div>
+            <div>📱 <strong>Numéro MTN MoMo :</strong> <span style="color:#fff; font-weight:800;">${num}</span></div>
+            <div>🏷️ <strong>Motif du transfert :</strong> <code style="background:rgba(234,179,8,0.2); color:#eab308; padding:2px 8px; border-radius:4px; font-weight:800;">${ref}</code></div>
+          </div>
+          <a href="tel:*133%23" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; margin-top:12px; padding:11px; background:#eab308; color:#000; font-weight:800; border-radius:10px; text-decoration:none; font-size:0.85rem;">
+            <i class="fa-solid fa-phone"></i> Composer le Code MTN MoMo (*133#)
+          </a>
+        </div>
+      `;
+    } else if (channel === 'moov') {
+      const num = this.companyProfile?.moovNum || '+225 01 00 00 00 03';
+      contentHtml = `
+        <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 14px; padding: 16px; margin-bottom: 16px;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+            <span style="font-size:1.6rem;">💙</span>
+            <div>
+              <strong style="color:#3b82f6; font-size:0.95rem; display:block;">Payer par Moov Money (Flooz)</strong>
+              <span style="font-size:0.78rem; color:#94a3b8;">Transfert Flooz sécurisé</span>
+            </div>
+          </div>
+          <div style="background: rgba(15, 23, 42, 0.85); padding: 12px; border-radius: 10px; font-size: 0.84rem; display:flex; flex-direction:column; gap:6px;">
+            <div>💰 <strong>Montant à envoyer :</strong> <span style="color:#3b82f6; font-weight:800; font-size:0.95rem;">${priceStr}</span></div>
+            <div>📱 <strong>Numéro Moov Money :</strong> <span style="color:#fff; font-weight:800;">${num}</span></div>
+            <div>🏷️ <strong>Motif du transfert :</strong> <code style="background:rgba(59,130,246,0.2); color:#3b82f6; padding:2px 8px; border-radius:4px; font-weight:800;">${ref}</code></div>
+          </div>
+        </div>
+      `;
+    } else if (channel === 'carte') {
+      const rib = this.companyProfile?.bankRib || 'CI890 01001 09812456701 92';
+      contentHtml = `
+        <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.35); border-radius: 14px; padding: 16px; margin-bottom: 16px;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+            <span style="font-size:1.6rem;">💳</span>
+            <div>
+              <strong style="color:#818cf8; font-size:0.95rem; display:block;">Virement Bancaire / Carte</strong>
+              <span style="font-size:0.78rem; color:#94a3b8;">Transfert bancaire direct sur compte entreprise</span>
+            </div>
+          </div>
+          <div style="background: rgba(15, 23, 42, 0.85); padding: 12px; border-radius: 10px; font-size: 0.84rem; display:flex; flex-direction:column; gap:6px;">
+            <div>💰 <strong>Montant du virement :</strong> <span style="color:#818cf8; font-weight:800; font-size:0.95rem;">${priceStr}</span></div>
+            <div>🏦 <strong>RIB / IBAN du compte :</strong> <span style="color:#fff; font-weight:800; font-family:monospace;">${rib}</span></div>
+            <div>🏷️ <strong>Libellé du Virement :</strong> <code style="background:rgba(99,102,241,0.2); color:#818cf8; padding:2px 8px; border-radius:4px; font-weight:800;">${ref}</code></div>
+          </div>
+        </div>
+      `;
+    }
+
+    infoBox.innerHTML = contentHtml;
   }
 
   submitPlanPaymentForm() {
