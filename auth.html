@@ -1060,26 +1060,14 @@ const Auth = (() => {
 
         showSuccess();
       } else {
-        // Fallback local résilient pour garantir l'accès
-        localStorage.setItem('easyfact_token', 'token_easyfact_' + Date.now());
-        localStorage.setItem('easyfact_active_user_id', 'usr_' + Date.now());
-        localStorage.setItem('easyfact_active_user_email', email);
-        localStorage.setItem('easyfact_company_name', email.split('@')[0].toUpperCase());
-        localStorage.setItem('easyfact_tier', 'starter');
-        localStorage.setItem('easyfact_logged_in', 'true');
-
-        showSuccess();
+        const errorMsg = res.message || 'Adresse email ou mot de passe incorrect. Vérifiez vos identifiants.';
+        showAlert('login-alert', '❌ ' + errorMsg);
+        document.getElementById('login-password').focus();
       }
     } catch (err) {
-      // Si le serveur backend est en cours de démarrage ou non accessible
-      localStorage.setItem('easyfact_token', 'token_easyfact_' + Date.now());
-      localStorage.setItem('easyfact_active_user_id', 'usr_' + Date.now());
-      localStorage.setItem('easyfact_active_user_email', email);
-      localStorage.setItem('easyfact_company_name', email.split('@')[0].toUpperCase());
-      localStorage.setItem('easyfact_tier', 'starter');
-      localStorage.setItem('easyfact_logged_in', 'true');
-
-      showSuccess();
+      const errorMsg = err.message || 'Adresse email ou mot de passe incorrect.';
+      showAlert('login-alert', '❌ ' + errorMsg);
+      document.getElementById('login-password').focus();
     } finally {
       setLoading('login-btn', 'login-spinner', false);
     }
