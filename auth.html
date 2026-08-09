@@ -1137,13 +1137,22 @@ const Auth = (() => {
   // ============================================================
   // OTP STEP
   // ============================================================
+  function maskEmail(email) {
+    if (!email || !email.includes('@')) return email;
+    const parts = email.split('@');
+    const name = parts[0];
+    const domain = parts[1];
+    if (name.length <= 3) return name[0] + '***@' + domain;
+    return name.slice(0, 3) + '***@' + domain;
+  }
+
   function showOtpStep(email) {
     document.getElementById('tab-bar').style.display = 'none';
     document.getElementById('panel-login').classList.remove('active');
     document.getElementById('panel-register').classList.remove('active');
     document.getElementById('otp-step').classList.add('active');
     document.getElementById('auth-footer').style.display = 'none';
-    document.getElementById('otp-email-display').textContent = email;
+    document.getElementById('otp-email-display').textContent = `${email} (${maskEmail(email)})`;
     clearAlert('otp-alert');
     initOtpBoxes();
     startResendCountdown(60);
