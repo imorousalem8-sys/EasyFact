@@ -869,20 +869,37 @@ const Auth = (() => {
     return DISPOSABLE.has(domain);
   }
 
-  // ---- Generic API call ----
+  // ---- Generic API call (Bulletproof Error Sanitizer) ----
   async function api(method, endpoint, body, token) {
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const opts = { method, headers };
     if (body) opts.body = JSON.stringify(body);
-    const res = await fetch(`${API}${endpoint}`, opts);
-    const json = await res.json();
-    if (!res.ok) {
-      // Extract meaningful error message
-      const msg = json.message || json.error || 'Erreur serveur. Réessayez.';
-      throw new Error(Array.isArray(msg) ? msg.join(', ') : msg);
+
+    try {
+      const res = await fetch(`${API}${endpoint}`, opts);
+      const contentType = res.headers.get('content-type') || '';
+
+      let json = {};
+      if (contentType.includes('application/json')) {
+        json = await res.json();
+      } else {
+        const text = await res.text();
+        json = { message: 'Le serveur EasyFact est en cours d\'initialisation. Réessayez dans 3 secondes.' };
+      }
+
+      if (!res.ok) {
+        const rawMsg = json.message || json.error || 'Erreur de traitement. Veuillez réessayer.';
+        const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : String(rawMsg);
+        throw new Error(msg);
+      }
+      return json;
+    } catch (err) {
+      if (err.name === 'SyntaxError' || (err.message && err.message.includes('JSON'))) {
+        throw new Error('Connexion au serveur en cours. Veuillez réesayer dans 3 secondes.');
+      }
+      throw err;
     }
-    return json;
   }
 
   // ---- Tab switching ----
@@ -1190,7 +1207,7 @@ const Auth = (() => {
     const code  = Array.from(boxes).map(b => b.value).join('');
 
     if (code.length < 6) {
-      showAlert('otp-alert', '⚠️ Saisissez les 6 chiffres du code reçu par email.');
+      showAlert('otp-alert', '⚠️ Saisissez les 6 chiffres du code de vérification.');
       return;
     }
 
@@ -1199,7 +1216,7 @@ const Auth = (() => {
     try {
       const res = await api('POST', '/auth/verify-code', { email: state.pendingEmail, code });
 
-      if (res.success) {
+      if (res.success && (res.token || res.user)) {
         const token = res.token || state.pendingToken || ('token_easyfact_' + Date.now());
         localStorage.setItem('easyfact_token', token);
         localStorage.setItem('easyfact_active_user_id', res.user?.id || 'usr_' + Date.now());
@@ -1210,23 +1227,15 @@ const Auth = (() => {
 
         showSuccess();
       } else {
-        showAlert('otp-alert', '❌ Code de vérification incorrect.');
+        const msg = res.message || 'Code de vérification incorrect ou expiré.';
+        showAlert('otp-alert', '❌ ' + msg);
       }
     } catch (err) {
-      // Mode résilient : si l'API backend est hors-ligne pendant les tests local/statique
-      if (code && code.length === 6) {
-        const token = state.pendingToken || ('token_easyfact_' + Date.now());
-        localStorage.setItem('easyfact_token', token);
-        localStorage.setItem('easyfact_active_user_id', 'usr_' + Date.now());
-        localStorage.setItem('easyfact_active_user_email', state.pendingEmail || 'contact@monentreprise.com');
-        localStorage.setItem('easyfact_company_name', state.pendingCompany || 'Mon Entreprise');
-        localStorage.setItem('easyfact_tier', 'starter');
-        localStorage.setItem('easyfact_logged_in', 'true');
-
-        showSuccess();
-      } else {
-        showAlert('otp-alert', '❌ ' + err.message);
+      let cleanMsg = err.message || 'Code de vérification incorrect ou expiré.';
+      if (cleanMsg.includes('JSON') || cleanMsg.includes('Unexpected token')) {
+        cleanMsg = 'Synchronisation du serveur... Veuillez réessayer.';
       }
+      showAlert('otp-alert', '❌ ' + cleanMsg);
     } finally {
       setLoading('verify-btn', 'verify-spinner', false);
     }
