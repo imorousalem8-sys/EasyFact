@@ -195,7 +195,7 @@ export class AuthService {
 
     return {
       success: true,
-      message: `Code OTP à 6 chiffres envoyé à ${cleanEmail}. (Code direct de test: 891024)`,
+      message: `Un code de vérification à 6 chiffres a été envoyé à ${cleanEmail}. Veuillez consulter votre boîte de réception (et vos Spams).`,
       expiresInMinutes: 10,
     };
   }
