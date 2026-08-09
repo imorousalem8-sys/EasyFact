@@ -148,6 +148,37 @@ class EasyFactApp {
     try { this.checkCookieConsent(); } catch(e) { console.warn('checkCookieConsent warning:', e); }
   }
 
+  updateHeaderAuthUI() {
+    const container = document.getElementById('header-auth-container');
+    if (!container) return;
+
+    const isLoggedIn = (localStorage.getItem('easyfact_logged_in') === 'true' && localStorage.getItem('easyfact_token'));
+
+    if (isLoggedIn) {
+      container.innerHTML = `
+        <button type="button" onclick="app.logoutUser()" class="btn btn-logout-header" title="Se déconnecter de la plateforme" style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 700; font-size: 0.8rem; border-radius: 10px; padding: 7px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+          <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+        </button>
+      `;
+    } else {
+      container.innerHTML = `
+        <a href="auth.html?force=true" id="header-auth-btn" class="btn" style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 700; font-size: 0.8rem; border-radius: 10px; padding: 7px 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-user-lock"></i> Connexion / Inscription
+        </a>
+      `;
+    }
+  }
+
+  logoutUser() {
+    if (confirm("⚠️ Voulez-vous vraiment vous déconnecter de votre compte EasyFact ?")) {
+      localStorage.removeItem('easyfact_token');
+      localStorage.setItem('easyfact_logged_in', 'false');
+      localStorage.removeItem('easyfact_active_user_id');
+      localStorage.removeItem('easyfact_active_user_email');
+      window.location.href = 'auth.html?logout=true';
+    }
+  }
+
   /* Custom Professional Toast Notifications System */
   validatePhoneNumber(phoneStr, labelName = 'Téléphone') {
     if (!phoneStr || phoneStr.trim() === '') return { isValid: true, clean: '' };
