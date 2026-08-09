@@ -119,26 +119,13 @@ export class AuthService {
     return { wave_num: 'VER:true' };
   }
 
-  private async validateEmailStrict(email: string): Promise<string> {
+  private validateEmailStrict(email: string): string {
     if (!email) throw new BadRequestException('L\'adresse email est obligatoire.');
     const cleanEmail = email.toLowerCase().trim();
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,10}$/;
     if (!emailRegex.test(cleanEmail)) {
-      throw new BadRequestException('Format d\'adresse email invalide. Votre email doit comporter un "@" et un domaine valide (ex: contact@entreprise.com).');
+      throw new BadRequestException('Format d\'adresse email invalide (ex: contact@domaine.com).');
     }
-
-    const domain = cleanEmail.split('@')[1];
-    try {
-      const dns = require('dns').promises;
-      const mxRecords = await dns.resolveMx(domain);
-      if (!mxRecords || mxRecords.length === 0) {
-        throw new BadRequestException(`Le nom de domaine "@${domain}" ne possède aucun serveur de messagerie actif pour recevoir des emails.`);
-      }
-    } catch (err) {
-      if (err instanceof BadRequestException) throw err;
-      throw new BadRequestException(`L'adresse email "@${domain}" n'existe pas ou ne peut pas recevoir d'emails.`);
-    }
-
     return cleanEmail;
   }
 
@@ -150,7 +137,7 @@ export class AuthService {
   // ENVOYER CODE OTP (Supabase otp_codes + Resend email)
   // ============================================================
   async sendVerificationCode(email: string) {
-    const cleanEmail = await this.validateEmailStrict(email);
+    const cleanEmail = this.validateEmailStrict(email);
 
     // Rate Limiting: Max 3 resend requests per 15 minutes
     const now = Date.now();
@@ -217,7 +204,7 @@ export class AuthService {
   // VÉRIFIER CODE OTP (Max 5 tentatives)
   // ============================================================
   async verifyCode(email: string, code: string) {
-    const cleanEmail = await this.validateEmailStrict(email);
+    const cleanEmail = this.validateEmailStrict(email);
 
     // Check failed attempts limit (max 5 attempts)
     const attempts = (this.otpAttemptCounts.get(cleanEmail) || 0) + 1;
@@ -344,7 +331,7 @@ export class AuthService {
   // ============================================================
   async register(data: any) {
     await this.detectSchemaColumns();
-    const emailKey = await this.validateEmailStrict(data.email || '');
+    const emailKey = this.validateEmailStrict(data.email || '');
 
     // Check email already exists
     const { data: existingUser } = await this.supabase.getClient()
