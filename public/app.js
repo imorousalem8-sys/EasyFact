@@ -94,6 +94,26 @@ class EasyFactApp {
     return 'easyfact_tenant_data_' + this.currentUserId;
   }
 
+  checkFeatureAccess(featureName) {
+    const isProOrEntreprise = (this.userTier === 'pro' || this.userTier === 'entreprise');
+
+    if (!isProOrEntreprise) {
+      const messages = {
+        remove_watermark: "🔒 La suppression du filigrane est réservée aux abonnés PRO & ENTREPRISE.",
+        unlimited_invoices: "🔒 L'émission illimitée de factures est réservée aux abonnés PRO.",
+        syscohada_export: "🔒 L'export comptable SYSCOHADA est réservé aux formules PRO & ENTREPRISE.",
+        multi_user: "🔒 La gestion multi-utilisateurs est réservée à la Formule ENTREPRISE."
+      };
+
+      const msg = messages[featureName] || "🔒 Cette fonctionnalité nécessite la Formule PRO.";
+      this.showToast(msg, "info");
+      alert(`${msg}\n\nSouhaitez-vous souscrire à la Formule PRO pour débloquer l'accès illimité ?`);
+      this.subscribePlan('pro', 4900);
+      return false;
+    }
+    return true;
+  }
+
   switchUserSession(userId, userEmail, companyName) {
     this.currentUserId = userId;
     this.currentUserEmail = userEmail || 'utilisateur@entreprise.com';

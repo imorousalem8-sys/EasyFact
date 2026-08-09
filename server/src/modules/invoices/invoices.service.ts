@@ -52,6 +52,20 @@ export class InvoicesService {
     const withAmount = parseFloat((totalHt * (withRate / 100)).toFixed(2));
     const netTotal = parseFloat((totalHt + vatAmount - withAmount - (dto.advanceAmount || 0)).toFixed(2));
 
+    // Quota Enforcement: Check Starter Plan Limit (Max 5 invoices)
+    const userTier = dto.userTier || dto.user_tier || 'starter';
+    if (userTier === 'starter' && dto.userId) {
+      const { count: existingCount } = await this.supabase.getClient()
+        .from('invoices')
+        .select('id', { count: 'exact' })
+        .eq('user_id', dto.userId);
+
+      if ((existingCount || 0) >= 5) {
+        this.logger.warn(`⚠️ Limite de quota Starter atteinte pour l'utilisateur ${dto.userId}`);
+        throw new BadRequestException('⚠️ Quota du Plan Starter atteint (5 factures max). Veuillez souscrire à la Formule PRO pour débloquer l\'émission illimitée.');
+      }
+    }
+
     // Générer un numéro de facture unique
     const year = new Date().getFullYear();
     const { count } = await this.supabase.getClient()

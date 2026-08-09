@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { InvoicesService } from './invoices.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -8,18 +8,22 @@ export class InvoicesController {
   constructor(private readonly invoicesService: InvoicesService) {}
 
   @Get('stats/dashboard')
-  async getStats() {
-    return this.invoicesService.getStats();
+  async getStats(@Request() req: any) {
+    const userId = req.user?.sub || req.user?.userId;
+    return this.invoicesService.getStats(userId);
   }
 
   @Get()
-  async findAll(@Query('search') search?: string, @Query('status') status?: string) {
-    return this.invoicesService.findAll(search, status);
+  async findAll(@Request() req: any, @Query('search') search?: string, @Query('status') status?: string) {
+    const userId = req.user?.sub || req.user?.userId;
+    return this.invoicesService.findAll(search, status, userId);
   }
 
   @Post()
-  async create(@Body() invoiceDto: any) {
-    return this.invoicesService.create(invoiceDto);
+  async create(@Request() req: any, @Body() invoiceDto: any) {
+    const userId = req.user?.sub || req.user?.userId;
+    const userTier = req.user?.tier || invoiceDto.userTier || 'starter';
+    return this.invoicesService.create({ ...invoiceDto, userId, userTier });
   }
 
   @Get(':id')
