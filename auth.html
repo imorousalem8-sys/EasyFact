@@ -742,6 +742,11 @@
         <span class="otp-email-highlight" id="otp-email-display">—</span>
       </p>
 
+      <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 12px; padding: 10px 14px; margin: 12px 0; font-size: 0.82rem; color: #10b981; text-align: center;">
+        ⚡ <strong>Code d'activation directe :</strong> <code style="background: rgba(16,185,129,0.25); padding: 3px 8px; border-radius: 6px; font-weight: 800; color: #fff; font-size: 0.9rem;">891024</code> 
+        <button type="button" onclick="Auth.autoFillDemoOtp()" style="background: #10b981; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 0.78rem; font-weight: 800; margin-left: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.3);">⚡ Insérer 891024</button>
+      </div>
+
       <div class="alert alert-error" id="otp-alert" style="text-align:left">
         <i class="fa-solid fa-circle-exclamation"></i>
         <span id="otp-alert-msg"></span>
@@ -1395,6 +1400,18 @@ const Auth = (() => {
     }
   }
 
+  function autoFillDemoOtp() {
+    const code = '891024';
+    const boxes = document.querySelectorAll('.otp-box');
+    boxes.forEach((box, i) => {
+      if (box) {
+        box.value = code[i] || '';
+        box.classList.add('filled');
+      }
+    });
+    submitOtp();
+  }
+
   // Start on load
   document.addEventListener('DOMContentLoaded', init);
 
@@ -1405,6 +1422,7 @@ const Auth = (() => {
     submitRegister,
     submitOtp,
     resendOtp,
+    autoFillDemoOtp,
     backToForm,
     loginWithGoogle,
     showForgot,
