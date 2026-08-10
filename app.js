@@ -2334,27 +2334,40 @@ class EasyFactApp {
     if (pendSub) pendSub.innerText = `${yearInvoices.filter(i => i.status === 'En attente').length} créance(s) en attente`;
 
     // Update Financial Health Banner
+    const healthBanner = document.getElementById('fi-health-banner');
     const healthTitle = document.getElementById('fi-health-title');
-    const healthDesc = document.getElementById('fi-health-desc');
-    const healthIcon = document.getElementById('fi-health-icon');
+    const healthDesc  = document.getElementById('fi-health-desc');
+    const healthIcon  = document.getElementById('fi-health-icon');
     const healthBadge = document.getElementById('fi-health-badge');
 
     if (netProfitYear > 0) {
       const marginPct = totalRevYear > 0 ? Math.round((netProfitYear / totalRevYear) * 100) : 100;
-      if (healthTitle) healthTitle.innerText = `🚀 Ascension Financière Excellente (Bénéfice Net : +${this.formatCurrency(netProfitYear)})`;
-      if (healthDesc) healthDesc.innerText = `Vos encaissements couvrent largement vos charges. Marge nette de ${marginPct}%. Votre entreprise est en forte croissance !`;
-      if (healthIcon) healthIcon.className = 'fa-solid fa-chart-line fi-health-icon text-emerald';
-      if (healthBadge) healthBadge.innerHTML = `<span class="badge-status" style="background:#dcfce7; color:#15803d; padding:6px 14px; border-radius:9999px; font-weight:800;"><i class="fa-solid fa-arrow-trend-up"></i> Rentabilité +${marginPct}%</span>`;
-    } else if (netProfitYear === 0 && totalRevYear === 0 && totalExpYear === 0) {
-      if (healthTitle) healthTitle.innerText = `⚡ Espace Financier Prêt (Année ${selectedYear})`;
-      if (healthDesc) healthDesc.innerText = `Aucune transaction enregistrée pour ${selectedYear}. Émettez des factures et enregistrez vos dépenses pour suivre votre rentabilité en temps réel.`;
-      if (healthIcon) healthIcon.className = 'fa-solid fa-wallet fi-health-icon text-emerald';
-      if (healthBadge) healthBadge.innerHTML = `<span class="badge-status" style="background:#e0f2fe; color:#0369a1; padding:6px 14px; border-radius:9999px; font-weight:800;"><i class="fa-solid fa-clock"></i> Prêt à Encasser</span>`;
-    } else {
-      if (healthTitle) healthTitle.innerText = `⚠️ Attention : Déficit Temporaire (Charges Supérieures aux Encaissements)`;
+      if (healthBanner) {
+        healthBanner.style.background = 'rgba(59, 130, 246, 0.12)';
+        healthBanner.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+      }
+      if (healthTitle) { healthTitle.innerText = `🚀 Ascension Financière & Profitabilité en Montée (+${this.formatCurrency(netProfitYear)})`; healthTitle.style.color = '#3b82f6'; }
+      if (healthDesc) healthDesc.innerText = `Vos encaissements couvrent largement vos charges. Marge nette de ${marginPct}%. Votre entreprise est en constante progression !`;
+      if (healthIcon) { healthIcon.className = 'fa-solid fa-chart-line fi-health-icon'; healthIcon.style.color = '#3b82f6'; }
+      if (healthBadge) healthBadge.innerHTML = `<span class="badge-status" style="background:#3b82f6; color:#ffffff; padding:6px 14px; border-radius:9999px; font-weight:800;"><i class="fa-solid fa-arrow-trend-up"></i> Ascension Positive 🔵</span>`;
+    } else if (netProfitYear < 0) {
+      if (healthBanner) {
+        healthBanner.style.background = 'rgba(239, 68, 68, 0.12)';
+        healthBanner.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+      }
+      if (healthTitle) { healthTitle.innerText = `🔻 Solde Négatif / Déficit Financier (En Perte : ${this.formatCurrency(netProfitYear)})`; healthTitle.style.color = '#ef4444'; }
       if (healthDesc) healthDesc.innerText = `Vos dépenses (${this.formatCurrency(totalExpYear)}) dépassent vos encaissements (${this.formatCurrency(totalRevYear)}). Relancez vos créances en attente.`;
-      if (healthIcon) healthIcon.className = 'fa-solid fa-triangle-exclamation fi-health-icon text-red';
-      if (healthBadge) healthBadge.innerHTML = `<span class="badge-status" style="background:#fee2e2; color:#b91c1c; padding:6px 14px; border-radius:9999px; font-weight:800;"><i class="fa-solid fa-arrow-trend-down"></i> Solde Déficitaire</span>`;
+      if (healthIcon) { healthIcon.className = 'fa-solid fa-arrow-trend-down fi-health-icon'; healthIcon.style.color = '#ef4444'; }
+      if (healthBadge) healthBadge.innerHTML = `<span class="badge-status" style="background:#ef4444; color:#ffffff; padding:6px 14px; border-radius:9999px; font-weight:800;"><i class="fa-solid fa-arrow-trend-down"></i> Déficit Négatif 🔴</span>`;
+    } else {
+      if (healthBanner) {
+        healthBanner.style.background = 'rgba(255, 255, 255, 0.05)';
+        healthBanner.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+      }
+      if (healthTitle) { healthTitle.innerText = `⚪ Solde Neutre (0 FCFA)`; healthTitle.style.color = '#ffffff'; }
+      if (healthDesc) healthDesc.innerText = `Aucune opération enregistrée pour ${selectedYear}. Émettez vos factures et enregistrez vos dépenses pour déclencher le calcul de rentabilité.`;
+      if (healthIcon) { healthIcon.className = 'fa-solid fa-minus fi-health-icon'; healthIcon.style.color = '#ffffff'; }
+      if (healthBadge) healthBadge.innerHTML = `<span class="badge-status" style="background:rgba(255,255,255,0.2); color:#ffffff; padding:6px 14px; border-radius:9999px; font-weight:800;"><i class="fa-solid fa-minus"></i> Solde Neutre ⚪</span>`;
     }
 
     // Monthly 12-Month Table Breakdown & Canvas Trend Line Data
@@ -2380,9 +2393,9 @@ class EasyFactApp {
 
         monthlyNetProfits.push(mProfit);
 
-        let trendBadge = `<span style="color:#94a3b8; font-weight:600;"><i class="fa-solid fa-minus"></i> 0 FCFA</span>`;
+        let trendBadge = `<span style="color:#ffffff; font-weight:600;"><i class="fa-solid fa-minus"></i> 0 FCFA</span>`;
         if (mProfit > 0) {
-          trendBadge = `<span style="color:#10b981; font-weight:800;"><i class="fa-solid fa-arrow-trend-up"></i> +${this.formatCurrency(mProfit)} (Positif 🟢)</span>`;
+          trendBadge = `<span style="color:#3b82f6; font-weight:800;"><i class="fa-solid fa-arrow-trend-up"></i> +${this.formatCurrency(mProfit)} (Positif 🔵)</span>`;
         } else if (mProfit < 0) {
           trendBadge = `<span style="color:#ef4444; font-weight:800;"><i class="fa-solid fa-arrow-trend-down"></i> ${this.formatCurrency(mProfit)} (Négatif 🔴)</span>`;
         }
@@ -2392,7 +2405,7 @@ class EasyFactApp {
             <td><strong>${mName} ${selectedYear}</strong></td>
             <td style="color:#10b981; font-weight:800;">${this.formatCurrency(mRev)}</td>
             <td style="color:#64748b; font-weight:600;">${this.formatCurrency(mExp)}</td>
-            <td style="color:${mProfit >= 0 ? '#10b981' : '#ef4444'}; font-weight:800;">${this.formatCurrency(mProfit)}</td>
+            <td style="color:${mProfit > 0 ? '#3b82f6' : (mProfit < 0 ? '#ef4444' : '#ffffff')}; font-weight:800;">${this.formatCurrency(mProfit)}</td>
             <td>${trendBadge}</td>
             <td>
               <button class="btn btn-outline-sm" onclick="app.exportMonthlyReport('${mName}', '${selectedYear}', ${mRev}, ${mExp}, ${mProfit})">
@@ -2406,10 +2419,10 @@ class EasyFactApp {
     }
 
     // Render Canvas 3D Trend Curve Animation
-    this.renderFinancialTrendChart(monthlyNetProfits, netProfitYear >= 0);
+    this.renderFinancialTrendChart(monthlyNetProfits, netProfitYear);
   }
 
-  renderFinancialTrendChart(monthlyData, isUpwardTrend = true) {
+  renderFinancialTrendChart(monthlyData, netProfitVal = 0) {
     const canvas = document.getElementById('fi-trend-canvas');
     const tag = document.getElementById('fi-chart-trend-tag');
     if (!canvas) return;
@@ -2435,20 +2448,28 @@ class EasyFactApp {
       return { x, y, val: v };
     });
 
-    const lineColor = isUpwardTrend ? '#10b981' : '#ef4444';
-    const gradientTop = isUpwardTrend ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)';
+    const isPositive = netProfitVal > 0;
+    const isNegative = netProfitVal < 0;
+
+    const lineColor = isPositive ? '#3b82f6' : (isNegative ? '#ef4444' : '#ffffff');
+    const gradientTop = isPositive ? 'rgba(59, 130, 246, 0.35)' : (isNegative ? 'rgba(239, 68, 68, 0.35)' : 'rgba(255, 255, 255, 0.15)');
 
     if (tag) {
-      if (isUpwardTrend) {
-        tag.style.background = 'rgba(16, 185, 129, 0.15)';
-        tag.style.borderColor = '#10b981';
-        tag.style.color = '#10b981';
-        tag.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> TENDANCE HAUSSIÈRE (POSITIF 🚀)`;
-      } else {
+      if (isPositive) {
+        tag.style.background = 'rgba(59, 130, 246, 0.15)';
+        tag.style.borderColor = '#3b82f6';
+        tag.style.color = '#3b82f6';
+        tag.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> TENDANCE EN MONTÉE (POSITIF 🔵)`;
+      } else if (isNegative) {
         tag.style.background = 'rgba(239, 68, 68, 0.15)';
         tag.style.borderColor = '#ef4444';
         tag.style.color = '#ef4444';
-        tag.innerHTML = `<i class="fa-solid fa-arrow-trend-down"></i> TENDANCE BAISSIÈRE (DÉFICIT 🔻)`;
+        tag.innerHTML = `<i class="fa-solid fa-arrow-trend-down"></i> SOLDE NÉGATIF / DÉFICIT 🔴`;
+      } else {
+        tag.style.background = 'rgba(255, 255, 255, 0.08)';
+        tag.style.borderColor = 'rgba(255, 255, 255, 0.25)';
+        tag.style.color = '#ffffff';
+        tag.innerHTML = `<i class="fa-solid fa-minus"></i> SOLDE NEUTRE (0 FCFA ⚪)`;
       }
     }
 
