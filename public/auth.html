@@ -1406,7 +1406,7 @@ const Auth = (() => {
   }
 
   // ============================================================
-  // GOOGLE OAUTH & GOOGLE IDENTITY SERVICES (GIS)
+  // GOOGLE OAUTH & GOOGLE IDENTITY SERVICES (GIS) DYNAMIQUE
   // ============================================================
   function handleGoogleCredentialResponse(response) {
     if (!response || !response.credential) {
@@ -1415,7 +1415,7 @@ const Auth = (() => {
     }
 
     try {
-      // Decode Google JWT Token payload
+      // Decode Google JWT Token payload dynamically
       const base64Url = response.credential.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
@@ -1423,8 +1423,13 @@ const Auth = (() => {
       }).join(''));
       
       const payload = JSON.parse(jsonPayload);
-      const email = payload.email || 'user_google@gmail.com';
-      const name = payload.name || payload.given_name || email.split('@')[0];
+      const email = (payload.email || '').toLowerCase().trim();
+      const name = payload.name || payload.given_name || (email ? email.split('@')[0] : 'Utilisateur Google');
+
+      if (!email || !email.includes('@')) {
+        showAlert('login-alert', '❌ Impossible de récupérer l\'adresse e-mail Google.');
+        return;
+      }
 
       const token = 'token_google_' + Date.now();
       localStorage.setItem('easyfact_token', token);
@@ -1434,7 +1439,7 @@ const Auth = (() => {
       localStorage.setItem('easyfact_tier', 'starter');
       localStorage.setItem('easyfact_logged_in', 'true');
 
-      // Persist user in Supabase via backend API
+      // Sync backend user record
       fetch(`${API}/auth/google/verify-credential`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1443,23 +1448,29 @@ const Auth = (() => {
 
       showSuccess();
     } catch (e) {
-      showAlert('login-alert', '❌ Erreur de traitement du compte Google.');
+      showAlert('login-alert', '❌ Erreur lors du traitement de l\'identité Google.');
     }
   }
 
   function loginWithGoogle() {
+    clearAlert('login-alert');
+    clearAlert('register-alert');
+
+    const CLIENT_ID = '674903265274-oknqihg9j3hdcfss8qtf5iohh0462i7n.apps.googleusercontent.com';
+
     if (window.google && window.google.accounts) {
       if (window.google.accounts.id) {
         window.google.accounts.id.initialize({
-          client_id: '674903265274-oknqihg9j3hdcfss8qtf5iohh0462i7n.apps.googleusercontent.com',
+          client_id: CLIENT_ID,
           callback: handleGoogleCredentialResponse,
           auto_select: false
         });
+        
         window.google.accounts.id.prompt((notification) => {
           if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
             if (window.google.accounts.oauth2) {
               const client = window.google.accounts.oauth2.initTokenClient({
-                client_id: '674903265274-oknqihg9j3hdcfss8qtf5iohh0462i7n.apps.googleusercontent.com',
+                client_id: CLIENT_ID,
                 scope: 'email profile',
                 callback: (tokenResponse) => {
                   if (tokenResponse && tokenResponse.access_token) {
@@ -1468,35 +1479,42 @@ const Auth = (() => {
                     })
                     .then(res => res.json())
                     .then(userInfo => {
-                      const email = userInfo.email || 'user_google@gmail.com';
-                      const name = userInfo.name || userInfo.given_name || email.split('@')[0];
+                      const email = (userInfo.email || '').toLowerCase().trim();
+                      const name = userInfo.name || userInfo.given_name || (email ? email.split('@')[0] : 'Utilisateur Google');
 
-                      const token = 'token_google_' + Date.now();
-                      localStorage.setItem('easyfact_token', token);
-                      localStorage.setItem('easyfact_active_user_id', 'usr_g_' + (userInfo.sub || Date.now()));
-                      localStorage.setItem('easyfact_active_user_email', email);
-                      localStorage.setItem('easyfact_company_name', name);
-                      localStorage.setItem('easyfact_tier', 'starter');
-                      localStorage.setItem('easyfact_logged_in', 'true');
+                      if (email && email.includes('@')) {
+                        const token = 'token_google_' + Date.now();
+                        localStorage.setItem('easyfact_token', token);
+                        localStorage.setItem('easyfact_active_user_id', 'usr_g_' + (userInfo.sub || Date.now()));
+                        localStorage.setItem('easyfact_active_user_email', email);
+                        localStorage.setItem('easyfact_company_name', name);
+                        localStorage.setItem('easyfact_tier', 'starter');
+                        localStorage.setItem('easyfact_logged_in', 'true');
 
-                      fetch(`${API}/auth/google/verify-credential`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ credential: tokenResponse.access_token, email, name })
-                      }).catch(() => {});
+                        fetch(`${API}/auth/google/verify-credential`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ credential: tokenResponse.access_token, email, name })
+                        }).catch(() => {});
 
-                      showSuccess();
+                        showSuccess();
+                      }
+                    })
+                    .catch(() => {
+                      window.location.href = `${API}/auth/google`;
                     });
                   }
                 }
               });
               client.requestAccessToken();
+            } else {
+              window.location.href = `${API}/auth/google`;
             }
           }
         });
       } else if (window.google.accounts.oauth2) {
         const client = window.google.accounts.oauth2.initTokenClient({
-          client_id: '674903265274-oknqihg9j3hdcfss8qtf5iohh0462i7n.apps.googleusercontent.com',
+          client_id: CLIENT_ID,
           scope: 'email profile',
           callback: (tokenResponse) => {
             if (tokenResponse && tokenResponse.access_token) {
@@ -1505,30 +1523,37 @@ const Auth = (() => {
               })
               .then(res => res.json())
               .then(userInfo => {
-                const email = userInfo.email || 'user_google@gmail.com';
-                const name = userInfo.name || userInfo.given_name || email.split('@')[0];
+                const email = (userInfo.email || '').toLowerCase().trim();
+                const name = userInfo.name || userInfo.given_name || (email ? email.split('@')[0] : 'Utilisateur Google');
 
-                const token = 'token_google_' + Date.now();
-                localStorage.setItem('easyfact_token', token);
-                localStorage.setItem('easyfact_active_user_id', 'usr_g_' + (userInfo.sub || Date.now()));
-                localStorage.setItem('easyfact_active_user_email', email);
-                localStorage.setItem('easyfact_company_name', name);
-                localStorage.setItem('easyfact_tier', 'starter');
-                localStorage.setItem('easyfact_logged_in', 'true');
+                if (email && email.includes('@')) {
+                  const token = 'token_google_' + Date.now();
+                  localStorage.setItem('easyfact_token', token);
+                  localStorage.setItem('easyfact_active_user_id', 'usr_g_' + (userInfo.sub || Date.now()));
+                  localStorage.setItem('easyfact_active_user_email', email);
+                  localStorage.setItem('easyfact_company_name', name);
+                  localStorage.setItem('easyfact_tier', 'starter');
+                  localStorage.setItem('easyfact_logged_in', 'true');
 
-                fetch(`${API}/auth/google/verify-credential`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ credential: tokenResponse.access_token, email, name })
-                }).catch(() => {});
+                  fetch(`${API}/auth/google/verify-credential`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ credential: tokenResponse.access_token, email, name })
+                  }).catch(() => {});
 
-                showSuccess();
+                  showSuccess();
+                }
+              })
+              .catch(() => {
+                window.location.href = `${API}/auth/google`;
               });
             }
           }
         });
         client.requestAccessToken();
       }
+    } else {
+      window.location.href = `${API}/auth/google`;
     }
   }
 
