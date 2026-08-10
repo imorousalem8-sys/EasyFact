@@ -817,11 +817,66 @@
 
     <!-- Footer -->
     <div class="auth-footer" id="auth-footer">
-      En continuant, vous acceptez nos <a href="#" style="color:var(--primary)">Conditions d'utilisation</a> et notre <a href="#" style="color:var(--primary)">Politique de confidentialité</a>.
+      En continuant, vous acceptez nos <a href="javascript:void(0)" onclick="openPrivacyModal()" style="color:var(--primary); text-decoration:underline;">Conditions d'utilisation</a> et notre <a href="javascript:void(0)" onclick="openPrivacyModal()" style="color:var(--primary); text-decoration:underline;">Politique de confidentialité</a>.
     </div>
 
   </div><!-- /auth-card -->
 </div><!-- /auth-wrapper -->
+
+<!-- ============================================================
+     MODAL POLITIQUE DE CONFIDENTIALITÉ & MENTIONS LÉGALES
+============================================================ -->
+<div id="privacy-modal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:#0f172a; border:1px solid rgba(255,255,255,0.15); border-radius:18px; max-width:680px; width:100%; max-height:85vh; overflow-y:auto; padding:28px; color:#f1f5f9; box-shadow:0 25px 50px rgba(0,0,0,0.7); position:relative;">
+    <button type="button" onclick="closePrivacyModal()" style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; color:#fff; width:36px; height:36px; border-radius:50%; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center;">&times;</button>
+    
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:18px;">
+      <i class="fa-solid fa-shield-halved" style="font-size:1.8rem; color:#10b981;"></i>
+      <div>
+        <h2 style="font-family:'Outfit',sans-serif; font-size:1.35rem; font-weight:800; color:#fff;">Politique de Confidentialité & CGU</h2>
+        <p style="font-size:0.8rem; color:#94a3b8;">EasyFact Africa — Protection et sécurité de vos données de facturation</p>
+      </div>
+    </div>
+
+    <div style="font-size:0.88rem; line-height:1.6; color:#cbd5e1; display:flex; flex-direction:column; gap:14px;">
+      <h3 style="color:#10b981; font-size:0.95rem; margin-top:8px;">1. Présentation de l'Application</h3>
+      <p>EasyFact Africa est une solution logicielle SaaS professionnelle dédiée à l'émission, à la gestion et au suivi automatisé des devis et factures pour les entreprises, PME et indépendants d'Afrique de l'Ouest (Sénégal, Côte d'Ivoire, etc.). Elle vise à simplifier la gestion comptable tout en respectant les normes fiscales en vigueur (TVA, NINEA, RIB).</p>
+
+      <h3 style="color:#10b981; font-size:0.95rem; margin-top:8px;">2. Collecte & Utilisation des Données</h3>
+      <p>Afin de vous fournir un service optimal, EasyFact collecte uniquement les informations strictement nécessaires à la création de votre compte et à la rédaction de vos documents commerciaux : nom de l'entreprise, adresse e-mail professionnelle, numéro de téléphone, NINEA/RC, et logo d'entreprise. Vos données ne sont jamais vendues ni cédées à des tiers commercialement.</p>
+
+      <h3 style="color:#10b981; font-size:0.95rem; margin-top:8px;">3. Sécurité et Chiffrement de Niveau Bancaire</h3>
+      <p>Toutes les connexions sont chiffrées de bout en bout via le protocole SSL/TLS 256 bits. Les mots de passe sont hachés de manière irréversible avec l'algorithme bcrypt. Vos données sont hébergées dans une infrastructure hautement sécurisée (Supabase DB) avec sauvegardes régulières.</p>
+
+      <h3 style="color:#10b981; font-size:0.95rem; margin-top:8px;">4. Gestion des Cookies & Fichiers de Session</h3>
+      <p>EasyFact utilise des cookies techniques essentiels pour maintenir votre session de connexion active et sécurisée. Aucun cookie publicitaire de traçage tiers n'est déposé sans votre accord explicite.</p>
+
+      <h3 style="color:#10b981; font-size:0.95rem; margin-top:8px;">5. Vos Droits & Modification</h3>
+      <p>Vous disposez à tout moment d'un droit d'accès, de rectification et de suppression de vos données personnelles depuis votre tableau de bord ou en nous contactant directement à l'adresse support@easyfact-africa.com.</p>
+    </div>
+
+    <div style="margin-top:24px; text-align:right;">
+      <button type="button" onclick="closePrivacyModal()" style="background:#10b981; color:#000; font-weight:700; border:none; padding:10px 22px; border-radius:10px; cursor:pointer; font-size:0.88rem;">Fermer et Accepter</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     BANNIÈRE CONSENTEMENT COOKIES
+============================================================ -->
+<div id="cookie-banner" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); width:calc(100% - 40px); max-width:760px; background:rgba(15, 23, 42, 0.95); border:1px solid rgba(16, 185, 129, 0.4); border-radius:16px; padding:16px 20px; color:#fff; z-index:9990; backdrop-filter:blur(12px); box-shadow:0 20px 40px rgba(0,0,0,0.6); align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+  <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:280px;">
+    <i class="fa-solid fa-cookie-bite" style="font-size:1.6rem; color:#fbbf24;"></i>
+    <div style="font-size:0.84rem; color:#cbd5e1; line-height:1.4;">
+      <strong style="color:#fff;">Consentement aux cookies :</strong> EasyFact utilise des cookies essentiels pour sécuriser votre session et enregistrer vos factures. <a href="javascript:void(0)" onclick="openPrivacyModal()" style="color:#10b981; text-decoration:underline;">En savoir plus</a>.
+    </div>
+  </div>
+  <div style="display:flex; gap:10px; align-items:center;">
+    <button type="button" onclick="acceptCookies()" style="background:#10b981; color:#000; font-weight:700; border:none; padding:9px 18px; border-radius:8px; cursor:pointer; font-size:0.84rem; display:flex; align-items:center; gap:6px;">
+      <i class="fa-solid fa-check"></i> Accepter les cookies
+    </button>
+  </div>
+</div>
 
 <script>
 /* ================================================================
@@ -1583,8 +1638,44 @@ const Auth = (() => {
     submitOtp();
   }
 
+  function openPrivacyModal() {
+    const modal = document.getElementById('privacy-modal');
+    if (modal) modal.style.display = 'flex';
+  }
+  function closePrivacyModal() {
+    const modal = document.getElementById('privacy-modal');
+    if (modal) modal.style.display = 'none';
+  }
+  function acceptCookies() {
+    localStorage.setItem('easyfact_cookies_accepted', 'true');
+    const banner = document.getElementById('cookie-banner');
+    if (banner) banner.style.display = 'none';
+  }
+  function checkCookieBanner() {
+    const accepted = localStorage.getItem('easyfact_cookies_accepted');
+    if (!accepted) {
+      const banner = document.getElementById('cookie-banner');
+      if (banner) banner.style.display = 'flex';
+    }
+  }
+
+  // Window global scope bindings
+  window.openPrivacyModal = openPrivacyModal;
+  window.closePrivacyModal = closePrivacyModal;
+  window.acceptCookies = acceptCookies;
+  window.switchTab = switchTab;
+  window.loginWithGoogle = loginWithGoogle;
+
   // Start on load
-  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', () => {
+    init();
+    checkCookieBanner();
+
+    const loginTabBtn = document.getElementById('tab-login-btn');
+    const regTabBtn = document.getElementById('tab-register-btn');
+    if (loginTabBtn) loginTabBtn.addEventListener('click', () => switchTab('login'));
+    if (regTabBtn) regTabBtn.addEventListener('click', () => switchTab('register'));
+  });
 
   // Public API
   return {
