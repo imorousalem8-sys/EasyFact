@@ -148,6 +148,84 @@ class EasyFactApp {
     try { this.checkCookieConsent(); } catch(e) { console.warn('checkCookieConsent warning:', e); }
   }
 
+  bindEvents() {
+    // 1. Sidebar Navigation Links (data-tab)
+    document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const tabId = item.getAttribute('data-tab');
+        if (tabId) this.switchTab(tabId);
+      });
+    });
+
+    // 2. All elements with data-switch-tab attribute
+    document.querySelectorAll('[data-switch-tab]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        const tabId = el.getAttribute('data-switch-tab');
+        if (tabId) this.switchTab(tabId);
+      });
+    });
+
+    // 3. Mobile sidebar toggle button
+    const toggleBtn = document.getElementById('toggle-sidebar');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.toggleSidebar();
+      });
+    }
+
+    // 4. Sidebar backdrop overlay
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.closeSidebar();
+      });
+    }
+
+    // 5. Theme toggle button
+    const themeBtn = document.getElementById('theme-toggle');
+    if (themeBtn) {
+      themeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.toggleTheme();
+      });
+    }
+
+    // 6. Country selector
+    const countrySelect = document.getElementById('country-select');
+    if (countrySelect) {
+      countrySelect.addEventListener('change', (e) => {
+        this.switchCountry(e.target.value);
+      });
+    }
+
+    // 7. Currency selector
+    const currencySelect = document.getElementById('currency-select');
+    if (currencySelect) {
+      currencySelect.addEventListener('change', (e) => {
+        this.currency = e.target.value;
+        this.renderAllViews();
+        this.updateLivePdf();
+      });
+    }
+
+    // 8. Search & Filters for Invoices List
+    const searchInv = document.getElementById('search-invoice');
+    const filterType = document.getElementById('filter-type');
+    const filterStatus = document.getElementById('filter-status');
+
+    if (searchInv) searchInv.addEventListener('input', () => this.renderInvoicesTable());
+    if (filterType) filterType.addEventListener('change', () => this.renderInvoicesTable());
+    if (filterStatus) filterStatus.addEventListener('change', () => this.renderInvoicesTable());
+
+    // 9. Search for Clients List
+    const searchClient = document.getElementById('search-client');
+    if (searchClient) searchClient.addEventListener('input', () => this.renderClientsTable());
+  }
+
   updateHeaderAuthUI() {
     const container = document.getElementById('header-auth-container');
     if (!container) return;
