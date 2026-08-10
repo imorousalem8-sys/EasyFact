@@ -567,10 +567,10 @@
 
     <!-- ==== TABS ==== -->
     <div class="tab-bar" id="tab-bar">
-      <button class="tab-btn active" id="tab-login-btn" onclick="Auth.switchTab('login')">
+      <button type="button" class="tab-btn active" id="tab-login-btn" onclick="switchTab('login')">
         <i class="fa-solid fa-right-to-bracket" style="margin-right:6px"></i> Connexion
       </button>
-      <button class="tab-btn" id="tab-register-btn" onclick="Auth.switchTab('register')">
+      <button type="button" class="tab-btn" id="tab-register-btn" onclick="switchTab('register')">
         <i class="fa-solid fa-user-plus" style="margin-right:6px"></i> Inscription
       </button>
     </div>
@@ -864,15 +864,15 @@
 <!-- ============================================================
      BANNIÈRE CONSENTEMENT COOKIES
 ============================================================ -->
-<div id="cookie-banner" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); width:calc(100% - 40px); max-width:760px; background:rgba(15, 23, 42, 0.95); border:1px solid rgba(16, 185, 129, 0.4); border-radius:16px; padding:16px 20px; color:#fff; z-index:9990; backdrop-filter:blur(12px); box-shadow:0 20px 40px rgba(0,0,0,0.6); align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+<div id="cookie-banner" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); width:calc(100% - 40px); max-width:760px; background:rgba(15, 23, 42, 0.95); border:1px solid rgba(16, 185, 129, 0.4); border-radius:16px; padding:16px 20px; color:#fff; z-index:9990; backdrop-filter:blur(12px); box-shadow:0 20px 40px rgba(0,0,0,0.6); align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; pointer-events:auto;">
   <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:280px;">
     <i class="fa-solid fa-cookie-bite" style="font-size:1.6rem; color:#fbbf24;"></i>
     <div style="font-size:0.84rem; color:#cbd5e1; line-height:1.4;">
-      <strong style="color:#fff;">Consentement aux cookies :</strong> EasyFact utilise des cookies essentiels pour sécuriser votre session et enregistrer vos factures. <a href="javascript:void(0)" onclick="openPrivacyModal()" style="color:#10b981; text-decoration:underline;">En savoir plus</a>.
+      <strong style="color:#fff;">Consentement aux cookies :</strong> EasyFact utilise des cookies essentiels pour sécuriser votre session et enregistrer vos factures. <a href="javascript:void(0)" onclick="openPrivacyModal()" style="color:#10b981; text-decoration:underline; pointer-events:auto;">En savoir plus</a>.
     </div>
   </div>
   <div style="display:flex; gap:10px; align-items:center;">
-    <button type="button" onclick="acceptCookies()" style="background:#10b981; color:#000; font-weight:700; border:none; padding:9px 18px; border-radius:8px; cursor:pointer; font-size:0.84rem; display:flex; align-items:center; gap:6px;">
+    <button type="button" onclick="acceptCookies()" style="background:#10b981; color:#000; font-weight:700; border:none; padding:9px 18px; border-radius:8px; cursor:pointer; font-size:0.84rem; display:flex; align-items:center; gap:6px; pointer-events:auto;">
       <i class="fa-solid fa-check"></i> Accepter les cookies
     </button>
   </div>
@@ -1659,12 +1659,43 @@ const Auth = (() => {
     }
   }
 
-  // Window global scope bindings
+  // Global scope bindings for inline HTML handlers
+  window.switchTab = switchTab;
+  window.submitLogin = submitLogin;
+  window.submitRegister = submitRegister;
+  window.submitOtp = submitOtp;
+  window.resendOtp = resendOtp;
+  window.backToForm = backToForm;
+  window.loginWithGoogle = loginWithGoogle;
+  window.showForgot = showForgot;
+  window.validateEmailField = validateEmailField;
+  window.validateCompany = validateCompany;
+  window.validateConfirm = validateConfirm;
+  window.checkPasswordStrength = checkPasswordStrength;
+  window.togglePwd = togglePwd;
   window.openPrivacyModal = openPrivacyModal;
   window.closePrivacyModal = closePrivacyModal;
   window.acceptCookies = acceptCookies;
-  window.switchTab = switchTab;
-  window.loginWithGoogle = loginWithGoogle;
+
+  window.Auth = {
+    switchTab,
+    submitLogin,
+    submitRegister,
+    submitOtp,
+    resendOtp,
+    autoFillDemoOtp,
+    backToForm,
+    loginWithGoogle,
+    showForgot,
+    validateEmailField,
+    validateCompany,
+    validateConfirm,
+    checkPasswordStrength,
+    togglePwd,
+    openPrivacyModal,
+    closePrivacyModal,
+    acceptCookies,
+  };
 
   // Start on load
   document.addEventListener('DOMContentLoaded', () => {
@@ -1673,8 +1704,12 @@ const Auth = (() => {
 
     const loginTabBtn = document.getElementById('tab-login-btn');
     const regTabBtn = document.getElementById('tab-register-btn');
-    if (loginTabBtn) loginTabBtn.addEventListener('click', () => switchTab('login'));
-    if (regTabBtn) regTabBtn.addEventListener('click', () => switchTab('register'));
+    if (loginTabBtn) {
+      loginTabBtn.onclick = (e) => { e.preventDefault(); switchTab('login'); };
+    }
+    if (regTabBtn) {
+      regTabBtn.onclick = (e) => { e.preventDefault(); switchTab('register'); };
+    }
   });
 
   // Public API
