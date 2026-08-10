@@ -289,32 +289,39 @@ html, body {
 .quota-tip { font-size: 0.68rem; color: var(--text-muted); margin-bottom: 8px; }
 .btn-quota-upgrade { width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 7px; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
 
-.content-area { flex: 1; padding: 20px; overflow-y: auto; background-color: var(--bg-dark); width: 100%; }
-.tab-view { display: none; width: 100%; }
+.content-area { 
+  flex: 1; 
+  padding: 24px; 
+  overflow-y: auto; 
+  background-color: var(--bg-dark); 
+  width: 100%; 
+  min-height: calc(100vh - 70px);
+}
+.tab-view { display: none; width: 100%; min-height: 100%; }
 .tab-view.active { display: block; }
 .view-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
-.view-title { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700; color: #0f172a; }
+.view-title { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700; color: var(--text-main); }
 .view-subtitle { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
 
 /* Dashboard Cards & Tables */
-.empty-state-card { background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 30px; text-align: center; max-width: 600px; margin: 20px auto; box-shadow: var(--shadow-card); }
+.empty-state-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 30px; text-align: center; max-width: 600px; margin: 20px auto; box-shadow: var(--shadow-card); color: var(--text-main); }
 .empty-state-icon { font-size: 2.5rem; color: var(--primary); margin-bottom: 12px; }
-.empty-state-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
+.empty-state-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; color: var(--text-main); }
 .empty-state-text { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 18px; line-height: 1.5; }
 
 .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
-.kpi-card { background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow-card); }
+.kpi-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow-card); }
 .kpi-icon { width: 44px; height: 44px; border-radius: var(--radius-md); background: rgba(16, 185, 129, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
 .kpi-details { display: flex; flex-direction: column; }
 .kpi-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
-.kpi-value { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 2px 0; }
+.kpi-value { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin: 2px 0; }
 .kpi-change { font-size: 0.7rem; color: var(--primary); font-weight: 600; }
 
 .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .custom-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem; }
-.custom-table th { background: #f8fafc; padding: 10px 12px; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border-color); }
+.custom-table th { background: var(--bg-card-hover); padding: 10px 12px; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border-color); }
 .custom-table td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); color: var(--text-main); }
-.custom-table tr:hover { background-color: #f1f5f9; }
+.custom-table tr:hover { background-color: var(--bg-card-hover); }
 
 .badge-status { padding: 3px 8px; border-radius: var(--radius-pill); font-size: 0.72rem; font-weight: 700; display: inline-block; }
 .badge-status.payé { background: rgba(16, 185, 129, 0.15); color: #059669; }
