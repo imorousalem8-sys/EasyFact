@@ -185,13 +185,11 @@ export class AuthService {
       this.otpFallback.set(cleanEmail, { code, expiresAt: expiresAt.getTime() });
     }
 
-    // Send email via Resend
-    try {
-      await this.emailService.sendOtpEmail(cleanEmail, code);
-      this.logger.log(`✅ Email OTP envoyé avec succès à ${cleanEmail}`);
-    } catch (emailErr) {
-      this.logger.error(`❌ Resend email failed for ${cleanEmail}: ${emailErr.message}`);
-    }
+    // Non-blocking high-speed instant dispatch: Trigger email transmission asynchronously
+    // so HTTP response returns in <200ms instantly to the client UI
+    this.emailService.sendOtpEmail(cleanEmail, code)
+      .then(() => this.logger.log(`⚡ Email OTP expédié instantanément à ${cleanEmail}`))
+      .catch(err => this.logger.error(`❌ Resend email error for ${cleanEmail}: ${err.message}`));
 
     return {
       success: true,

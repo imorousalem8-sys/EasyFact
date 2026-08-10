@@ -94,6 +94,11 @@ export class EmailService {
         to: [to],
         subject: `${code} — Votre code de vérification EasyFact Africa`,
         html,
+        headers: {
+          'X-Priority': '1',
+          'X-MSMail-Priority': 'High',
+          'Importance': 'High',
+        },
       });
 
       if (error) {
