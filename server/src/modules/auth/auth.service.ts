@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, UnauthorizedException, ConflictException, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException, ConflictException, NotFoundException, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { SupabaseService } from '../../supabase/supabase.service';
