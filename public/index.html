@@ -86,20 +86,9 @@
           <button class="upgrade-mini-btn" id="btn-upgrade-header">Changer Plan</button>
         </div>
 
-        <!-- Auth State Container (Connexion vs Déconnexion) -->
-        <div id="header-auth-container">
-          <a href="auth.html?force=true" id="header-auth-btn" class="btn" style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 700; font-size: 0.8rem; border-radius: 10px; padding: 7px 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-            <i class="fa-solid fa-user-lock"></i> Connexion / Inscription
-          </a>
-        </div>
-
-        <!-- Enterprise Profile Badge (Statique & Débloqué) -->
-        <div class="user-profile-button" onclick="app.switchTab('settings')" title="Paramètres de l'Entreprise" style="cursor: pointer;">
-          <div class="avatar" style="background: linear-gradient(135deg, #10b981, #059669); color: white;"><i class="fa-solid fa-building-user"></i></div>
-          <div class="user-info">
-            <span class="user-name">Mon Entreprise</span>
-            <span class="company-name"><i class="fa-solid fa-circle-check text-emerald"></i> Espace Actif</span>
-          </div>
+        <!-- Auth State Container (Dynamique : Connexion vs Déconnexion) -->
+        <div id="header-auth-container" style="display:flex; align-items:center; gap:10px;">
+          <!-- Injecté dynamiquement par app.updateHeaderAuthUI() -->
         </div>
       </div>
     </header>

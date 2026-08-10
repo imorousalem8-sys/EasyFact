@@ -231,10 +231,27 @@ class EasyFactApp {
     if (!container) return;
 
     const isLoggedIn = (localStorage.getItem('easyfact_logged_in') === 'true' && localStorage.getItem('easyfact_token'));
+    const email = localStorage.getItem('easyfact_active_user_email') || this.currentUserEmail || 'contact@monentreprise.com';
+    const company = localStorage.getItem('easyfact_company_name') || this.companyProfile.name || 'Mon Entreprise';
+    const initial = company.charAt(0).toUpperCase() || 'E';
+
+    const welcomeTitle = document.getElementById('welcome-title');
+    if (welcomeTitle) {
+      welcomeTitle.innerText = `Bienvenue, ${company} 👋`;
+    }
 
     if (isLoggedIn) {
       container.innerHTML = `
-        <button type="button" onclick="app.logoutUser()" class="btn btn-logout-header" title="Se déconnecter de la plateforme" style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 700; font-size: 0.8rem; border-radius: 10px; padding: 7px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+        <div class="user-profile-button" onclick="app.switchTab('settings')" title="Paramètres de l'Entreprise (${email})" style="cursor: pointer; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
+          <div class="avatar" style="background: linear-gradient(135deg, #10b981, #059669); color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem;">
+            ${initial}
+          </div>
+          <div class="user-info" style="display: flex; flex-direction: column; text-align: left;">
+            <span class="user-name" style="font-weight: 700; font-size: 0.82rem; color: #fff;">${company}</span>
+            <span class="company-name" style="font-size: 0.72rem; color: #10b981;"><i class="fa-solid fa-circle-check text-emerald"></i> ${email}</span>
+          </div>
+        </div>
+        <button type="button" onclick="app.logoutUser()" class="btn btn-logout-header" title="Se déconnecter de la plateforme" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); font-weight: 700; font-size: 0.8rem; border-radius: 10px; padding: 7px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
           <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
         </button>
       `;
@@ -446,29 +463,6 @@ class EasyFactApp {
     localStorage.setItem('easyfact_logged_in', 'true');
     this.switchTab('settings');
     this.showToast(`Espace Entreprise actif : ${this.companyProfile.name || this.currentUserEmail || 'Mon Entreprise'}`, "info");
-  }
-
-  updateHeaderAuthUI() {
-    this.isLoggedIn = true;
-    localStorage.setItem('easyfact_logged_in', 'true');
-
-    const userNameEl = document.getElementById('header-user-name');
-    const userSubEl = document.getElementById('header-user-sub');
-    const avatarEl = document.getElementById('header-avatar');
-    const welcomeTitle = document.getElementById('welcome-title');
-
-    const email = localStorage.getItem('easyfact_active_user_email') || this.currentUserEmail || 'contact@monentreprise.com';
-    const company = localStorage.getItem('easyfact_company_name') || this.companyProfile.name || 'Mon Entreprise';
-
-    if (userNameEl) userNameEl.innerText = company;
-    if (userSubEl) userSubEl.innerHTML = `<i class="fa-solid fa-circle-check text-emerald"></i> ${email}`;
-    if (avatarEl) {
-      const initial = company.charAt(0).toUpperCase() || 'E';
-      avatarEl.innerHTML = `<span style="font-weight:800; font-size:1.1rem;">${initial}</span>`;
-    }
-    if (welcomeTitle) {
-      welcomeTitle.innerText = `Bienvenue, ${company} 👋`;
-    }
   }
 
   switchTab(tabId) {
