@@ -386,13 +386,11 @@
               <p class="view-subtitle">Tableau de bord financier, encaissements Mobile Money et suivi du bénéfice net.</p>
             </div>
             <div class="action-buttons">
-              <button class="btn btn-secondary" onclick="app.loadDemoData()">
-                <i class="fa-solid fa-vial"></i> Charger Données DÉMO
-              </button>
               <button class="btn btn-primary" onclick="app.switchTab('create-invoice')">
                 <i class="fa-solid fa-plus"></i> Nouvelle Facture
               </button>
             </div>
+
           </div>
 
           <!-- 3D African Target Countries Showcase Grid (6 Pays avec Drapeaux Nationaux) -->
@@ -475,9 +473,6 @@
             <button class="btn btn-primary" onclick="app.switchTab('create-invoice')">
               <i class="fa-solid fa-plus"></i> Créer ma première facture
             </button>
-            <div style="margin-top: 14px;">
-              <button class="btn btn-outline-sm" onclick="app.loadDemoData()">Tester avec des données démo</button>
-            </div>
           </div>
 
           <!-- FINANCIAL PERFORMANCE & HEALTH DASHBOARD -->
@@ -492,14 +487,11 @@
               <div class="fi-year-picker">
                 <label for="fi-year-select" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);"><i class="fa-solid fa-calendar-days text-emerald"></i> Période Historique :</label>
                 <select id="fi-year-select" class="form-control fi-dropdown" onchange="app.renderFinancialIntelligence(this.value)" style="font-weight: 800; border-color: var(--primary); cursor: pointer;">
-                  <option value="2026" selected>Année 2026 (En cours)</option>
-                  <option value="2025">Année 2025</option>
-                  <option value="2024">Année 2024</option>
-                  <option value="2023">Année 2023</option>
-                  <option value="2022">Année 2022</option>
+                  <option value="2026" selected>2026</option>
                 </select>
               </div>
             </div>
+
 
             <!-- Dynamic Financial Health Banner -->
             <div class="fi-health-banner" id="fi-health-banner" style="margin: 18px 0; padding: 16px; border-radius: 14px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
@@ -642,10 +634,10 @@
           <div class="view-header">
             <div>
               <h1 class="view-title">Tableau d'Ascension Financière 3D & Bénéfice Net 📈</h1>
-              <p class="view-subtitle">Suivi du bénéfice net, de la marge de rentabilité et des rapports mensuels sur 5 ans max.</p>
+              <p class="view-subtitle">Suivi du bénéfice net, de la marge de rentabilité et des rapports mensuels en temps réel.</p>
             </div>
-            <button class="btn btn-primary" onclick="app.loadDemoData()">
-              <i class="fa-solid fa-vial"></i> Charger Données DÉMO
+            <button class="btn btn-primary" onclick="app.switchTab('create-invoice')">
+              <i class="fa-solid fa-plus"></i> Nouvelle Facture
             </button>
           </div>
 
@@ -660,15 +652,12 @@
               <div class="fi-year-picker">
                 <label for="fi-year-select-tab" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);"><i class="fa-solid fa-calendar-days text-emerald"></i> Période Historique :</label>
                 <select id="fi-year-select-tab" class="form-control fi-dropdown" onchange="app.renderFinancialIntelligence(this.value)" style="font-weight: 800; border-color: var(--primary);">
-                  <option value="2026" selected>Année 2026 (En cours)</option>
-                  <option value="2025">Année 2025</option>
-                  <option value="2024">Année 2024</option>
-                  <option value="2023">Année 2023</option>
-                  <option value="2022">Année 2022</option>
+                  <option value="2026" selected>2026</option>
                 </select>
               </div>
             </div>
           </div>
+
         </section>
 
         <!-- ============================================================

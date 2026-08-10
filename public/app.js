@@ -603,24 +603,6 @@ class EasyFactApp {
         this.userTier = authTier;
       }
 
-      // Auto pre-fill demo data on initial launch so 3D Financial Ascension is immediately active and visible
-      if ((!this.invoices || this.invoices.length === 0) && (!this.expenses || this.expenses.length === 0)) {
-        this.invoices = [
-          { id: 'FAC-2026-001', invoice_number: 'FAC-2026-001', client_name: 'SOCIÉTÉ IVOIRIENNE DE COMMERCE (SIVC)', date: '2026-01-15', amount: 450000, net_to_pay: 450000, status: 'Payé', type: 'Facture', method: 'Wave Mobile Money 🌊' },
-          { id: 'FAC-2026-002', invoice_number: 'FAC-2026-002', client_name: 'Dakar Digital Tech SARL', date: '2026-02-10', amount: 850000, net_to_pay: 850000, status: 'Payé', type: 'Facture', method: 'Orange Money 🍊' },
-          { id: 'FAC-2026-003', invoice_number: 'FAC-2026-003', client_name: 'Cotonou Import Export', date: '2026-03-01', amount: 320000, net_to_pay: 320000, status: 'En attente', type: 'Facture', method: 'MTN Mobile Money 💛' },
-          { id: 'FAC-2025-018', invoice_number: 'FAC-2025-018', client_name: 'Abidjan Logistics Corp', date: '2025-11-20', amount: 1200000, net_to_pay: 1200000, status: 'Payé', type: 'Facture', method: 'Virement / Carte 💳' },
-          { id: 'FAC-2025-019', invoice_number: 'FAC-2025-019', client_name: 'Douala Services SA', date: '2025-12-14', amount: 950000, net_to_pay: 950000, status: 'Payé', type: 'Facture', method: 'Orange Money 🍊' },
-          { id: 'FAC-2024-005', invoice_number: 'FAC-2024-005', client_name: 'Lomé Business Group', date: '2024-08-10', amount: 600000, net_to_pay: 600000, status: 'Payé', type: 'Facture', method: 'Wave Mobile Money 🌊' }
-        ];
-
-        this.expenses = [
-          { id: 'EXP-2026-001', date: '2026-01-05', category: 'Achats & Fournitures', desc: 'Achat équipements informatiques', amountHt: 180000, method: 'Caisse' },
-          { id: 'EXP-2026-002', date: '2026-02-02', category: 'Loyer & Locaux', desc: 'Loyer mensuel bureau d\'Abidjan', amountHt: 250000, method: 'Wave' },
-          { id: 'EXP-2025-010', date: '2025-11-05', category: 'Fournisseurs', desc: 'Achats marchandises stock', amountHt: 400000, method: 'Virement' },
-          { id: 'EXP-2024-003', date: '2024-08-02', category: 'Matériel', desc: 'Renouvellement parc serveur', amountHt: 200000, method: 'Chèque' }
-        ];
-      }
     } catch (e) {
       console.error("Erreur de chargement de mémoire local:", e);
     }
@@ -2246,340 +2228,375 @@ class EasyFactApp {
   }
 
   renderDashboard() {
-    const emptyCard = document.getElementById('dashboard-empty-state');
+    // ── 1. Sélecteur d'année dynamique (basé sur données réelles + année actuelle) ──
+    this._populateYearSelector();
+
+    const currentYear = String(new Date().getFullYear());
+    const yearSelectEl = document.getElementById('fi-year-select');
+    const selectedYear = yearSelectEl?.value || currentYear;
+
+    // ── 2. Welcome state vs contenu principal ──
+    const hasAnyData = (this.invoices.length > 0 || this.expenses.length > 0);
+    const welcomeState = document.getElementById('dashboard-welcome-state');
+    const dashContent  = document.getElementById('dashboard-main-content');
+    if (welcomeState) welcomeState.style.display = hasAnyData ? 'none' : 'block';
+    if (dashContent)  dashContent.style.display  = hasAnyData ? 'block' : 'none';
+
+    // ── 3. Legacy compatibility ──
+    const emptyCard  = document.getElementById('dashboard-empty-state');
     const tablePanel = document.getElementById('dashboard-table-panel');
+    if (emptyCard)  emptyCard.style.display  = hasAnyData ? 'none' : 'block';
+    if (tablePanel) tablePanel.style.display = hasAnyData ? 'block' : 'none';
 
-    if (this.invoices.length === 0 && this.expenses.length === 0) {
-      if (emptyCard) emptyCard.style.display = 'block';
-      if (tablePanel) tablePanel.style.display = 'none';
-    } else {
-      if (emptyCard) emptyCard.style.display = 'none';
-      if (tablePanel) tablePanel.style.display = 'block';
-    }
-
-    const yearSelect = document.getElementById('fi-year-select')?.value || '2026';
-    this.renderFinancialIntelligence(yearSelect);
+    // ── 4. Render ──
+    this.renderFinancialIntelligence(selectedYear);
     this.renderRecentInvoicesTable();
   }
+
+  _populateYearSelector() {
+    const selectors = [
+      document.getElementById('fi-year-select'),
+      document.getElementById('fi-year-select-tab')
+    ].filter(Boolean);
+
+    if (selectors.length === 0) return;
+
+    const currentYear = new Date().getFullYear();
+    const dataYears = new Set();
+
+    (this.invoices || []).forEach(inv => {
+      const y = new Date(inv.date || Date.now()).getFullYear();
+      if (!isNaN(y)) dataYears.add(y);
+    });
+    (this.expenses || []).forEach(exp => {
+      const y = new Date(exp.date || Date.now()).getFullYear();
+      if (!isNaN(y)) dataYears.add(y);
+    });
+
+    // Toujours inclure l'année courante du système
+    dataYears.add(currentYear);
+
+    const years = Array.from(dataYears).sort((a, b) => b - a);
+
+    selectors.forEach(sel => {
+      const prevVal = sel.value || String(currentYear);
+      sel.innerHTML = years.map(y =>
+        `<option value="${y}"${String(y) === prevVal ? ' selected' : ''}>${y}</option>`
+      ).join('');
+    });
+  }
+
+
 
   renderRecentInvoicesTable() {
     const tbody = document.getElementById('recent-invoices-tbody');
     if (!tbody) return;
 
     if (!this.invoices || this.invoices.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" class="text-center" style="padding: 24px; color: #64748b;">Aucune facture enregistrée. Cliquez sur "Nouvelle Facture".</td></tr>`;
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="padding:48px 24px; text-align:center;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+              <div style="width:56px;height:56px;background:rgba(99,102,241,0.1);border-radius:16px;display:flex;align-items:center;justify-content:center;">
+                <i class="fa-solid fa-file-invoice" style="font-size:1.5rem;color:#6366f1;opacity:0.5;"></i>
+              </div>
+              <div>
+                <p style="margin:0;font-weight:700;color:#e2e8f0;font-size:1rem;">Aucune activité pour le moment</p>
+                <p style="margin:6px 0 0;color:#64748b;font-size:0.85rem;">Vos factures et encaissements apparaîtront ici dès votre première opération.</p>
+              </div>
+              <button class="btn btn-primary" onclick="app.switchTab('create-invoice')" style="font-size:0.85rem;padding:8px 20px;">
+                <i class="fa-solid fa-plus"></i> Créer ma première facture
+              </button>
+            </div>
+          </td>
+        </tr>`;
       return;
     }
 
     let html = '';
-    const recent = this.invoices.slice(0, 5);
+    const recent = this.invoices.slice(0, 10);
     recent.forEach(inv => {
-      const isPaid = inv.status === 'Payé';
+      const isPaid    = (inv.status === 'Payé' || inv.status === 'Payée');
+      const isPending = (inv.status === 'En attente');
+      const statusBg    = isPaid ? 'rgba(16,185,129,0.15)' : isPending ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)';
+      const statusColor = isPaid ? '#10b981' : isPending ? '#f59e0b' : '#ef4444';
       html += `
         <tr>
-          <td><strong>${inv.invoice_number || inv.id}</strong></td>
-          <td>${inv.client_name || 'Client'}</td>
-          <td>${inv.date || ''}</td>
-          <td><span class="badge-status" style="background:#e0e7ff; color:#3730a3;">${inv.type || 'Facture'}</span></td>
-          <td><strong>${this.formatCurrency(inv.net_to_pay || inv.amount || 0)}</strong></td>
-          <td>${inv.method || 'Wave / OM / MTN'}</td>
-          <td><span class="badge-status" style="background:${isPaid ? '#dcfce7' : '#fef3c7'}; color:${isPaid ? '#15803d' : '#d97706'}; font-weight:700;">${inv.status}</span></td>
+          <td><strong style="color:#a5b4fc;">${inv.invoice_number || inv.id}</strong></td>
+          <td style="font-weight:600;">${inv.client_name || 'Client'}</td>
+          <td style="color:#94a3b8;">${inv.date || '—'}</td>
+          <td><span style="background:rgba(99,102,241,0.15);color:#a5b4fc;padding:3px 10px;border-radius:6px;font-size:0.78rem;font-weight:600;">${inv.type || 'Facture'}</span></td>
+          <td><strong style="color:#10b981;">${this.formatCurrency(inv.net_to_pay || inv.amount || 0)}</strong></td>
+          <td style="color:#94a3b8;font-size:0.83rem;">${inv.method || '—'}</td>
+          <td><span style="background:${statusBg};color:${statusColor};padding:4px 12px;border-radius:99px;font-size:0.78rem;font-weight:700;">${inv.status}</span></td>
           <td>
-            <button class="btn-icon" onclick="app.shareInvoiceWhatsApp('${inv.invoice_number || inv.id}')" title="Relancer via WhatsApp"><i class="fa-brands fa-whatsapp text-green"></i></button>
+            <button class="btn-icon" onclick="app.shareInvoiceWhatsApp('${inv.invoice_number || inv.id}')" title="Partager via WhatsApp">
+              <i class="fa-brands fa-whatsapp" style="color:#25d366;"></i>
+            </button>
           </td>
-        </tr>
-      `;
+        </tr>`;
     });
     tbody.innerHTML = html;
   }
 
-  renderFinancialIntelligence(selectedYear = '2026') {
+
+  renderFinancialIntelligence(selectedYear) {
+    const currentYear = String(new Date().getFullYear());
+    if (!selectedYear) selectedYear = currentYear;
+
     const yearLabel = document.getElementById('fi-selected-year-label');
     if (yearLabel) yearLabel.innerText = selectedYear;
 
-    const months = [
-      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
-    ];
-
+    const months = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
     const targetYearNum = parseInt(selectedYear);
-    
-    // Filter invoices and expenses by year
-    const yearInvoices = (this.invoices || []).filter(inv => {
-      const d = new Date(inv.date || Date.now());
-      return d.getFullYear() === targetYearNum;
-    });
 
-    const yearExpenses = (this.expenses || []).filter(exp => {
-      const d = new Date(exp.date || Date.now());
-      return d.getFullYear() === targetYearNum;
-    });
+    const yearInvoices = (this.invoices || []).filter(inv => new Date(inv.date || Date.now()).getFullYear() === targetYearNum);
+    const yearExpenses  = (this.expenses  || []).filter(exp => new Date(exp.date || Date.now()).getFullYear() === targetYearNum);
 
-    const totalRevYear = yearInvoices.reduce((acc, curr) => acc + (curr.status === 'Payé' ? (curr.net_to_pay || curr.amount || 0) : 0), 0);
-    const totalExpYear = yearExpenses.reduce((acc, curr) => acc + (curr.amountHt || 0), 0);
-    const totalPendingYear = yearInvoices.reduce((acc, curr) => acc + (curr.status === 'En attente' ? (curr.net_to_pay || curr.amount || 0) : 0), 0);
-    const netProfitYear = totalRevYear - totalExpYear;
+    const totalRevYear     = yearInvoices.reduce((s, i) => s + ((i.status === 'Payé' || i.status === 'Payée') ? (i.net_to_pay || i.amount || 0) : 0), 0);
+    const totalExpYear     = yearExpenses.reduce((s, e)  => s + (e.amountHt || 0), 0);
+    const totalPendingYear = yearInvoices.reduce((s, i) => s + (i.status === 'En attente' ? (i.net_to_pay || i.amount || 0) : 0), 0);
+    const netProfitYear    = totalRevYear - totalExpYear;
+    const hasYearData      = (yearInvoices.length > 0 || yearExpenses.length > 0);
+    const pendingCount     = yearInvoices.filter(i => i.status === 'En attente').length;
+    const paidCount        = yearInvoices.filter(i => i.status === 'Payé' || i.status === 'Payée').length;
 
-    // Update KPI Card Texts
-    const revEl = document.getElementById('kpi-revenue');
-    const expEl = document.getElementById('kpi-expenses');
-    const profEl = document.getElementById('kpi-profit');
-    const pendEl = document.getElementById('kpi-pending');
+    // ── KPI Cards ──
+    const revEl   = document.getElementById('kpi-revenue');
+    const expEl   = document.getElementById('kpi-expenses');
+    const profEl  = document.getElementById('kpi-profit');
+    const pendEl  = document.getElementById('kpi-pending');
+    const revSub  = document.getElementById('kpi-revenue-sub');
+    const expSub  = document.getElementById('kpi-expenses-sub');
+    const profSub = document.getElementById('kpi-profit-sub');
     const pendSub = document.getElementById('kpi-pending-sub');
 
-    if (revEl) revEl.innerText = this.formatCurrency(totalRevYear);
-    if (expEl) expEl.innerText = this.formatCurrency(totalExpYear);
+    if (revEl)  revEl.innerText  = this.formatCurrency(totalRevYear);
+    if (expEl)  expEl.innerText  = this.formatCurrency(totalExpYear);
     if (profEl) profEl.innerText = this.formatCurrency(netProfitYear);
     if (pendEl) pendEl.innerText = this.formatCurrency(totalPendingYear);
-    if (pendSub) pendSub.innerText = `${yearInvoices.filter(i => i.status === 'En attente').length} créance(s) en attente`;
 
-    // Update Financial Health Banner
-    const healthBanner = document.getElementById('fi-health-banner');
-    const healthTitle = document.getElementById('fi-health-title');
-    const healthDesc  = document.getElementById('fi-health-desc');
-    const healthIcon  = document.getElementById('fi-health-icon');
-    const healthBadge = document.getElementById('fi-health-badge');
+    if (revSub)  revSub.innerText  = paidCount   > 0 ? `${paidCount} facture(s) encaissée(s)`   : 'Aucun encaissement enregistré';
+    if (expSub)  expSub.innerText  = yearExpenses.length > 0 ? `${yearExpenses.length} dépense(s)` : 'Aucune dépense enregistrée';
+    if (profSub) profSub.innerText = !hasYearData ? 'En attente de données' : (netProfitYear > 0 ? 'Bénéficiaire ↑' : netProfitYear < 0 ? 'Déficitaire ↓' : 'Solde équilibré');
+    if (pendSub) pendSub.innerText = pendingCount > 0 ? `${pendingCount} créance(s) en attente`  : 'Aucune créance en attente';
 
-    if (netProfitYear > 0) {
-      const marginPct = totalRevYear > 0 ? Math.round((netProfitYear / totalRevYear) * 100) : 100;
-      if (healthBanner) {
-        healthBanner.style.background = 'rgba(59, 130, 246, 0.12)';
-        healthBanner.style.borderColor = 'rgba(59, 130, 246, 0.4)';
-      }
-      if (healthTitle) { healthTitle.innerText = `🚀 Ascension Financière & Profitabilité en Montée (+${this.formatCurrency(netProfitYear)})`; healthTitle.style.color = '#3b82f6'; }
-      if (healthDesc) healthDesc.innerText = `Vos encaissements couvrent largement vos charges. Marge nette de ${marginPct}%. Votre entreprise est en constante progression !`;
-      if (healthIcon) { healthIcon.className = 'fa-solid fa-chart-line fi-health-icon'; healthIcon.style.color = '#3b82f6'; }
-      if (healthBadge) healthBadge.innerHTML = `<span class="badge-status" style="background:#3b82f6; color:#ffffff; padding:6px 14px; border-radius:9999px; font-weight:800;"><i class="fa-solid fa-arrow-trend-up"></i> Ascension Positive 🔵</span>`;
-    } else if (netProfitYear < 0) {
-      if (healthBanner) {
-        healthBanner.style.background = 'rgba(239, 68, 68, 0.12)';
-        healthBanner.style.borderColor = 'rgba(239, 68, 68, 0.4)';
-      }
-      if (healthTitle) { healthTitle.innerText = `🔻 Solde Négatif / Déficit Financier (En Perte : ${this.formatCurrency(netProfitYear)})`; healthTitle.style.color = '#ef4444'; }
-      if (healthDesc) healthDesc.innerText = `Vos dépenses (${this.formatCurrency(totalExpYear)}) dépassent vos encaissements (${this.formatCurrency(totalRevYear)}). Relancez vos créances en attente.`;
-      if (healthIcon) { healthIcon.className = 'fa-solid fa-arrow-trend-down fi-health-icon'; healthIcon.style.color = '#ef4444'; }
-      if (healthBadge) healthBadge.innerHTML = `<span class="badge-status" style="background:#ef4444; color:#ffffff; padding:6px 14px; border-radius:9999px; font-weight:800;"><i class="fa-solid fa-arrow-trend-down"></i> Déficit Négatif 🔴</span>`;
-    } else {
-      if (healthBanner) {
-        healthBanner.style.background = 'rgba(255, 255, 255, 0.05)';
-        healthBanner.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-      }
-      if (healthTitle) { healthTitle.innerText = `⚪ Solde Neutre (0 FCFA)`; healthTitle.style.color = '#ffffff'; }
-      if (healthDesc) healthDesc.innerText = `Aucune opération enregistrée pour ${selectedYear}. Émettez vos factures et enregistrez vos dépenses pour déclencher le calcul de rentabilité.`;
-      if (healthIcon) { healthIcon.className = 'fa-solid fa-minus fi-health-icon'; healthIcon.style.color = '#ffffff'; }
-      if (healthBadge) healthBadge.innerHTML = `<span class="badge-status" style="background:rgba(255,255,255,0.2); color:#ffffff; padding:6px 14px; border-radius:9999px; font-weight:800;"><i class="fa-solid fa-minus"></i> Solde Neutre ⚪</span>`;
+    // Couleur dynamique de la carte bénéfice
+    if (profEl) {
+      if (!hasYearData)           profEl.style.color = '';
+      else if (netProfitYear > 0) profEl.style.color = '#3b82f6';
+      else if (netProfitYear < 0) profEl.style.color = '#ef4444';
+      else                        profEl.style.color = '#ffffff';
     }
 
-    // Monthly 12-Month Table Breakdown & Canvas Trend Line Data
-    const monthlyNetProfits = [];
+    // ── Bannière santé financière ──
+    const healthBanner = document.getElementById('fi-health-banner');
+    const healthTitle  = document.getElementById('fi-health-title');
+    const healthDesc   = document.getElementById('fi-health-desc');
+    const healthIcon   = document.getElementById('fi-health-icon');
+    const healthBadge  = document.getElementById('fi-health-badge');
 
+    if (!hasYearData) {
+      if (healthBanner) { healthBanner.style.background='rgba(255,255,255,0.03)'; healthBanner.style.borderColor='rgba(255,255,255,0.08)'; }
+      if (healthTitle)  { healthTitle.innerText=`Aucune opération enregistrée pour ${selectedYear}`; healthTitle.style.color='#475569'; }
+      if (healthDesc)   { healthDesc.innerText=`Votre tableau de bord se remplira automatiquement dès votre première facture ou dépense enregistrée.`; }
+      if (healthIcon)   { healthIcon.className='fa-solid fa-chart-simple fi-health-icon'; healthIcon.style.color='#334155'; }
+      if (healthBadge)  { healthBadge.innerHTML=`<span style="background:rgba(255,255,255,0.06);color:#475569;padding:5px 14px;border-radius:9999px;font-size:0.8rem;font-weight:600;"><i class="fa-solid fa-hourglass-start"></i> En attente des premières opérations</span>`; }
+    } else if (netProfitYear > 0) {
+      const pct = totalRevYear > 0 ? Math.round((netProfitYear / totalRevYear) * 100) : 0;
+      if (healthBanner) { healthBanner.style.background='rgba(59,130,246,0.12)'; healthBanner.style.borderColor='rgba(59,130,246,0.4)'; }
+      if (healthTitle)  { healthTitle.innerText=`🚀 Profitabilité en Hausse — Bénéfice Net : +${this.formatCurrency(netProfitYear)}`; healthTitle.style.color='#3b82f6'; }
+      if (healthDesc)   { healthDesc.innerText=`Encaissements : ${this.formatCurrency(totalRevYear)} · Dépenses : ${this.formatCurrency(totalExpYear)} · Marge nette : ${pct}%.`; }
+      if (healthIcon)   { healthIcon.className='fa-solid fa-chart-line fi-health-icon'; healthIcon.style.color='#3b82f6'; }
+      if (healthBadge)  { healthBadge.innerHTML=`<span style="background:#3b82f6;color:#fff;padding:6px 14px;border-radius:9999px;font-weight:800;"><i class="fa-solid fa-arrow-trend-up"></i> Positif 🔵</span>`; }
+    } else if (netProfitYear < 0) {
+      if (healthBanner) { healthBanner.style.background='rgba(239,68,68,0.12)'; healthBanner.style.borderColor='rgba(239,68,68,0.4)'; }
+      if (healthTitle)  { healthTitle.innerText=`⚠️ Déficit — Dépenses supérieures aux encaissements`; healthTitle.style.color='#ef4444'; }
+      if (healthDesc)   { healthDesc.innerText=`Dépenses : ${this.formatCurrency(totalExpYear)} · Encaissements : ${this.formatCurrency(totalRevYear)} · Écart : ${this.formatCurrency(Math.abs(netProfitYear))}. Relancez vos créances en attente.`; }
+      if (healthIcon)   { healthIcon.className='fa-solid fa-arrow-trend-down fi-health-icon'; healthIcon.style.color='#ef4444'; }
+      if (healthBadge)  { healthBadge.innerHTML=`<span style="background:#ef4444;color:#fff;padding:6px 14px;border-radius:9999px;font-weight:800;"><i class="fa-solid fa-arrow-trend-down"></i> Déficitaire 🔴</span>`; }
+    } else {
+      if (healthBanner) { healthBanner.style.background='rgba(255,255,255,0.05)'; healthBanner.style.borderColor='rgba(255,255,255,0.15)'; }
+      if (healthTitle)  { healthTitle.innerText=`Solde équilibré — Encaissements = Dépenses`; healthTitle.style.color='#ffffff'; }
+      if (healthDesc)   { healthDesc.innerText=`Votre solde est parfaitement à l'équilibre pour ${selectedYear}. Continuez à enregistrer vos opérations.`; }
+      if (healthIcon)   { healthIcon.className='fa-solid fa-equals fi-health-icon'; healthIcon.style.color='#94a3b8'; }
+      if (healthBadge)  { healthBadge.innerHTML=`<span style="background:rgba(255,255,255,0.1);color:#94a3b8;padding:6px 14px;border-radius:9999px;font-weight:700;"><i class="fa-solid fa-equals"></i> Équilibré ⚪</span>`; }
+    }
+
+    // ── Tableau mensuel ──
+    const monthlyNetProfits = [];
     const tbody = document.getElementById('fi-monthly-tbody');
     if (tbody) {
-      let html = '';
-      months.forEach((mName, idx) => {
-        const mInvoices = yearInvoices.filter(inv => {
-          const d = new Date(inv.date || Date.now());
-          return d.getMonth() === idx;
-        });
-
-        const mExpenses = yearExpenses.filter(exp => {
-          const d = new Date(exp.date || Date.now());
-          return d.getMonth() === idx;
-        });
-
-        const mRev = mInvoices.reduce((acc, curr) => acc + (curr.status === 'Payé' ? (curr.net_to_pay || curr.amount || 0) : 0), 0);
-        const mExp = mExpenses.reduce((acc, curr) => acc + (curr.amountHt || 0), 0);
-        const mProfit = mRev - mExp;
-
-        monthlyNetProfits.push(mProfit);
-
-        let trendBadge = `<span style="color:#ffffff; font-weight:600;"><i class="fa-solid fa-minus"></i> 0 FCFA</span>`;
-        if (mProfit > 0) {
-          trendBadge = `<span style="color:#3b82f6; font-weight:800;"><i class="fa-solid fa-arrow-trend-up"></i> +${this.formatCurrency(mProfit)} (Positif 🔵)</span>`;
-        } else if (mProfit < 0) {
-          trendBadge = `<span style="color:#ef4444; font-weight:800;"><i class="fa-solid fa-arrow-trend-down"></i> ${this.formatCurrency(mProfit)} (Négatif 🔴)</span>`;
-        }
-
-        html += `
+      if (!hasYearData) {
+        tbody.innerHTML = `
           <tr>
-            <td><strong>${mName} ${selectedYear}</strong></td>
-            <td style="color:#10b981; font-weight:800;">${this.formatCurrency(mRev)}</td>
-            <td style="color:#64748b; font-weight:600;">${this.formatCurrency(mExp)}</td>
-            <td style="color:${mProfit > 0 ? '#3b82f6' : (mProfit < 0 ? '#ef4444' : '#ffffff')}; font-weight:800;">${this.formatCurrency(mProfit)}</td>
-            <td>${trendBadge}</td>
-            <td>
-              <button class="btn btn-outline-sm" onclick="app.exportMonthlyReport('${mName}', '${selectedYear}', ${mRev}, ${mExp}, ${mProfit})">
-                <i class="fa-solid fa-file-pdf"></i> Rapport PDF
-              </button>
+            <td colspan="6" style="padding:40px 24px;text-align:center;">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+                <i class="fa-solid fa-calendar-xmark" style="font-size:2rem;color:#1e293b;"></i>
+                <p style="margin:0;color:#64748b;font-size:0.9rem;">Aucune donnée enregistrée pour <strong style="color:#94a3b8;">${selectedYear}</strong>.</p>
+                <p style="margin:0;color:#475569;font-size:0.82rem;">Le tableau mensuel se remplira automatiquement à chaque opération.</p>
+              </div>
             </td>
-          </tr>
-        `;
-      });
-      tbody.innerHTML = html;
+          </tr>`;
+        for (let i = 0; i < 12; i++) monthlyNetProfits.push(0);
+      } else {
+        let html = '';
+        months.forEach((mName, idx) => {
+          const mInv = yearInvoices.filter(i => new Date(i.date || Date.now()).getMonth() === idx);
+          const mExp = yearExpenses.filter(e => new Date(e.date || Date.now()).getMonth() === idx);
+          const mRev    = mInv.reduce((s, i) => s + ((i.status === 'Payé' || i.status === 'Payée') ? (i.net_to_pay || i.amount || 0) : 0), 0);
+          const mExpAmt = mExp.reduce((s, e) => s + (e.amountHt || 0), 0);
+          const mProfit = mRev - mExpAmt;
+          monthlyNetProfits.push(mProfit);
+
+          const hasMData = (mRev > 0 || mExpAmt > 0);
+          if (!hasMData) {
+            html += `<tr style="opacity:0.35;"><td style="color:#475569;"><em>${mName}</em></td><td>—</td><td>—</td><td>—</td><td style="color:#334155;font-size:0.78rem;">Aucune opération</td><td></td></tr>`;
+            return;
+          }
+
+          let badge;
+          if (mProfit > 0)      badge = `<span style="color:#3b82f6;font-weight:800;"><i class="fa-solid fa-arrow-trend-up"></i> +${this.formatCurrency(mProfit)}</span>`;
+          else if (mProfit < 0) badge = `<span style="color:#ef4444;font-weight:800;"><i class="fa-solid fa-arrow-trend-down"></i> ${this.formatCurrency(mProfit)}</span>`;
+          else                   badge = `<span style="color:#94a3b8;">Équilibré</span>`;
+
+          html += `
+            <tr>
+              <td><strong>${mName} ${selectedYear}</strong></td>
+              <td style="color:#10b981;font-weight:800;">${this.formatCurrency(mRev)}</td>
+              <td style="color:#f87171;font-weight:600;">${this.formatCurrency(mExpAmt)}</td>
+              <td style="color:${mProfit>0?'#3b82f6':mProfit<0?'#ef4444':'#fff'};font-weight:800;">${this.formatCurrency(mProfit)}</td>
+              <td>${badge}</td>
+              <td>
+                <button class="btn btn-outline-sm" onclick="app.exportMonthlyReport('${mName}','${selectedYear}',${mRev},${mExpAmt},${mProfit})">
+                  <i class="fa-solid fa-file-pdf"></i> Rapport
+                </button>
+              </td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+      }
     }
 
-    // Render Canvas 3D Trend Curve Animation
-    this.renderFinancialTrendChart(monthlyNetProfits, netProfitYear);
+    // ── Graphique conditionnel ──
+    this.renderFinancialTrendChart(monthlyNetProfits, netProfitYear, hasYearData);
   }
 
-  renderFinancialTrendChart(monthlyData, netProfitVal = 0) {
-    const canvas = document.getElementById('fi-trend-canvas');
-    const tag = document.getElementById('fi-chart-trend-tag');
+  renderFinancialTrendChart(monthlyData, netProfitVal = 0, hasData = false) {
+    const canvas     = document.getElementById('fi-trend-canvas');
+    const tag        = document.getElementById('fi-chart-trend-tag');
+    const emptyChart = document.getElementById('fi-chart-empty');
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    // ── Pas de données réelles : masquer la courbe & afficher empty state ──
+    const hasRealData = hasData && monthlyData && monthlyData.some(v => v !== 0);
+    if (!hasRealData) {
+      canvas.style.display = 'none';
+      if (tag) tag.style.display = 'none';
+      if (emptyChart) {
+        emptyChart.style.display = 'flex';
+      } else {
+        const parent = canvas.parentElement;
+        if (parent && !parent.querySelector('#fi-chart-empty')) {
+          const emp = document.createElement('div');
+          emp.id = 'fi-chart-empty';
+          emp.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;min-height:180px;padding:32px;';
+          emp.innerHTML = `
+            <i class="fa-solid fa-chart-area" style="font-size:2.5rem;color:#1e293b;"></i>
+            <div style="text-align:center;">
+              <p style="margin:0;font-weight:700;color:#475569;font-size:0.95rem;">Évolution de votre activité</p>
+              <p style="margin:6px 0 0;color:#334155;font-size:0.82rem;">Votre courbe de tendance apparaîtra ici après vos premières opérations.</p>
+            </div>
+            <button class="btn btn-primary" onclick="app.switchTab('create-invoice')" style="font-size:0.8rem;padding:8px 18px;">
+              <i class="fa-solid fa-plus"></i> Créer une facture
+            </button>`;
+          parent.appendChild(emp);
+        }
+      }
+      return;
+    }
+
+    // ── Afficher le graphique ──
+    canvas.style.display = 'block';
+    if (emptyChart) emptyChart.style.display = 'none';
+    if (tag) tag.style.display = '';
+
+    const ctx  = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = rect.width * dpr;
+    const dpr  = window.devicePixelRatio || 1;
+    canvas.width  = rect.width  * dpr;
     canvas.height = rect.height * dpr;
     ctx.scale(dpr, dpr);
 
-    const width = rect.width;
+    const width  = rect.width;
     const height = rect.height;
 
-    const vals = (monthlyData && monthlyData.length === 12) ? monthlyData : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    const maxVal = Math.max(...vals, 100000);
+    const vals   = (monthlyData && monthlyData.length === 12) ? monthlyData : new Array(12).fill(0);
+    const maxVal = Math.max(...vals, 1);
     const minVal = Math.min(...vals, 0);
-    const range = (maxVal - minVal) || 1;
+    const range  = (maxVal - minVal) || 1;
 
-    const points = vals.map((v, i) => {
-      const x = (i / (vals.length - 1)) * (width - 40) + 20;
-      const y = height - 30 - ((v - minVal) / range) * (height - 60);
-      return { x, y, val: v };
-    });
+    const points = vals.map((v, i) => ({
+      x: (i / (vals.length - 1)) * (width - 40) + 20,
+      y: height - 30 - ((v - minVal) / range) * (height - 60),
+      val: v
+    }));
 
     const isPositive = netProfitVal > 0;
     const isNegative = netProfitVal < 0;
-
-    const lineColor = isPositive ? '#3b82f6' : (isNegative ? '#ef4444' : '#ffffff');
-    const gradientTop = isPositive ? 'rgba(59, 130, 246, 0.35)' : (isNegative ? 'rgba(239, 68, 68, 0.35)' : 'rgba(255, 255, 255, 0.15)');
+    const lineColor  = isPositive ? '#3b82f6' : (isNegative ? '#ef4444' : '#94a3b8');
+    const gradTop    = isPositive ? 'rgba(59,130,246,0.3)' : (isNegative ? 'rgba(239,68,68,0.3)' : 'rgba(148,163,184,0.15)');
 
     if (tag) {
-      if (isPositive) {
-        tag.style.background = 'rgba(59, 130, 246, 0.15)';
-        tag.style.borderColor = '#3b82f6';
-        tag.style.color = '#3b82f6';
-        tag.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> TENDANCE EN MONTÉE (POSITIF 🔵)`;
-      } else if (isNegative) {
-        tag.style.background = 'rgba(239, 68, 68, 0.15)';
-        tag.style.borderColor = '#ef4444';
-        tag.style.color = '#ef4444';
-        tag.innerHTML = `<i class="fa-solid fa-arrow-trend-down"></i> SOLDE NÉGATIF / DÉFICIT 🔴`;
-      } else {
-        tag.style.background = 'rgba(255, 255, 255, 0.08)';
-        tag.style.borderColor = 'rgba(255, 255, 255, 0.25)';
-        tag.style.color = '#ffffff';
-        tag.innerHTML = `<i class="fa-solid fa-minus"></i> SOLDE NEUTRE (0 FCFA ⚪)`;
-      }
+      if (isPositive)      { tag.style.cssText='background:rgba(59,130,246,0.15);border-color:#3b82f6;color:#3b82f6;'; tag.innerHTML=`<i class="fa-solid fa-arrow-trend-up"></i> TENDANCE POSITIVE 🔵`; }
+      else if (isNegative) { tag.style.cssText='background:rgba(239,68,68,0.15);border-color:#ef4444;color:#ef4444;'; tag.innerHTML=`<i class="fa-solid fa-arrow-trend-down"></i> DÉFICIT 🔴`; }
+      else                 { tag.style.cssText='background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.2);color:#94a3b8;'; tag.innerHTML=`<i class="fa-solid fa-equals"></i> ÉQUILIBRÉ`; }
     }
 
     let progress = 0;
     const animate = () => {
-      progress += 0.05;
-      if (progress > 1) progress = 1;
-
+      progress = Math.min(progress + 0.05, 1);
       ctx.clearRect(0, 0, width, height);
 
-      // Gridlines
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
-      for (let y = 30; y < height - 20; y += 40) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
-      }
+      // Grille
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+      for (let gy = 30; gy < height - 20; gy += 40) { ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(width,gy); ctx.stroke(); }
       ctx.setLineDash([]);
 
-      const limitIdx = Math.floor(progress * (points.length - 1));
-      const subPoints = points.slice(0, limitIdx + 2);
+      const subPts = points.slice(0, Math.floor(progress * (points.length - 1)) + 2);
 
-      if (subPoints.length > 1) {
-        // Area Gradient Fill
-        const gradient = ctx.createLinearGradient(0, 0, 0, height);
-        gradient.addColorStop(0, gradientTop);
-        gradient.addColorStop(1, 'rgba(15, 23, 42, 0)');
+      if (subPts.length > 1) {
+        const grad = ctx.createLinearGradient(0,0,0,height);
+        grad.addColorStop(0, gradTop); grad.addColorStop(1, 'rgba(15,23,42,0)');
 
-        ctx.beginPath();
-        ctx.moveTo(subPoints[0].x, height - 20);
-        ctx.lineTo(subPoints[0].x, subPoints[0].y);
+        ctx.beginPath(); ctx.moveTo(subPts[0].x, height-20); ctx.lineTo(subPts[0].x, subPts[0].y);
+        for (let i = 0; i < subPts.length-1; i++) ctx.quadraticCurveTo(subPts[i].x,subPts[i].y,(subPts[i].x+subPts[i+1].x)/2,(subPts[i].y+subPts[i+1].y)/2);
+        const lastP = subPts[subPts.length-1];
+        ctx.lineTo(lastP.x,lastP.y); ctx.lineTo(lastP.x,height-20); ctx.closePath();
+        ctx.fillStyle = grad; ctx.fill();
 
-        for (let i = 0; i < subPoints.length - 1; i++) {
-          const xc = (subPoints[i].x + subPoints[i + 1].x) / 2;
-          const yc = (subPoints[i].y + subPoints[i + 1].y) / 2;
-          ctx.quadraticCurveTo(subPoints[i].x, subPoints[i].y, xc, yc);
-        }
+        ctx.beginPath(); ctx.moveTo(subPts[0].x,subPts[0].y);
+        for (let i = 0; i < subPts.length-1; i++) ctx.quadraticCurveTo(subPts[i].x,subPts[i].y,(subPts[i].x+subPts[i+1].x)/2,(subPts[i].y+subPts[i+1].y)/2);
+        ctx.strokeStyle=lineColor; ctx.lineWidth=3.5; ctx.shadowColor=lineColor; ctx.shadowBlur=10;
+        ctx.stroke(); ctx.shadowBlur=0;
 
-        const lastP = subPoints[subPoints.length - 1];
-        ctx.lineTo(lastP.x, lastP.y);
-        ctx.lineTo(lastP.x, height - 20);
-        ctx.closePath();
-        ctx.fillStyle = gradient;
-        ctx.fill();
-
-        // Neon Curve Line
-        ctx.beginPath();
-        ctx.moveTo(subPoints[0].x, subPoints[0].y);
-
-        for (let i = 0; i < subPoints.length - 1; i++) {
-          const xc = (subPoints[i].x + subPoints[i + 1].x) / 2;
-          const yc = (subPoints[i].y + subPoints[i + 1].y) / 2;
-          ctx.quadraticCurveTo(subPoints[i].x, subPoints[i].y, xc, yc);
-        }
-
-        ctx.strokeStyle = lineColor;
-        ctx.lineWidth = 3.5;
-        ctx.shadowColor = lineColor;
-        ctx.shadowBlur = 10;
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        // Glowing Dots
-        subPoints.forEach((p) => {
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-          ctx.fillStyle = '#ffffff';
-          ctx.shadowColor = lineColor;
-          ctx.shadowBlur = 8;
-          ctx.fill();
-          ctx.shadowBlur = 0;
+        subPts.forEach(p => {
+          ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2);
+          ctx.fillStyle='#fff'; ctx.shadowColor=lineColor; ctx.shadowBlur=8; ctx.fill(); ctx.shadowBlur=0;
         });
       }
 
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
+      if (progress < 1) requestAnimationFrame(animate);
     };
-
     animate();
   }
 
-  loadDemoData() {
-    this.invoices = [
-      { id: 'FAC-2026-001', invoice_number: 'FAC-2026-001', client_name: 'SOCIÉTÉ IVOIRIENNE DE COMMERCE (SIVC)', date: '2026-01-15', amount: 450000, net_to_pay: 450000, status: 'Payé', type: 'Facture', method: 'Wave Mobile Money 🌊' },
-      { id: 'FAC-2026-002', invoice_number: 'FAC-2026-002', client_name: 'Dakar Digital Tech SARL', date: '2026-02-10', amount: 850000, net_to_pay: 850000, status: 'Payé', type: 'Facture', method: 'Orange Money 🍊' },
-      { id: 'FAC-2026-003', invoice_number: 'FAC-2026-003', client_name: 'Cotonou Import Export', date: '2026-03-01', amount: 320000, net_to_pay: 320000, status: 'En attente', type: 'Facture', method: 'MTN Mobile Money 💛' },
-      { id: 'FAC-2025-018', invoice_number: 'FAC-2025-018', client_name: 'Abidjan Logistics Corp', date: '2025-11-20', amount: 1200000, net_to_pay: 1200000, status: 'Payé', type: 'Facture', method: 'Virement / Carte 💳' },
-      { id: 'FAC-2025-019', invoice_number: 'FAC-2025-019', client_name: 'Douala Services SA', date: '2025-12-14', amount: 950000, net_to_pay: 950000, status: 'Payé', type: 'Facture', method: 'Orange Money 🍊' },
-      { id: 'FAC-2024-005', invoice_number: 'FAC-2024-005', client_name: 'Lomé Business Group', date: '2024-08-10', amount: 600000, net_to_pay: 600000, status: 'Payé', type: 'Facture', method: 'Wave Mobile Money 🌊' }
-    ];
 
-    this.expenses = [
-      { id: 'EXP-2026-001', date: '2026-01-05', category: 'Achats & Fournitures', desc: 'Achat équipements informatiques', amountHt: 180000, method: 'Caisse' },
-      { id: 'EXP-2026-002', date: '2026-02-02', category: 'Loyer & Locaux', desc: 'Loyer mensuel bureau d\'Abidjan', amountHt: 250000, method: 'Wave' },
-      { id: 'EXP-2025-010', date: '2025-11-05', category: 'Fournisseurs', desc: 'Achats marchandises stock', amountHt: 400000, method: 'Virement' },
-      { id: 'EXP-2024-003', date: '2024-08-02', category: 'Matériel', desc: 'Renouvellement parc serveur', amountHt: 200000, method: 'Chèque' }
-    ];
-
-    this.saveToStorage();
-    this.renderAllViews();
-    this.showToast("🎉 Données DÉMO chargées avec succès ! Le tableau d'ascension financière sur 5 ans est actif.", "success");
-  }
 
   exportMonthlyReport(monthName, year, rev, exp, profit) {
     const compName = this.companyProfile?.name || 'Mon Entreprise';
     const msg = `📊 *RAPPORT DE PERFORMANCE FINANCIÈRE*\n` +
+
       `🏢 *Entreprise:* ${compName}\n` +
       `📅 *Période:* ${monthName} ${year}\n` +
       `-----------------------------------\n` +
@@ -2706,11 +2723,15 @@ class EasyFactApp {
     const client = prompt("Nom de l'entreprise destinataire du Bon de Livraison :");
     if (!client) return;
 
+    const linkedInvoiceId = (this.invoices.length > 0)
+      ? (this.invoices[0].invoice_number || this.invoices[0].id)
+      : '—';
+
     const newBl = {
-      id: 'BL-' + new Date().getFullYear() + '-00' + (this.deliveryNotes.length + 1),
+      id: 'BL-' + new Date().getFullYear() + '-' + String(this.deliveryNotes.length + 1).padStart(3, '0'),
       client: client,
       date: new Date().toISOString().split('T')[0],
-      invoiceId: 'FAC-2026-001',
+      invoiceId: linkedInvoiceId,
       status: 'En attente de réception'
     };
 
@@ -2723,18 +2744,18 @@ class EasyFactApp {
 
   // SYSCOHADA Export Engine
   downloadSyscohadaExport() {
+    if (this.invoices.length === 0) {
+      this.showToast("⚠️ Aucune écriture comptable enregistrée. Émettez d'abord votre première facture.", "info");
+      return;
+    }
+
     const format = document.getElementById('export-format')?.value || 'csv';
     let csvContent = "Data:text/csv;charset=utf-8,Date;Compte SYSCOHADA;Intitule Compte;Piece;Libelle;Debit FCFA;Credit FCFA\n";
 
-    if (this.invoices.length === 0) {
-      csvContent += `2026-07-29;701000;Ventes de Prestations;FAC-2026-001;Facture Client Test;0;1500000\n`;
-      csvContent += `2026-07-29;443100;TVA Facturee;FAC-2026-001;TVA 18%;0;270000\n`;
-      csvContent += `2026-07-29;411100;Clients Locaux;FAC-2026-001;Creance Client;1770000;0\n`;
-    } else {
-      this.invoices.forEach(inv => {
-        csvContent += `${inv.date};701000;Ventes Prestations;${inv.id};${inv.client};0;${inv.amount}\n`;
-      });
-    }
+    this.invoices.forEach(inv => {
+      csvContent += `${inv.date || ''};701000;Ventes Prestations;${inv.invoice_number || inv.id};${inv.client_name || 'Client'};0;${inv.net_to_pay || inv.amount || 0}\n`;
+    });
+
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
