@@ -35,6 +35,9 @@ export class AuthService {
   // OTP fallback en mémoire (si table otp_codes indisponible)
   private otpFallback = new Map<string, { code: string; expiresAt: number }>();
 
+  // Fallback réinitialisation de mot de passe en mémoire
+  private resetFallback = new Map<string, { code: string; expiresAt: number }>();
+
   // Blacklist des emails jetables
   private disposableEmailDomains = new Set([
     'yopmail.com', 'yopmail.fr', 'yopmail.net',
@@ -138,6 +141,21 @@ export class AuthService {
   // ============================================================
   async sendVerificationCode(email: string) {
     const cleanEmail = this.validateEmailStrict(email);
+
+    // Check if user account already exists in database
+    try {
+      const { data: existingUser } = await this.supabase.getClient()
+        .from('users')
+        .select('id, email')
+        .eq('email', cleanEmail)
+        .single();
+
+      if (existingUser) {
+        throw new ConflictException('DUPLICATE_USER: Ce compte existe déjà. Veuillez vous connecter à votre compte.');
+      }
+    } catch (checkErr) {
+      if (checkErr instanceof ConflictException) throw checkErr;
+    }
 
     // Rate Limiting: Max 3 resend requests per 15 minutes
     const now = Date.now();
@@ -552,5 +570,72 @@ export class AuthService {
     } catch (err) {
       return { id: userId, companyName: 'Mon Entreprise', tier: 'starter', invoicesUsedThisMonth: 0, invoicesLimit: 5 };
     }
+  }
+
+  // ============================================================
+  // RÉINITIALISATION DE MOT DE PASSE (MOT DE PASSE OUBLIÉ)
+  // ============================================================
+  async requestPasswordReset(email: string) {
+    const cleanEmail = this.validateEmailStrict(email);
+
+    // Check user exists
+    const { data: user } = await this.supabase.getClient()
+      .from('users')
+      .select('id, email')
+      .eq('email', cleanEmail)
+      .single();
+
+    if (!user) {
+      throw new NotFoundException(`Aucun compte EasyFact n'est associé à l'adresse ${cleanEmail}. Veuillez vérifier l'adresse ou créer un compte.`);
+    }
+
+    const crypto = require('crypto');
+    const code = String(crypto.randomInt(100000, 1000000));
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    this.resetFallback.set(cleanEmail, { code, expiresAt });
+
+    // Send reset email via Resend
+    this.emailService.sendPasswordResetEmail(cleanEmail, code)
+      .then(() => this.logger.log(`⚡ Email de réinitialisation envoyé à ${cleanEmail}`))
+      .catch(err => this.logger.error(`❌ Erreur d'envoi réinitialisation pour ${cleanEmail}: ${err.message}`));
+
+    return {
+      success: true,
+      message: `Un code de réinitialisation à 6 chiffres a été envoyé par e-mail à ${cleanEmail}.`,
+    };
+  }
+
+  async resetPassword(email: string, code: string, newPassword: string) {
+    const cleanEmail = this.validateEmailStrict(email);
+
+    if (!newPassword || newPassword.length < 6) {
+      throw new BadRequestException('Le nouveau mot de passe doit contenir au moins 6 caractères.');
+    }
+
+    const record = this.resetFallback.get(cleanEmail);
+    if (!record || record.code !== String(code).trim() || Date.now() > record.expiresAt) {
+      throw new BadRequestException('Code de réinitialisation invalide ou expiré (durée max: 10 minutes).');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    const { error } = await this.supabase.getClient()
+      .from('users')
+      .update({ password_hash: hashedPassword })
+      .eq('email', cleanEmail);
+
+    if (error) {
+      this.logger.error(`❌ Erreur mise à jour mot de passe: ${error.message}`);
+      throw new HttpException('Échec de la mise à jour du mot de passe.', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    this.resetFallback.delete(cleanEmail);
+    this.logger.log(`✅ Mot de passe réinitialisé avec succès pour ${cleanEmail}`);
+
+    return {
+      success: true,
+      message: 'Votre mot de passe a été réinitialisé avec succès ! Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.',
+    };
   }
 }

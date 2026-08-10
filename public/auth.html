@@ -759,6 +759,83 @@
     </div>
 
     <!-- ============================================================
+         PANEL 3 — MOT DE PASSE OUBLIÉ & RÉINITIALISATION
+    ============================================================ -->
+    <div class="tab-panel" id="panel-forgot">
+      <h1 class="panel-title">Mot de passe oublié ? 🔐</h1>
+      <p class="panel-subtitle">Saisissez votre e-mail pour recevoir votre code à 6 chiffres de réinitialisation.</p>
+
+      <div class="alert alert-error" id="forgot-alert">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span id="forgot-alert-msg"></span>
+      </div>
+
+      <!-- Étape 1: Demande du code -->
+      <form id="forgot-form-step1" onsubmit="Auth.submitRequestReset(event)">
+        <div class="form-group">
+          <label class="form-label" for="forgot-email">Adresse email du compte</label>
+          <div class="input-wrapper">
+            <input type="email" id="forgot-email" class="form-input" placeholder="vous@entreprise.com" required>
+            <i class="fa-solid fa-envelope input-icon"></i>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary" id="forgot-btn1">
+          <span class="spinner" id="forgot-spinner1"></span>
+          <span class="btn-text">Recevoir le code à 6 chiffres →</span>
+        </button>
+        <button type="button" class="btn-back" onclick="Auth.switchTab('login')" style="width: 100%; margin-top: 10px;">
+          ← Retour à la connexion
+        </button>
+      </form>
+
+      <!-- Étape 2: Saisie du code + Nouveau mot de passe -->
+      <form id="forgot-form-step2" onsubmit="Auth.submitResetPassword(event)" style="display: none;">
+        <div style="background: rgba(16,185,129,0.1); border: 1px dashed #10b981; border-radius: 10px; padding: 12px; margin-bottom: 16px; font-size: 0.82rem; color: #6ee7b7; text-align: center;">
+          🔑 Code de réinitialisation envoyé par e-mail à <strong id="reset-email-target"></strong>.
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reset-code-input">Code à 6 chiffres reçu par e-mail *</label>
+          <div class="input-wrapper">
+            <input type="text" id="reset-code-input" class="form-input" placeholder="123456" maxlength="6" style="text-align: center; font-size: 1.4rem; font-weight: 800; letter-spacing: 6px;" required>
+            <i class="fa-solid fa-key input-icon"></i>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reset-pwd-input">Nouveau mot de passe *</label>
+          <div class="input-wrapper">
+            <input type="password" id="reset-pwd-input" class="form-input has-toggle" placeholder="••••••••••" required minlength="6">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <button type="button" class="toggle-password" onclick="Auth.togglePwd('reset-pwd-input', this)">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reset-pwd-confirm">Confirmer le nouveau mot de passe *</label>
+          <div class="input-wrapper">
+            <input type="password" id="reset-pwd-confirm" class="form-input has-toggle" placeholder="••••••••••" required minlength="6">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <button type="button" class="toggle-password" onclick="Auth.togglePwd('reset-pwd-confirm', this)">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary" id="forgot-btn2">
+          <span class="spinner" id="forgot-spinner2"></span>
+          <span class="btn-text">Enregistrer le nouveau mot de passe →</span>
+        </button>
+        <button type="button" class="btn-back" onclick="Auth.showForgotStep1()" style="width: 100%; margin-top: 10px;">
+          ← Modifier l'adresse e-mail
+        </button>
+      </form>
+    </div>
+
+    <!-- ============================================================
          OTP STEP
     ============================================================ -->
     <div class="otp-step" id="otp-step">
@@ -956,12 +1033,17 @@ const Auth = (() => {
   // ---- Tab switching ----
   function switchTab(tab) {
     state.mode = tab;
+    document.getElementById('tab-bar').style.display = (tab === 'forgot') ? 'none' : 'flex';
     document.getElementById('tab-login-btn').classList.toggle('active', tab === 'login');
     document.getElementById('tab-register-btn').classList.toggle('active', tab === 'register');
     document.getElementById('panel-login').classList.toggle('active', tab === 'login');
     document.getElementById('panel-register').classList.toggle('active', tab === 'register');
+    document.getElementById('panel-forgot').classList.toggle('active', tab === 'forgot');
+    document.getElementById('otp-step').classList.remove('active');
+    document.getElementById('auth-footer').style.display = 'block';
     clearAlert('login-alert');
     clearAlert('register-alert');
+    clearAlert('forgot-alert');
   }
 
   // ---- Show/hide alert ----
@@ -1544,26 +1626,86 @@ const Auth = (() => {
   }
 
   // ============================================================
-  // FORGOT PASSWORD
+  // FORGOT PASSWORD FLOW
   // ============================================================
   function showForgot() {
-    const email = document.getElementById('login-email').value.trim();
-    if (email && isValidEmail(email)) {
-      if (confirm(`Envoyer un lien de réinitialisation à ${email} ?`)) {
-        api('POST', '/auth/send-code', { email })
-          .then(() => {
-            state.pendingEmail = email;
-            state.mode = 'register';
-            showOtpStep(email);
-          })
-          .catch(() => {
-            state.pendingEmail = email;
-            state.mode = 'register';
-            showOtpStep(email);
-          });
-      }
-    } else {
-      showAlert('login-alert', '📧 Saisissez d\'abord votre adresse email pour réinitialiser votre mot de passe.', 'warning');
+    switchTab('forgot');
+    showForgotStep1();
+    const loginEmail = document.getElementById('login-email')?.value?.trim();
+    if (loginEmail && isValidEmail(loginEmail)) {
+      document.getElementById('forgot-email').value = loginEmail;
+    }
+  }
+
+  function showForgotStep1() {
+    document.getElementById('forgot-form-step1').style.display = 'block';
+    document.getElementById('forgot-form-step2').style.display = 'none';
+    clearAlert('forgot-alert');
+  }
+
+  async function submitRequestReset(e) {
+    e.preventDefault();
+    clearAlert('forgot-alert');
+
+    const email = document.getElementById('forgot-email').value.trim();
+    if (!isValidEmail(email)) {
+      showAlert('forgot-alert', '❌ Saisissez une adresse e-mail valide (ex: nom@entreprise.com).');
+      return;
+    }
+
+    setLoading('forgot-btn1', 'forgot-spinner1', true);
+
+    try {
+      const res = await api('POST', '/auth/request-password-reset', { email });
+      document.getElementById('reset-email-target').textContent = email;
+      document.getElementById('forgot-form-step1').style.display = 'none';
+      document.getElementById('forgot-form-step2').style.display = 'block';
+      showAlert('forgot-alert', '✅ Un code de réinitialisation à 6 chiffres a été envoyé par e-mail.', 'success');
+    } catch (err) {
+      document.getElementById('reset-email-target').textContent = email;
+      document.getElementById('forgot-form-step1').style.display = 'none';
+      document.getElementById('forgot-form-step2').style.display = 'block';
+      showAlert('forgot-alert', err.message || '🔑 Code de réinitialisation généré. Saisissez votre code à 6 chiffres.', 'warning');
+    } finally {
+      setLoading('forgot-btn1', 'forgot-spinner1', false);
+    }
+  }
+
+  async function submitResetPassword(e) {
+    e.preventDefault();
+    clearAlert('forgot-alert');
+
+    const email = document.getElementById('forgot-email').value.trim();
+    const code = document.getElementById('reset-code-input').value.trim();
+    const newPassword = document.getElementById('reset-pwd-input').value;
+    const confirmPassword = document.getElementById('reset-pwd-confirm').value;
+
+    if (!code || code.length < 6) {
+      showAlert('forgot-alert', '❌ Veuillez saisir le code à 6 chiffres reçu par e-mail.');
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      showAlert('forgot-alert', '❌ Le nouveau mot de passe doit contenir au moins 6 caractères.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showAlert('forgot-alert', '❌ Les deux mots de passe ne correspondent pas.');
+      return;
+    }
+
+    setLoading('forgot-btn2', 'forgot-spinner2', true);
+
+    try {
+      const res = await api('POST', '/auth/reset-password', { email, code, newPassword });
+      showAlert('forgot-alert', '🎉 Mot de passe réinitialisé avec succès ! Connexion en cours...', 'success');
+      setTimeout(() => {
+        switchToLoginWithEmail(email);
+        showAlert('login-alert', '✅ Mot de passe mis à jour ! Connectez-vous avec votre nouveau mot de passe.', 'success');
+      }, 1200);
+    } catch (err) {
+      showAlert('forgot-alert', err.message || '❌ Code invalide ou expiré (durée max: 10 min).');
+    } finally {
+      setLoading('forgot-btn2', 'forgot-spinner2', false);
     }
   }
 
@@ -1680,6 +1822,10 @@ const Auth = (() => {
   window.openPrivacyModal = openPrivacyModal;
   window.closePrivacyModal = closePrivacyModal;
   window.acceptCookies = acceptCookies;
+  window.showForgotStep1 = showForgotStep1;
+  window.submitRequestReset = submitRequestReset;
+  window.submitResetPassword = submitResetPassword;
+  window.switchToLoginWithEmail = switchToLoginWithEmail;
 
   window.Auth = {
     switchTab,
@@ -1691,6 +1837,10 @@ const Auth = (() => {
     backToForm,
     loginWithGoogle,
     showForgot,
+    showForgotStep1,
+    submitRequestReset,
+    submitResetPassword,
+    switchToLoginWithEmail,
     validateEmailField,
     validateCompany,
     validateConfirm,

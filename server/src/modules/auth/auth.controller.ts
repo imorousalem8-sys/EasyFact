@@ -27,6 +27,16 @@ export class AuthController {
     return this.authService.login(body);
   }
 
+  @Post('request-password-reset')
+  async requestPasswordReset(@Body() body: { email: string }) {
+    return this.authService.requestPasswordReset(body.email);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() body: { email: string; code: string; newPassword: string }) {
+    return this.authService.resetPassword(body.email, body.code, body.newPassword);
+  }
+
   // ✅ Profile route protected by JWT — used by frontend to validate token on load
   @Get('profile')
   @UseGuards(JwtAuthGuard)
