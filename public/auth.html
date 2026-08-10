@@ -769,11 +769,6 @@
         <span class="otp-email-highlight" id="otp-email-display">—</span>
       </p>
 
-      <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 12px; padding: 10px 14px; margin: 12px 0; font-size: 0.82rem; color: #10b981; text-align: center;">
-        ⚡ <strong>Code d'activation directe :</strong> <code style="background: rgba(16,185,129,0.25); padding: 3px 8px; border-radius: 6px; font-weight: 800; color: #fff; font-size: 0.9rem;">891024</code> 
-        <button type="button" onclick="Auth.autoFillDemoOtp()" style="background: #10b981; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 0.78rem; font-weight: 800; margin-left: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.3);">⚡ Insérer 891024</button>
-      </div>
-
       <div class="alert alert-error" id="otp-alert" style="text-align:left">
         <i class="fa-solid fa-circle-exclamation"></i>
         <span id="otp-alert-msg"></span>
@@ -1322,7 +1317,7 @@ const Auth = (() => {
     const code  = Array.from(boxes).map(b => b.value).join('');
 
     if (code.length < 6) {
-      showAlert('otp-alert', '⚠️ Saisissez les 6 chiffres du code de vérification.');
+      showAlert('otp-alert', '⚠️ Saisissez les 6 chiffres du code de vérification reçu par email.');
       return;
     }
 
@@ -1331,39 +1326,22 @@ const Auth = (() => {
     try {
       const res = await api('POST', '/auth/verify-code', { email: state.pendingEmail, code });
 
-      if (res.success) {
+      if (res && res.success) {
         const token = res.token || state.pendingToken || ('token_easyfact_' + Date.now());
         localStorage.setItem('easyfact_token', token);
         localStorage.setItem('easyfact_active_user_id', res.user?.id || 'usr_' + Date.now());
-        localStorage.setItem('easyfact_active_user_email', res.user?.email || state.pendingEmail || 'contact@monentreprise.com');
+        localStorage.setItem('easyfact_active_user_email', res.user?.email || state.pendingEmail);
         localStorage.setItem('easyfact_company_name', res.user?.companyName || state.pendingCompany || 'Mon Entreprise');
         localStorage.setItem('easyfact_tier', res.user?.tier || 'starter');
         localStorage.setItem('easyfact_logged_in', 'true');
 
         showSuccess();
       } else {
-        localStorage.setItem('easyfact_token', 'token_easyfact_' + Date.now());
-        localStorage.setItem('easyfact_active_user_id', 'usr_' + Date.now());
-        localStorage.setItem('easyfact_active_user_email', state.pendingEmail || 'contact@monentreprise.com');
-        localStorage.setItem('easyfact_company_name', state.pendingCompany || 'Mon Entreprise');
-        localStorage.setItem('easyfact_tier', 'starter');
-        localStorage.setItem('easyfact_logged_in', 'true');
-
-        showSuccess();
+        showAlert('otp-alert', '❌ Code de vérification incorrect ou expiré. Consultez votre boîte e-mail.');
       }
     } catch (err) {
-      if (code && code.length === 6) {
-        localStorage.setItem('easyfact_token', 'token_easyfact_' + Date.now());
-        localStorage.setItem('easyfact_active_user_id', 'usr_' + Date.now());
-        localStorage.setItem('easyfact_active_user_email', state.pendingEmail || 'contact@monentreprise.com');
-        localStorage.setItem('easyfact_company_name', state.pendingCompany || 'Mon Entreprise');
-        localStorage.setItem('easyfact_tier', 'starter');
-        localStorage.setItem('easyfact_logged_in', 'true');
-
-        showSuccess();
-      } else {
-        showAlert('otp-alert', '❌ Saisissez un code à 6 chiffres valide.');
-      }
+      const msg = err.message || '❌ Code de vérification incorrect ou expiré. Veuillez vérifier et réessayer.';
+      showAlert('otp-alert', msg);
     } finally {
       setLoading('verify-btn', 'verify-spinner', false);
     }
